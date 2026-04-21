@@ -1,19 +1,10 @@
-"""Provider-neutral prompt parameter space and variants.
-
-``PromptVariants`` holds the concrete pools the searcher samples indices
-into (system prompts, few-shot examples).
-
-``MetaAxisSpace`` declares the bounds for each meta-axis. The calibration
-searcher emits a parameter dict whose keys are axis names and values are
-ordinals or enum members; ``ResolvedPromptParams`` is the structured form
-after adapter translation.
-"""
+"""Provider-neutral prompt parameter space and variants."""
 
 from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omegaprompt.domain.enums import (
     OutputBudgetBucket,
@@ -120,12 +111,12 @@ class MetaAxisSpace(BaseModel):
     def axis_names(self) -> list[str]:
         """Names of the meta-axes, in a stable order."""
         return [
-            "system_prompt_idx",
+            "system_prompt_variant",
             "few_shot_count",
             "reasoning_profile",
-            "output_budget",
+            "output_budget_bucket",
             "response_schema_mode",
-            "tool_policy",
+            "tool_policy_variant",
         ]
 
 
@@ -139,9 +130,35 @@ class ResolvedPromptParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    system_prompt_idx: int
+    system_prompt_variant: int
     few_shot_count: int
     reasoning_profile: ReasoningProfile = ReasoningProfile.STANDARD
-    output_budget: OutputBudgetBucket = OutputBudgetBucket.MEDIUM
+    output_budget_bucket: OutputBudgetBucket = OutputBudgetBucket.MEDIUM
     response_schema_mode: ResponseSchemaMode = ResponseSchemaMode.FREEFORM
-    tool_policy: ToolPolicyVariant = ToolPolicyVariant.NO_TOOLS
+    tool_policy_variant: ToolPolicyVariant = ToolPolicyVariant.NO_TOOLS
+
+    @model_validator(mode="before")
+    @classmethod
+    def _compat_keys(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if "system_prompt_idx" in data and "system_prompt_variant" not in data:
+            data["system_prompt_variant"] = data.pop("system_prompt_idx")
+        if "output_budget" in data and "output_budget_bucket" not in data:
+            data["output_budget_bucket"] = data.pop("output_budget")
+        if "tool_policy" in data and "tool_policy_variant" not in data:
+            data["tool_policy_variant"] = data.pop("tool_policy")
+        return data
+
+    @property
+    def system_prompt_idx(self) -> int:
+        return self.system_prompt_variant
+
+    @property
+    def output_budget(self) -> OutputBudgetBucket:
+        return self.output_budget_bucket
+
+    @property
+    def tool_policy(self) -> ToolPolicyVariant:
+        return self.tool_policy_variant

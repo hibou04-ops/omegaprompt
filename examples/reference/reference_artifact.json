@@ -1,0 +1,103 @@
+{
+  "schema_version": "2.0",
+  "engine_name": "omegacal",
+  "method": "p1",
+  "unlock_k": 2,
+  "selected_profile": "guarded",
+  "neutral_baseline_params": {
+    "system_prompt_variant": 0,
+    "few_shot_count": 0,
+    "reasoning_profile": 2,
+    "output_budget_bucket": 1,
+    "response_schema_mode": 0,
+    "tool_policy_variant": 0
+  },
+  "calibrated_params": {
+    "system_prompt_variant": 1,
+    "reasoning_profile": 1
+  },
+  "neutral_fitness": 0.425,
+  "calibrated_fitness": 0.9249999999999999,
+  "uplift_absolute": 0.49999999999999994,
+  "uplift_percent": 117.64705882352939,
+  "quality_per_cost_neutral": 0.0,
+  "quality_per_cost_best": 0.0,
+  "quality_per_latency_neutral": 0.0,
+  "quality_per_latency_best": 0.0,
+  "boundary_warnings": [],
+  "degraded_capabilities": [],
+  "ship_recommendation": "hold",
+  "stayed_within_guarded_boundaries": true,
+  "additional_uplift_from_boundary_crossing": 0.0,
+  "relaxed_safeguards": [],
+  "guarded_boundary_crossed": false,
+  "cost_basis": "normalized_token_units",
+  "best_params": {
+    "system_prompt_variant": 1,
+    "reasoning_profile": 1
+  },
+  "best_fitness": 0.9249999999999999,
+  "walk_forward": {
+    "train_best_fitness": 0.9249999999999999,
+    "test_fitness": 0.9249999999999999,
+    "generalization_gap": 0.0,
+    "kc4_correlation": null,
+    "passed": true
+  },
+  "hard_gate_pass_rate": 1.0,
+  "sensitivity_ranking": [
+    {
+      "axis": "system_prompt_variant",
+      "gini_delta": 1.4527542977065842,
+      "raw_stress": 0.49999999999999994,
+      "rank": 0
+    },
+    {
+      "axis": "reasoning_profile",
+      "gini_delta": 1.0945409092309881,
+      "raw_stress": 0.425,
+      "rank": 1
+    },
+    {
+      "axis": "few_shot_count",
+      "gini_delta": 0.25870966945459706,
+      "raw_stress": 0.24999999999999994,
+      "rank": 2
+    },
+    {
+      "axis": "output_budget_bucket",
+      "gini_delta": -0.9353349587973897,
+      "raw_stress": 0.0,
+      "rank": 3
+    },
+    {
+      "axis": "response_schema_mode",
+      "gini_delta": -0.9353349587973897,
+      "raw_stress": 0.0,
+      "rank": 4
+    },
+    {
+      "axis": "tool_policy_variant",
+      "gini_delta": -0.9353349587973897,
+      "raw_stress": 0.0,
+      "rank": 5
+    }
+  ],
+  "n_candidates_evaluated": 22,
+  "total_api_calls": 344,
+  "usage_summary": {
+    "input_tokens": 14262,
+    "output_tokens": 4620,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 15840
+  },
+  "latency_summary_ms": {},
+  "target_provider": "anthropic",
+  "target_model": "deterministic-reference",
+  "judge_provider": "anthropic",
+  "judge_model": "deterministic-reference",
+  "target_capabilities": null,
+  "judge_capabilities": null,
+  "status": "OK",
+  "rationale": "deterministic stubs; reproducible reference artifact"
+}

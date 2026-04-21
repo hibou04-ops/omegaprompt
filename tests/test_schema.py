@@ -71,8 +71,12 @@ def test_calibration_artifact_happy_path():
     a = CalibrationArtifact(
         method="p1",
         unlock_k=3,
-        best_params={"system_prompt_idx": 1},
+        best_params={"system_prompt_variant": 1},
         best_fitness=0.75,
+        neutral_baseline_params={"system_prompt_variant": 0},
+        calibrated_params={"system_prompt_variant": 1},
+        neutral_fitness=0.50,
+        calibrated_fitness=0.75,
         hard_gate_pass_rate=0.9,
         n_candidates_evaluated=50,
         total_api_calls=500,
@@ -81,6 +85,7 @@ def test_calibration_artifact_happy_path():
     assert a.status == "OK"
     payload = a.model_dump_json()
     assert '"best_fitness":0.75' in payload
+    assert a.calibrated_params["system_prompt_variant"] == 1
 
 
 def test_calibration_artifact_pass_rate_clamped_to_unit():

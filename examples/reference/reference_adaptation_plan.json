@@ -1,0 +1,62 @@
+{
+  "min_kc4_override": 0.6,
+  "max_gap_override": 0.4,
+  "unlock_k_override": 2,
+  "skip_axes": [
+    "system_prompt_variant"
+  ],
+  "rescore_count": 3,
+  "rubric_weight_overrides": {},
+  "schema_mode_fallback": "json_object",
+  "judge_ensemble_shift": 0.4,
+  "candidate_budget_cap": null,
+  "dataset_reorder_for_cache": false,
+  "overrides": [
+    {
+      "parameter": "min_kc4",
+      "default": 0.5,
+      "applied": 0.6,
+      "reason": "empirical noise floor 0.180 requires stronger Pearson"
+    },
+    {
+      "parameter": "max_gap",
+      "default": 0.25,
+      "applied": 0.4,
+      "reason": "small-sample test slice widens acceptable gap"
+    },
+    {
+      "parameter": "rescore_count",
+      "default": 1,
+      "applied": 3,
+      "reason": "judge consistency 0.55 < 0.60 - take median of 3"
+    },
+    {
+      "parameter": "schema_mode",
+      "default": "strict_schema",
+      "applied": "json_object",
+      "reason": "STRICT_SCHEMA reliability 67% below 90% - fallback to JSON_OBJECT with post-parse validation"
+    },
+    {
+      "parameter": "judge_ensemble_shift",
+      "default": 0.0,
+      "applied": 0.4,
+      "reason": "judge consistency 0.55 - raise RuleJudge weight to 40%"
+    },
+    {
+      "parameter": "unlock_k",
+      "default": 3,
+      "applied": 2,
+      "reason": "projected wall-time 5.2h exceeds 4h - reduce unlock_k"
+    }
+  ],
+  "rationale": [
+    "min_kc4 raised 0.50 -> 0.60 (noise floor 0.180)",
+    "max_gap widened 0.25 -> 0.40 (small sample)",
+    "rescore_count 1 -> 3 (judge consistency 0.55)",
+    "schema_mode STRICT_SCHEMA -> JSON_OBJECT (reliability 67%)",
+    "system_prompt_variant axis skipped from sensitivity (variants too homogeneous)",
+    "judge_ensemble_shift 0.00 -> 0.40 (judge consistency 0.55)",
+    "unlock_k 3 -> 2 (wall-time 5.2h)"
+  ],
+  "preserves_discipline": true
+}

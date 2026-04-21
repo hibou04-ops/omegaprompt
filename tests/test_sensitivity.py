@@ -7,6 +7,7 @@ from pathlib import Path
 from omegaprompt.core.artifact import load_artifact, save_artifact
 from omegaprompt.core.sensitivity import measure_sensitivity, select_unlocked_axes
 from omegaprompt.domain.result import CalibrationArtifact
+from tests.helpers import workspace_tmpdir
 
 
 def test_measure_sensitivity_ranks_high_variance_first():
@@ -44,29 +45,34 @@ def test_select_unlocked_axes_top_k():
     assert "c" not in top_two or scores[2].axis == "c"
 
 
-def test_artifact_roundtrip(tmp_path: Path):
-    artifact = CalibrationArtifact(
-        method="p1",
-        unlock_k=3,
-        best_params={"system_prompt_idx": 1, "reasoning_profile": "deep"},
-        best_fitness=0.87,
-        hard_gate_pass_rate=1.0,
-        sensitivity_ranking=[
-            {"axis": "system_prompt_idx", "gini_delta": 0.42, "rank": 0},
-            {"axis": "few_shot_count", "gini_delta": 0.18, "rank": 1},
-        ],
-        n_candidates_evaluated=40,
-        total_api_calls=160,
-        usage_summary={"input_tokens": 100, "output_tokens": 50},
-        target_provider="openai",
-        target_model="gpt-4o",
-        judge_provider="anthropic",
-        judge_model="claude-opus-4-7",
-    )
-    path = tmp_path / "artifact.json"
-    save_artifact(artifact, path)
-    loaded = load_artifact(path)
-    assert loaded.best_fitness == 0.87
-    assert loaded.best_params["system_prompt_idx"] == 1
-    assert loaded.sensitivity_ranking[0]["axis"] == "system_prompt_idx"
-    assert loaded.target_provider == "openai"
+def test_artifact_roundtrip():
+    with workspace_tmpdir() as tmp_path:
+        artifact = CalibrationArtifact(
+            method="p1",
+            unlock_k=3,
+            best_params={"system_prompt_variant": 1, "reasoning_profile": "deep"},
+            best_fitness=0.87,
+            neutral_baseline_params={"system_prompt_variant": 0},
+            calibrated_params={"system_prompt_variant": 1, "reasoning_profile": "deep"},
+            neutral_fitness=0.80,
+            calibrated_fitness=0.87,
+            hard_gate_pass_rate=1.0,
+            sensitivity_ranking=[
+                {"axis": "system_prompt_variant", "gini_delta": 0.42, "rank": 0},
+                {"axis": "few_shot_count", "gini_delta": 0.18, "rank": 1},
+            ],
+            n_candidates_evaluated=40,
+            total_api_calls=160,
+            usage_summary={"input_tokens": 100, "output_tokens": 50},
+            target_provider="openai",
+            target_model="gpt-4o",
+            judge_provider="anthropic",
+            judge_model="claude-opus-4-7",
+        )
+        path = tmp_path / "artifact.json"
+        save_artifact(artifact, path)
+        loaded = load_artifact(path)
+        assert loaded.best_fitness == 0.87
+        assert loaded.best_params["system_prompt_variant"] == 1
+        assert loaded.sensitivity_ranking[0]["axis"] == "system_prompt_variant"
+        assert loaded.target_provider == "openai"

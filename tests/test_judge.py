@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from omegaprompt.judge import Dimension, HardGate, JudgeResult, JudgeRubric
+from tests.helpers import workspace_tmpdir
 
 
 def _rubric() -> JudgeRubric:
@@ -64,29 +65,30 @@ def test_rubric_normalized_weights_sum_to_one():
     assert abs(weights["correctness"] - 0.5) < 1e-9
 
 
-def test_rubric_from_json(tmp_path: Path):
-    p = tmp_path / "rubric.json"
-    p.write_text(
-        json.dumps(
-            {
-                "dimensions": [
-                    {
-                        "name": "c",
-                        "description": "c",
-                        "weight": 1.0,
-                        "scale": [1, 5],
-                    }
-                ],
-                "hard_gates": [
-                    {"name": "g", "description": "g", "evaluator": "judge"}
-                ],
-            }
-        ),
-        encoding="utf-8",
-    )
-    r = JudgeRubric.from_json(p)
-    assert r.dimensions[0].name == "c"
-    assert r.hard_gates[0].name == "g"
+def test_rubric_from_json():
+    with workspace_tmpdir() as tmp_path:
+        p = tmp_path / "rubric.json"
+        p.write_text(
+            json.dumps(
+                {
+                    "dimensions": [
+                        {
+                            "name": "c",
+                            "description": "c",
+                            "weight": 1.0,
+                            "scale": [1, 5],
+                        }
+                    ],
+                    "hard_gates": [
+                        {"name": "g", "description": "g", "evaluator": "judge"}
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        r = JudgeRubric.from_json(p)
+        assert r.dimensions[0].name == "c"
+        assert r.hard_gates[0].name == "g"
 
 
 def test_judge_result_weighted_score():

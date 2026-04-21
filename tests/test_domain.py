@@ -50,27 +50,31 @@ def test_output_budget_from_ordinal_clamps():
 def test_meta_axis_space_axis_names_stable():
     s = MetaAxisSpace(system_prompt_idx_max=2)
     assert s.axis_names() == [
-        "system_prompt_idx",
+        "system_prompt_variant",
         "few_shot_count",
         "reasoning_profile",
-        "output_budget",
+        "output_budget_bucket",
         "response_schema_mode",
-        "tool_policy",
+        "tool_policy_variant",
     ]
 
 
 def test_resolved_prompt_params_defaults():
-    r = ResolvedPromptParams(system_prompt_idx=0, few_shot_count=0)
+    r = ResolvedPromptParams(system_prompt_variant=0, few_shot_count=0)
     assert r.reasoning_profile == ReasoningProfile.STANDARD
-    assert r.output_budget == OutputBudgetBucket.MEDIUM
+    assert r.output_budget_bucket == OutputBudgetBucket.MEDIUM
     assert r.response_schema_mode == ResponseSchemaMode.FREEFORM
+    assert r.tool_policy_variant == ToolPolicyVariant.NO_TOOLS
+    # Compatibility aliases remain readable during migration.
+    assert r.system_prompt_idx == 0
+    assert r.output_budget == OutputBudgetBucket.MEDIUM
     assert r.tool_policy == ToolPolicyVariant.NO_TOOLS
 
 
 def test_resolved_prompt_params_forbids_extra():
     with pytest.raises(ValidationError):
         ResolvedPromptParams(
-            system_prompt_idx=0,
+            system_prompt_variant=0,
             few_shot_count=0,
             unknown_axis="bad",
         )

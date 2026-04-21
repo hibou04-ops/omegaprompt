@@ -14,11 +14,12 @@ import json
 from omegaprompt.domain.dataset import DatasetItem
 from omegaprompt.domain.enums import OutputBudgetBucket, ResponseSchemaMode
 from omegaprompt.domain.judge import JudgeResult, JudgeRubric
+from omegaprompt.domain.profiles import ExecutionProfile
 from omegaprompt.judges.base import JudgeError
-from omegaprompt.providers.base import LLMProvider, ProviderError, ProviderRequest
+from omegaprompt.providers.base import LLMProvider, ProviderError, ProviderRequest, provider_capabilities
 
 
-JUDGE_SYSTEM_PROMPT = r"""You are the judge in an omegaprompt calibration run. Your job is narrow: read the rubric, read the input/response pair, and return a structured JSON score. Do not attempt to improve the response, do not add commentary beyond the `notes` field, do not guess at the user's intent beyond what the rubric asks.
+JUDGE_SYSTEM_PROMPT = r"""You are the judge in an omegacal calibration run. Your job is narrow: read the rubric, read the input/response pair, and return a structured JSON score. Do not attempt to improve the response, do not add commentary beyond the `notes` field, do not guess at the user's intent beyond what the rubric asks.
 
 ## Inputs
 
@@ -110,9 +111,11 @@ class LLMJudge:
         *,
         provider: LLMProvider,
         output_budget: OutputBudgetBucket = OutputBudgetBucket.SMALL,
+        execution_profile: ExecutionProfile = ExecutionProfile.GUARDED,
     ) -> None:
         self.provider = provider
         self.output_budget = output_budget
+        self.execution_profile = execution_profile
 
     def score(
         self,
@@ -121,15 +124,22 @@ class LLMJudge:
         item: DatasetItem,
         target_response: str,
     ) -> tuple[JudgeResult, dict[str, int]]:
+        capabilities = provider_capabilities(self.provider)
+        if not capabilities.supports_llm_judge and self.execution_profile == ExecutionProfile.GUARDED:
+            raise JudgeError(
+                f"Provider {capabilities.provider!r} is not ship-grade for LLM judging. "
+                "Use a stronger judge provider or expedition mode with explicit risk."
+            )
         payload = _build_user_payload(rubric, item, target_response)
 
         request = ProviderRequest(
             system_prompt=JUDGE_SYSTEM_PROMPT,
             user_message=payload,
             reasoning_profile=rubric_reasoning_profile(),
-            output_budget=self.output_budget,
+            output_budget_bucket=self.output_budget,
             response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
             output_schema=JudgeResult,
+            execution_profile=self.execution_profile,
         )
 
         try:

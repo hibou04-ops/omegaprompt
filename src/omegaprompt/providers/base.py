@@ -1,19 +1,12 @@
-"""Unified ``LLMProvider`` Protocol + provider-neutral request/response.
-
-v1.0 change: the two-method interface (``complete`` + ``structured_complete``)
-is replaced by a single ``call()`` that consumes a ``ProviderRequest``
-carrying the meta-axes. Each adapter translates the meta-axes to its
-vendor's native parameters internally; the public contract is vendor-free.
-
-Returning a :class:`ProviderResponse` rather than a tuple keeps call sites
-readable when response_schema_mode varies at runtime.
-"""
+"""Unified provider contracts plus capability/degradation reporting."""
 
 from __future__ import annotations
 
+from enum import Enum
+from json import JSONDecodeError
 from typing import Any, Protocol, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from omegaprompt.domain.enums import (
     OutputBudgetBucket,
@@ -21,6 +14,7 @@ from omegaprompt.domain.enums import (
     ResponseSchemaMode,
     ToolPolicyVariant,
 )
+from omegaprompt.domain.profiles import ExecutionProfile
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -29,13 +23,48 @@ class ProviderError(RuntimeError):
     """Raised when a provider call fails in a way the caller can surface."""
 
 
-class ProviderRequest(BaseModel):
-    """The provider-neutral call payload.
+class CapabilityTier(str, Enum):
+    """Capability tier used in docs, reporting, and risk policy."""
 
-    Adapters see only this shape. Vendor-specific knobs (Anthropic
-    ``thinking`` config, OpenAI ``response_format``) are derived from the
-    meta-axes inside each adapter's ``call``.
-    """
+    CORE = "tier_1_core_parity"
+    CLOUD = "tier_2_cloud_grade"
+    LOCAL = "tier_3_local"
+
+
+class CapabilityEvent(BaseModel):
+    """One explicit adapter fallback or degraded feature."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    capability: str
+    requested: str
+    applied: str
+    reason: str
+    user_visible_note: str
+    affects_guarded_boundary: bool = True
+
+
+class ProviderCapabilities(BaseModel):
+    """Static capability summary for one provider adapter."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    provider: str
+    tier: CapabilityTier
+    supports_strict_schema: bool = False
+    supports_json_object: bool = False
+    supports_reasoning_profiles: bool = False
+    supports_usage_accounting: bool = True
+    supports_llm_judge: bool = False
+    ship_grade_judge: bool = False
+    supports_tools: bool = False
+    experimental: bool = False
+    placeholder: bool = False
+    notes: list[str] = Field(default_factory=list)
+
+
+class ProviderRequest(BaseModel):
+    """The provider-neutral call payload."""
 
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
@@ -44,12 +73,33 @@ class ProviderRequest(BaseModel):
     few_shots: list[dict[str, str]] = Field(default_factory=list)
 
     reasoning_profile: ReasoningProfile = ReasoningProfile.STANDARD
-    output_budget: OutputBudgetBucket = OutputBudgetBucket.MEDIUM
+    output_budget_bucket: OutputBudgetBucket = OutputBudgetBucket.MEDIUM
     response_schema_mode: ResponseSchemaMode = ResponseSchemaMode.FREEFORM
-    tool_policy: ToolPolicyVariant = ToolPolicyVariant.NO_TOOLS
+    tool_policy_variant: ToolPolicyVariant = ToolPolicyVariant.NO_TOOLS
+    execution_profile: ExecutionProfile = ExecutionProfile.GUARDED
 
     # Required when response_schema_mode == STRICT_SCHEMA. Otherwise ignored.
     output_schema: type[BaseModel] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _compat_keys(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if "output_budget" in data and "output_budget_bucket" not in data:
+            data["output_budget_bucket"] = data.pop("output_budget")
+        if "tool_policy" in data and "tool_policy_variant" not in data:
+            data["tool_policy_variant"] = data.pop("tool_policy")
+        return data
+
+    @property
+    def output_budget(self) -> OutputBudgetBucket:
+        return self.output_budget_bucket
+
+    @property
+    def tool_policy(self) -> ToolPolicyVariant:
+        return self.tool_policy_variant
 
 
 class ProviderResponse(BaseModel):
@@ -61,6 +111,9 @@ class ProviderResponse(BaseModel):
     parsed: BaseModel | None = None
     usage: dict[str, int] = Field(default_factory=dict)
     finish_reason: str | None = None
+    latency_ms: float = 0.0
+    degraded_capabilities: list[CapabilityEvent] = Field(default_factory=list)
+    capability_notes: list[str] = Field(default_factory=list)
 
 
 class LLMProvider(Protocol):
@@ -70,6 +123,29 @@ class LLMProvider(Protocol):
     model: str
 
     def call(self, request: ProviderRequest) -> ProviderResponse: ...
+
+    def capabilities(self) -> ProviderCapabilities: ...
+
+
+def provider_capabilities(provider: object) -> ProviderCapabilities:
+    """Return declared capabilities or a safe legacy fallback."""
+
+    caps_fn = getattr(provider, "capabilities", None)
+    if callable(caps_fn):
+        caps = caps_fn()
+        if isinstance(caps, ProviderCapabilities):
+            return caps
+    return ProviderCapabilities(
+        provider=str(getattr(provider, "name", "legacy")),
+        tier=CapabilityTier.CORE,
+        supports_strict_schema=True,
+        supports_json_object=True,
+        supports_reasoning_profiles=True,
+        supports_usage_accounting=True,
+        supports_llm_judge=True,
+        ship_grade_judge=True,
+        notes=["Legacy provider without explicit capability declaration."],
+    )
 
 
 def empty_usage() -> dict[str, int]:
@@ -83,11 +159,13 @@ def empty_usage() -> dict[str, int]:
 
 def normalize_usage(raw: Any) -> dict[str, int]:
     """Coerce vendor usage into the canonical dict shape."""
+
     def _attr(name: str) -> int:
         value = getattr(raw, name, 0) if raw is not None else 0
         return int(value or 0)
 
     if isinstance(raw, dict):
+
         def _attr(name: str) -> int:  # noqa: F811
             return int(raw.get(name, 0) or 0)
 
@@ -114,8 +192,6 @@ def normalize_usage(raw: Any) -> dict[str, int]:
     }
 
 
-# ----- Meta-axis to vendor-param translation (shared helpers) -----
-
 _OUTPUT_BUDGET_MAX_TOKENS: dict[OutputBudgetBucket, int] = {
     OutputBudgetBucket.SMALL: 1024,
     OutputBudgetBucket.MEDIUM: 4096,
@@ -140,3 +216,60 @@ def reasoning_effort_label(profile: ReasoningProfile) -> str:
 
 def reasoning_enabled(profile: ReasoningProfile) -> bool:
     return profile != ReasoningProfile.OFF
+
+
+def estimate_cost_units(usage: dict[str, int] | None) -> float:
+    """Provider-neutral cost proxy.
+
+    When adapters do not publish a pricing table, token volume remains a
+    stable within-provider proxy for relative cost.
+    """
+
+    usage = usage or {}
+    return float(int(usage.get("input_tokens", 0) or 0) + int(usage.get("output_tokens", 0) or 0))
+
+
+def quality_per_cost(fitness: float, cost_units: float) -> float:
+    denom = cost_units if cost_units > 0 else 1.0
+    return fitness / denom
+
+
+def quality_per_latency(fitness: float, latency_ms: float) -> float:
+    denom = latency_ms if latency_ms > 0 else 1.0
+    return fitness / denom
+
+
+def parse_model_from_json_text(
+    *,
+    text: str,
+    schema: type[T],
+    capability: str,
+    reason: str,
+) -> tuple[T, CapabilityEvent]:
+    """Parse an output model from JSON text after an adapter-level fallback."""
+
+    try:
+        parsed = schema.model_validate_json(text)
+    except (ValidationError, ValueError, JSONDecodeError):
+        parsed = schema.model_validate_json(_strip_markdown_fences(text))
+    event = CapabilityEvent(
+        capability=capability,
+        requested="strict_schema",
+        applied="json_object_parse",
+        reason=reason,
+        user_visible_note=(
+            "Strict schema support was unavailable, so the adapter fell back to JSON output "
+            "plus local validation. Validation strength is lower than native strict parsing."
+        ),
+    )
+    return parsed, event
+
+
+def _strip_markdown_fences(text: str) -> str:
+    stripped = text.strip()
+    if not stripped.startswith("```"):
+        return stripped
+    lines = stripped.splitlines()
+    if len(lines) >= 3 and lines[-1].strip().startswith("```"):
+        return "\n".join(lines[1:-1])
+    return stripped

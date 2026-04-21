@@ -54,7 +54,7 @@ def call_target(
         user_message=user_message,
         few_shots=few_shots,
         reasoning_profile=profile,
-        output_budget=budget,
+        output_budget_bucket=budget,
         response_schema_mode=ResponseSchemaMode.FREEFORM,
     )
     response = provider.call(request)

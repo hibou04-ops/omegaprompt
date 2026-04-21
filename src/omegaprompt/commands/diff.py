@@ -1,4 +1,4 @@
-"""``omegaprompt diff`` - compare two calibration artifacts.
+"""``omegacal diff`` - compare two calibration artifacts.
 
 Intended for CI: catch regressions when someone edits the prompt or
 variants. Exit code reflects whether the new artifact is strictly
@@ -46,18 +46,26 @@ def diff(
             return "="
         return "up" if b > a else "down"
 
-    typer.echo(f"# omegaprompt diff\n")
-    typer.echo(f"OLD: {old_path}  status={old.status}  best={old.best_fitness:.4f}")
-    typer.echo(f"NEW: {new_path}  status={new.status}  best={new.best_fitness:.4f}")
+    typer.echo(f"# omegacal diff\n")
+    typer.echo(f"OLD: {old_path}  status={old.status}  calibrated={old.calibrated_fitness:.4f}")
+    typer.echo(f"NEW: {new_path}  status={new.status}  calibrated={new.calibrated_fitness:.4f}")
     typer.echo("")
     typer.echo(
-        f"- best_fitness: {old.best_fitness:.4f} -> {new.best_fitness:.4f}  "
-        f"[{_arrow(old.best_fitness, new.best_fitness)}]"
+        f"- calibrated_fitness: {old.calibrated_fitness:.4f} -> {new.calibrated_fitness:.4f}  "
+        f"[{_arrow(old.calibrated_fitness, new.calibrated_fitness)}]"
+    )
+    typer.echo(
+        f"- neutral_fitness: {old.neutral_fitness:.4f} -> {new.neutral_fitness:.4f}  "
+        f"[{_arrow(old.neutral_fitness, new.neutral_fitness)}]"
     )
 
     regressed = False
 
-    if new.best_fitness < old.best_fitness:
+    if new.calibrated_fitness < old.calibrated_fitness:
+        regressed = True
+    if new.quality_per_cost_best < old.quality_per_cost_best:
+        regressed = True
+    if new.quality_per_latency_best < old.quality_per_latency_best:
         regressed = True
 
     if old.walk_forward is not None and new.walk_forward is not None:
@@ -80,6 +88,12 @@ def diff(
         f"{new.hard_gate_pass_rate:.1%}"
     )
     if new.hard_gate_pass_rate < old.hard_gate_pass_rate:
+        regressed = True
+    typer.echo(
+        f"- stayed_within_guarded_boundaries: {old.stayed_within_guarded_boundaries} -> "
+        f"{new.stayed_within_guarded_boundaries}"
+    )
+    if old.stayed_within_guarded_boundaries and not new.stayed_within_guarded_boundaries:
         regressed = True
 
     if regressed and fail_on_regression:

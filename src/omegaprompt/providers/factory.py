@@ -15,6 +15,11 @@ from omegaprompt.providers.base import LLMProvider, ProviderError
 DEFAULT_MODELS: dict[str, str] = {
     "anthropic": "claude-opus-4-7",
     "openai": "gpt-4o",
+    "gemini": "gemini-2.5-pro",
+    "local": "local-model",
+    "ollama": "llama3.1:8b",
+    "vllm": "meta-llama/Llama-3.1-8B-Instruct",
+    "llama_cpp": "llama.cpp-local",
 }
 
 
@@ -62,7 +67,28 @@ def _build_openai(**kwargs: Any) -> LLMProvider:
     return OpenAIProvider(**kwargs)
 
 
+def _build_gemini(**kwargs: Any) -> LLMProvider:
+    from omegaprompt.providers.gemini_provider import GeminiProvider
+
+    kwargs.pop("base_url", None)
+    kwargs.pop("api_key", None)
+    kwargs.pop("client", None)
+    return GeminiProvider(**kwargs)
+
+
+def _build_local(**kwargs: Any) -> LLMProvider:
+    from omegaprompt.providers.local_provider import LocalOpenAICompatibleProvider
+
+    backend = kwargs.pop("backend", "local")
+    return LocalOpenAICompatibleProvider(backend=backend, **kwargs)
+
+
 _REGISTRY = {
     "anthropic": _build_anthropic,
     "openai": _build_openai,
+    "gemini": _build_gemini,
+    "local": _build_local,
+    "ollama": lambda **kwargs: _build_local(backend="ollama", **kwargs),
+    "vllm": lambda **kwargs: _build_local(backend="vllm", **kwargs),
+    "llama_cpp": lambda **kwargs: _build_local(backend="llama_cpp", **kwargs),
 }

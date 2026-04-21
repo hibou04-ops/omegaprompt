@@ -35,6 +35,13 @@ from omegaprompt.domain.params import (
     PromptVariants,
     ResolvedPromptParams,
 )
+from omegaprompt.domain.profiles import (
+    BoundaryWarning,
+    ExecutionProfile,
+    RelaxedSafeguard,
+    RiskCategory,
+    ShipRecommendation,
+)
 from omegaprompt.domain.result import (
     CalibrationArtifact,
     EvalItemResult,
@@ -58,6 +65,11 @@ __all__ = [
     "MetaAxisSpace",
     "PromptVariants",
     "ResolvedPromptParams",
+    "BoundaryWarning",
+    "ExecutionProfile",
+    "RelaxedSafeguard",
+    "RiskCategory",
+    "ShipRecommendation",
     "CalibrationArtifact",
     "EvalItemResult",
     "EvalResult",

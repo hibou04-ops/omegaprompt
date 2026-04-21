@@ -19,7 +19,7 @@ from omegaprompt.judges.base import JudgeError
 from omegaprompt.providers.base import LLMProvider, ProviderError, ProviderRequest, provider_capabilities
 
 
-JUDGE_SYSTEM_PROMPT = r"""You are the judge in an omegacal calibration run. Your job is narrow: read the rubric, read the input/response pair, and return a structured JSON score. Do not attempt to improve the response, do not add commentary beyond the `notes` field, do not guess at the user's intent beyond what the rubric asks.
+JUDGE_SYSTEM_PROMPT = r"""You are the judge in an omegaprompt calibration run. Your job is narrow: read the rubric, read the input/response pair, and return a structured JSON score. Do not attempt to improve the response, do not add commentary beyond the `notes` field, do not guess at the user's intent beyond what the rubric asks.
 
 ## Inputs
 

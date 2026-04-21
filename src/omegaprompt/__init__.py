@@ -1,40 +1,18 @@
-"""omegacal / omegaprompt - provider-neutral prompt calibration engine.
+"""omegaprompt - provider-neutral prompt calibration engine.
 
-v1.0 is a ground-up restructure of the v0.2 interface. The *discipline*
-(sensitivity-driven coordinate descent, hard_gate x soft_score fitness,
-walk-forward ship gate, machine-readable artifacts) is preserved intact;
-the *contract* is provider-neutral: meta-axes instead of Claude-specific
-knobs, a single ``call()`` method on :class:`LLMProvider`, a
-:class:`Judge` protocol with rule / LLM / ensemble implementations.
+v1.1 is the public-distribution release of the v1.0 architecture. The
+*discipline* (sensitivity-driven coordinate descent, hard_gate x
+soft_score fitness, walk-forward ship gate, machine-readable artifacts)
+is preserved intact; the *contract* is provider-neutral: meta-axes
+instead of Claude-specific knobs, a single ``call()`` method on
+:class:`LLMProvider`, a :class:`Judge` protocol with rule / LLM /
+ensemble implementations.
 
-Public API:
-
-    from omegaprompt import (
-        # domain
-        Dataset, DatasetItem,
-        PromptVariants, MetaAxisSpace, ResolvedPromptParams,
-        JudgeRubric, Dimension, HardGate, JudgeResult,
-        ReasoningProfile, OutputBudgetBucket,
-        ResponseSchemaMode, ToolPolicyVariant,
-        CalibrationArtifact, EvalResult, WalkForwardResult,
-        ExecutionProfile, ShipRecommendation, BoundaryWarning,
-        # core
-        CompositeFitness, aggregate_fitness, item_fitness,
-        evaluate_walk_forward, measure_sensitivity, policy_for, assess_run_risk,
-        save_artifact, load_artifact,
-        # providers
-        LLMProvider, ProviderRequest, ProviderResponse, ProviderCapabilities,
-        make_provider, supported_providers,
-        # judges
-        Judge, LLMJudge, RuleJudge, EnsembleJudge,
-        # target
-        CalibrableTarget, PromptTarget,
-    )
-
-Depends on:
-    omega-lock (>=0.1.4)  - CalibrableTarget host + search pipeline
-    anthropic (>=0.40.0)
-    openai (>=1.50.0)
+The main package is self-contained. Two optional sub-tools
+(``mini-omega-lock``, ``mini-antemortem-cli``) distribute separately
+and plug in via the ``omegaprompt.preflight`` interface to add empirical
+and analytical preflight measurements respectively. Standalone users
+do not need them.
 """
 
 from omegaprompt.core import (
@@ -102,18 +80,19 @@ from omegaprompt.providers import (
 from omegaprompt.preflight import (
     AdaptationPlan,
     AnalyticalFinding,
+    EndpointMeasurement,
+    JudgeQualityMeasurement,
     ParameterOverride,
+    PerformanceMeasurement,
     PreflightReport,
     PreflightSeverity,
     PreflightStatus,
-    analytical_preflight,
     apply_adaptation_plan,
     derive_adaptation_plan,
-    empirical_preflight,
 )
 from omegaprompt.targets import CalibrableTarget, PromptTarget
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = [
     # domain
@@ -177,17 +156,18 @@ __all__ = [
     # target
     "CalibrableTarget",
     "PromptTarget",
-    # preflight
+    # preflight (plugin interface for optional mini-* sub-tools)
     "AdaptationPlan",
     "AnalyticalFinding",
+    "EndpointMeasurement",
+    "JudgeQualityMeasurement",
     "ParameterOverride",
+    "PerformanceMeasurement",
     "PreflightReport",
     "PreflightSeverity",
     "PreflightStatus",
-    "analytical_preflight",
     "apply_adaptation_plan",
     "derive_adaptation_plan",
-    "empirical_preflight",
     # version
     "__version__",
 ]

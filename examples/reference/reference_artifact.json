@@ -1,6 +1,6 @@
 {
   "schema_version": "2.0",
-  "engine_name": "omegacal",
+  "engine_name": "omegaprompt",
   "method": "p1",
   "unlock_k": 2,
   "selected_profile": "guarded",

@@ -1,4 +1,4 @@
-"""``omegacal calibrate`` - end-to-end prompt calibration."""
+"""``omegaprompt calibrate`` - end-to-end prompt calibration."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def _require_env_for(provider_key: str, base_url: str | None = None) -> str | No
     if not os.getenv(expected):
         return (
             f"{expected} is not set. Export it before running "
-            f"`omegacal calibrate` with provider={provider_key!r}."
+            f"`omegaprompt calibrate` with provider={provider_key!r}."
         )
     return None
 

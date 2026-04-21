@@ -2,7 +2,7 @@
 
 These types are the stable interface between the two preflight sub-units
 (analytical `mini_antemortem`, empirical `mini_omega_lock`) and the main
-`omegacal` calibration pipeline. External repositories implementing the
+`omegaprompt` calibration pipeline. External repositories implementing the
 full sub-units must emit records conforming to these shapes.
 """
 

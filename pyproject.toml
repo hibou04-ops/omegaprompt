@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "omegacal"
-version = "1.0.0"
-description = "Provider-neutral prompt calibration engine with sensitivity-ranked meta-axes, hard-gate x soft-score fitness, walk-forward ship gates, guarded/expedition profiles, and explicit capability/risk reporting across Anthropic, OpenAI, Gemini placeholder, and local OpenAI-compatible backends."
+name = "omegaprompt"
+version = "1.1.0"
+description = "Provider-neutral prompt calibration engine with sensitivity-ranked meta-axes, hard-gate x soft-score fitness, walk-forward ship gates, guarded/expedition profiles, and explicit capability/risk reporting across Anthropic, OpenAI, Gemini placeholder, and local OpenAI-compatible backends. Optional sub-tools (mini-omega-lock, mini-antemortem-cli) distribute separately and plug in via the omegaprompt.preflight interface."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }

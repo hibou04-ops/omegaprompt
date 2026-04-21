@@ -1,4 +1,4 @@
-"""Top-level Typer application for omegacal."""
+"""Top-level Typer application for omegaprompt."""
 
 import typer
 
@@ -8,7 +8,7 @@ from omegaprompt.commands import diff as diff_cmd
 from omegaprompt.commands import report as report_cmd
 
 app = typer.Typer(
-    name="omegacal",
+    name="omegaprompt",
     help="Provider-neutral prompt calibration engine with walk-forward ship gates.",
     no_args_is_help=True,
     add_completion=False,
@@ -17,7 +17,7 @@ app = typer.Typer(
 
 def _version_callback(value: bool) -> None:
     if value:
-        typer.echo(f"omegacal {__version__}")
+        typer.echo(f"omegaprompt {__version__}")
         raise typer.Exit()
 
 
@@ -32,7 +32,7 @@ def _root(
         help="Show version and exit.",
     ),
 ) -> None:
-    """omegacal - provider-neutral prompt calibration with structural risk reporting."""
+    """omegaprompt - provider-neutral prompt calibration with structural risk reporting."""
 
 
 app.command(

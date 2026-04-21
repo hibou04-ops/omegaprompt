@@ -7,7 +7,7 @@ import json
 
 def render_markdown(a) -> str:
     lines: list[str] = []
-    lines.append(f"# omegacal calibration - {a.status}")
+    lines.append(f"# omegaprompt calibration - {a.status}")
     lines.append("")
     lines.append(f"- **Profile:** {a.selected_profile.value}")
     lines.append(f"- **Method:** {a.method} (unlock_k={a.unlock_k})")

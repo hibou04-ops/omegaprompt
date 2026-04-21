@@ -1,20 +1,20 @@
-# omegacal
+# omegaprompt
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-1.0.0-blue.svg)](https://pypi.org/project/omegacal/)
-[![Tests](https://img.shields.io/badge/tests-178%20passing-brightgreen.svg)](tests/)
+[![PyPI](https://img.shields.io/badge/pypi-1.1.0-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![Tests](https://img.shields.io/badge/tests-149%20passing-brightgreen.svg)](tests/)
 [![Providers](https://img.shields.io/badge/providers-anthropic%20%7C%20openai%20%7C%20openai--compatible%20%7C%20local-informational.svg)](#7-provider-adapters)
 [![Schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
-> **Abstract.** `omegacal` is a provider-neutral calibration engine for LLM prompts. It takes the machine-learning defenses against overfitting — train/test split with a pre-declared gate, sensitivity-driven axis unlock, hard-gate × soft-score fitness — and applies them to prompt engineering without coupling to any single vendor's API surface. The public contract is expressed as semantic *meta-axes* (reasoning profile, output budget, response schema mode, tool policy) that each adapter translates to its vendor's native parameters. Adapters declare their capabilities up front; runtime degradations are recorded as `CapabilityEvent`s in the calibration artifact. Two execution profiles (`guarded` / `expedition`) make the trade between validation strength and exploratory reach explicit. The `CalibrationArtifact` (schema v2.0) records the neutral-baseline and calibrated runs side by side, so a reviewer can see not only *what* shipped but *how much* calibration earned over doing nothing.
+> **Abstract.** `omegaprompt` is a provider-neutral calibration engine for LLM prompts. It takes the machine-learning defenses against overfitting — train/test split with a pre-declared gate, sensitivity-driven axis unlock, hard-gate × soft-score fitness — and applies them to prompt engineering without coupling to any single vendor's API surface. The public contract is expressed as semantic *meta-axes* (reasoning profile, output budget, response schema mode, tool policy) that each adapter translates to its vendor's native parameters. Adapters declare their capabilities up front; runtime degradations are recorded as `CapabilityEvent`s in the calibration artifact. Two execution profiles (`guarded` / `expedition`) make the trade between validation strength and exploratory reach explicit. The `CalibrationArtifact` (schema v2.0) records the neutral-baseline and calibrated runs side by side, so a reviewer can see not only *what* shipped but *how much* calibration earned over doing nothing.
 
 ```bash
-pip install omegacal
+pip install omegaprompt
 ```
 
-The old `omegaprompt` import path and CLI remain as compatibility aliases during migration. Korean README: [README_KR.md](README_KR.md).
+The main package is self-contained. Two optional sub-tools (`mini-omega-lock`, `mini-antemortem-cli`) distribute **separately** and plug in via the `omegaprompt.preflight` interface to add empirical and analytical preflight measurements respectively. Standalone users do not need them — see §5.8. Korean README: [README_KR.md](README_KR.md).
 
 ---
 
@@ -65,7 +65,7 @@ Most prompt-optimisation tools inherit their search axes from the most convenien
 
 Real LLM SDKs degrade silently. A reasoning-effort parameter is rejected by a local endpoint, but the request proceeds without it. A structured-output path is unavailable on a given model, so JSON gets regex-parsed. A cache-control header is ignored on some providers, inflating token cost. In each case the calibration still produces numbers. The numbers are no longer comparable across providers, and the operator has no record of what changed. A calibration framework that does not name these degradations makes them invisible to the CI pipeline downstream.
 
-`omegacal` is the response to all four. Each contribution below targets one or more of these failure modes.
+`omegaprompt` is the response to all four. Each contribution below targets one or more of these failure modes.
 
 ---
 
@@ -92,7 +92,7 @@ Together, these contributions turn prompt calibration from an ergonomic exercise
 ### 3.1 Layered package structure
 
 ```
-omegacal/
+omegaprompt/
 ├── domain/        Provider-neutral contracts (enums, dataset, rubric,
 │                  params, result, profiles). Depends on nothing.
 ├── core/          Calibration kernel (fitness, artifact I/O, walk-forward,
@@ -156,7 +156,7 @@ omegacal/
        └──────────────────────────────────────────────────────────┘
 ```
 
-The dependency graph has no back-edges. `domain` does not import from anywhere inside `omegacal`. `core` knows about `domain` only. `providers` and `judges` never import search or target code. `targets` is the single composition point where the adapter layer plugs into `omega-lock`'s search engine via the `CalibrableTarget` protocol.
+The dependency graph has no back-edges. `domain` does not import from anywhere inside `omegaprompt`. `core` knows about `domain` only. `providers` and `judges` never import search or target code. `targets` is the single composition point where the adapter layer plugs into `omega-lock`'s search engine via the `CalibrableTarget` protocol.
 
 ### 3.3 Boundary between discipline and adapters
 
@@ -300,33 +300,25 @@ The Pearson correlation between train per-item scores and test per-item scores (
 
 The `CalibrationArtifact` (see §8) is written as pretty-printed JSON to the `--output` path. It carries enough information to (a) render a Markdown report, (b) diff against a prior run, (c) gate CI on machine-readable fields without parsing prose.
 
-### 5.8 Preflight and adaptation
+### 5.8 Preflight and adaptation (optional sub-tool ecosystem)
 
-The main pipeline does not assume that its default thresholds (`min_kc4 = 0.5`, `max_gap = 0.25`, `unlock_k = 3`) are universally correct. Two preflight sub-units run before §5.2 and emit a shared :class:`AdaptationPlan` that the main pipeline consumes. The discipline's *defenses* — hard-gate fitness collapse, walk-forward ship gate, sensitivity-driven axis unlock — remain in place; only the numeric parameters are tuned to the environment.
+The main pipeline does not assume that its default thresholds (`min_kc4 = 0.5`, `max_gap = 0.25`, `unlock_k = 3`) are universally correct. `omegaprompt.preflight` defines a stable plugin contract for two *optional* external sub-tools that measure the actual environment and emit a shared :class:`AdaptationPlan` the main pipeline consumes. The discipline's *defenses* — hard-gate fitness collapse, walk-forward ship gate, sensitivity-driven axis unlock — remain in place; only the numeric parameters are tuned to the environment.
 
-**Analytical preflight** (`omegaprompt.preflight.mini_antemortem`) reads the run configuration and classifies seven calibration-specific trap patterns against deterministic rules:
+**Standalone `omegaprompt` ships no preflight probe code.** Most users never need it. The preflight module exposes only:
 
-| Trap id | Trap hypothesis |
-|---|---|
-| `self_agreement_bias` | Target and judge share a vendor; the judge's biases overlap with the target. |
-| `small_sample_kc4_power` | Dataset too small for Pearson correlation to carry statistical power. |
-| `variants_homogeneous` | System-prompt variants are too similar for sensitivity to have signal. |
-| `rubric_weight_concentration` | A single rubric dimension carries most of the weight; its judge noise dominates fitness. |
-| `judge_budget_too_small` | Judge output budget is SMALL but the rubric has too many dimensions + gates. |
-| `empty_reference_with_strict_rubric` | No dataset item has a reference; rubric implies comparison to a ground truth. |
-| `no_held_out_slice` | No `--test` slice; walk-forward cannot run. |
+- **Contracts** — Pydantic types (`PreflightReport`, `AnalyticalFinding`, `JudgeQualityMeasurement`, `EndpointMeasurement`, `PerformanceMeasurement`) that external sub-tools emit.
+- **Adaptation logic** — `derive_adaptation_plan(report)` maps a report to an `AdaptationPlan`; `apply_adaptation_plan(plan, ...)` clips the plan against the caller's defaults so adaptation can only *strengthen* the discipline.
 
-Each pattern returns one of `REAL` / `GHOST` / `NEW` / `UNRESOLVED` with a severity (`blocker` / `high` / `medium` / `low`) and a remediation hint.
+Two external sub-tools plug in:
 
-**Empirical preflight** (`omegaprompt.preflight.mini_omega_lock`) issues a small set of probe calls to measure:
+| Sub-tool | Repository / PyPI | Role |
+|---|---|---|
+| **`mini-omega-lock`** | `pip install mini-omega-lock` (separate) | **Empirical preflight.** Probes the live judge + endpoint to measure consistency, schema reliability, context margin, latency, noise floor. Emits `JudgeQualityMeasurement`, `EndpointMeasurement`, `PerformanceMeasurement`. |
+| **`mini-antemortem-cli`** | `pip install mini-antemortem-cli` (separate) | **Analytical preflight.** Reads the run configuration and classifies calibration trap patterns (self-agreement bias, small-sample KC-4 power, rubric concentration, variant homogeneity, …) as `REAL` / `GHOST` / `NEW` / `UNRESOLVED`. Emits `AnalyticalFinding` records. |
 
-- **Judge consistency.** The same `(target_response, rubric)` pair is scored `N` times; `consistency = 1 - (stdev / mean)`, clamped to `[0, 1]`.
-- **Endpoint schema reliability.** `N` `STRICT_SCHEMA` requests; the adapter reports the parse-success fraction.
-- **Context budget margin.** `1.0 - (longest_call_tokens / context_window)`. Negative indicates overflow.
-- **Mean probe latency → projected wall-time.** Extrapolated as `mean_latency × dataset_size × candidates_expected × calls_per_candidate_per_item`.
-- **Noise floor.** Running an identical parameter dict on the same dataset multiple times and measuring fitness standard deviation.
+Either can be used alone; both compose into the same `PreflightReport`.
 
-Both feed :func:`derive_adaptation_plan`, which emits overrides following rules that *only strengthen* the discipline:
+When a sub-tool runs and feeds the result into `derive_adaptation_plan`, the derivation rules *only strengthen* the discipline:
 
 ```
 noise_floor >= 0.05  → min_kc4: max(default, 0.50)
@@ -346,9 +338,9 @@ small_sample_kc4_power finding (HIGH) → max_gap: min(0.40, default * 1.6)
 variants_homogeneous (REAL/NEW)       → skip_axes += ["system_prompt_variant"]
 ```
 
-The adaptation layer enforces invariants: applied thresholds *never weaken* the caller's defaults. `apply_adaptation_plan(plan, min_kc4=..., max_gap=..., unlock_k=...)` uses `max` on `min_kc4`, `min` on `max_gap`, and `min` on `unlock_k`, so a plan that attempts to widen tolerance is clipped to the caller's configuration (see Appendix C, invariants 3 and the accompanying test `test_apply_plan_never_weakens_kc4`).
+`apply_adaptation_plan(plan, min_kc4=..., max_gap=..., unlock_k=...)` uses `max` on `min_kc4`, `min` on `max_gap`, and `min` on `unlock_k`, so a plan that attempts to widen tolerance is clipped to the caller's configuration (see Appendix C, invariant 10 and the accompanying test `test_apply_plan_never_weakens_kc4`).
 
-A guarded-profile run with a high-capability judge produces an empty plan and the main pipeline runs with its declared defaults. A local-model calibration with a noisy judge produces a plan whose overrides are fully auditable on the artifact, and the pipeline adapts within the discipline rather than failing loud.
+Standalone `omegaprompt` ignores the whole subsystem and runs with its declared defaults. A calibration augmented with `mini-omega-lock` + `mini-antemortem-cli` produces a plan whose overrides are fully auditable on the artifact, and the pipeline adapts within the discipline rather than failing loud on weak infrastructure.
 
 ---
 
@@ -380,8 +372,8 @@ Evaluates only hard gates that declare `evaluator="rule"` in the rubric. Each ru
 Runs `RuleJudge` first. If any rule gate fails, the result short-circuits with the rule gate results and no LLM call. If every rule gate passes, escalates to the fallback judge (typically `LLMJudge`) for dimension scoring and judge-gate evaluation. The two judges' gate results are merged on return. In practice, `EnsembleJudge` recovers ~0.5–0.9× the LLM-judge cost depending on how often responses fail structural gates.
 
 ```python
-from omegacal import EnsembleJudge, LLMJudge, RuleJudge, make_provider
-from omegacal.judges.rule_judge import default_no_refusal, json_object_check
+from omegaprompt import EnsembleJudge, LLMJudge, RuleJudge, make_provider
+from omegaprompt.judges.rule_judge import default_no_refusal, json_object_check
 
 judge_provider = make_provider("anthropic")
 rule = RuleJudge(checks=[default_no_refusal(), json_object_check("format_valid")])
@@ -441,7 +433,7 @@ The schema is deliberately rich. The artifact is the system of record for the ru
 ```json
 {
   "schema_version": "2.0",
-  "engine_name": "omegacal",
+  "engine_name": "omegaprompt",
   "method": "p1",
   "unlock_k": 3,
   "selected_profile": "guarded",
@@ -518,12 +510,12 @@ The key structural choice: `neutral_baseline` and `calibrated` are recorded side
 
 ## 9. CLI surface
 
-### 9.1 `omegacal calibrate`
+### 9.1 `omegaprompt calibrate`
 
 End-to-end run: parse inputs, build the target + judge, invoke `omega_lock.run_p1`, emit the `CalibrationArtifact`.
 
 ```bash
-omegacal calibrate train.jsonl \
+omegaprompt calibrate train.jsonl \
   --rubric rubric.json \
   --variants variants.json \
   --test test.jsonl \
@@ -536,20 +528,20 @@ omegacal calibrate train.jsonl \
 
 Exit codes: `0` on success (regardless of `status`), `2` on environment problems (missing env var, unknown provider, missing `omega-lock`).
 
-### 9.2 `omegacal report <artifact.json>`
+### 9.2 `omegaprompt report <artifact.json>`
 
 Renders the artifact as Markdown (for PR descriptions, CI step outputs, human review).
 
 ```bash
-omegacal report artifact.json > report.md
+omegaprompt report artifact.json > report.md
 ```
 
-### 9.3 `omegacal diff <old.json> <new.json>`
+### 9.3 `omegaprompt diff <old.json> <new.json>`
 
 Compares two artifacts. Exits non-zero when the new run regresses on any of: `calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, `quality_per_cost_best`, `quality_per_latency_best`, or `stayed_within_guarded_boundaries` (true-to-false is a regression). Intended for CI use.
 
 ```bash
-omegacal diff previous.json artifact.json   # exit 1 on regression
+omegaprompt diff previous.json artifact.json   # exit 1 on regression
 ```
 
 The `omegaprompt` CLI binary remains as a compatibility alias during migration.
@@ -559,13 +551,13 @@ The `omegaprompt` CLI binary remains as a compatibility alias during migration.
 ## 10. Quick start
 
 ```bash
-pip install omegacal
+pip install omegaprompt
 ```
 
 A minimal run (Anthropic target + Anthropic judge, guarded profile):
 
 ```bash
-omegacal calibrate examples/sample_dataset.jsonl \
+omegaprompt calibrate examples/sample_dataset.jsonl \
   --rubric examples/rubric_example.json \
   --variants examples/variants_example.json \
   --target-provider anthropic \
@@ -577,7 +569,7 @@ omegacal calibrate examples/sample_dataset.jsonl \
 Cross-vendor (OpenAI target, Anthropic judge) to break self-agreement:
 
 ```bash
-omegacal calibrate train.jsonl \
+omegaprompt calibrate train.jsonl \
   --rubric rubric.json --variants variants.json --test test.jsonl \
   --target-provider openai   --target-model gpt-4o \
   --judge-provider anthropic --judge-model claude-opus-4-7 \
@@ -587,7 +579,7 @@ omegacal calibrate train.jsonl \
 Local target (Ollama) + cloud judge:
 
 ```bash
-omegacal calibrate train.jsonl \
+omegaprompt calibrate train.jsonl \
   --rubric rubric.json --variants variants.json --test test.jsonl \
   --target-provider ollama \
     --target-base-url http://localhost:11434/v1 \
@@ -600,8 +592,8 @@ omegacal calibrate train.jsonl \
 Render and diff:
 
 ```bash
-omegacal report artifact.json
-omegacal diff previous.json artifact.json
+omegaprompt report artifact.json
+omegaprompt diff previous.json artifact.json
 ```
 
 ---
@@ -632,7 +624,7 @@ Rationale: candidate A's per-item train ranking does not predict its per-item te
            the calibration signal did not generalise.
 ```
 
-Candidate A overfit the training slice. `omegacal` blocks the ship decision mechanically, before the practitioner sees the production behaviour. Candidate B — lower training score, dramatically better generalisation — is the correct decision.
+Candidate A overfit the training slice. `omegaprompt` blocks the ship decision mechanically, before the practitioner sees the production behaviour. Candidate B — lower training score, dramatically better generalisation — is the correct decision.
 
 The artifact records both candidates in the grid history, the failed KC-4, and `ship_recommendation: "hold"`. CI gating on `stayed_within_guarded_boundaries == true` and `ship_recommendation == "ship"` blocks the merge without the practitioner needing to parse prose.
 
@@ -654,7 +646,7 @@ The machine-produced artifact (trimmed; full file at `examples/reference/referen
 ```json
 {
   "schema_version": "2.0",
-  "engine_name": "omegacal",
+  "engine_name": "omegaprompt",
   "method": "p1",
   "unlock_k": 2,
   "selected_profile": "guarded",
@@ -718,7 +710,7 @@ The artifact is byte-deterministic:
 
 ```
 $ md5sum examples/reference/reference_artifact.json
-357f96d33678b1780ee6d3efbcd31a64  examples/reference/reference_artifact.json
+dedab51a32b2ab5ff462c101438cccd8  examples/reference/reference_artifact.json
 ```
 
 Two consecutive runs on any machine produce the same hash. If a change to the adapter layer, the fitness function, or the artifact schema alters the output, the hash shifts and the reviewer knows exactly where to look.
@@ -779,7 +771,7 @@ Every override is *monotonic toward stricter* validation: `min_kc4` only rises, 
 
 ## 12. Validation
 
-The test suite runs with `pytest -q` in under one second on a laptop and issues **zero live API calls**. The current head of `main` passes **178 tests** (wall time ~0.4s). Every adapter test uses `SimpleNamespace` or `MagicMock` in place of an SDK client, and asserts the *exact* shape of the outgoing request payload (model, messages, cache headers, `response_format`, reasoning directives, few-shot ordering).
+The test suite runs with `pytest -q` in under one second on a laptop and issues **zero live API calls**. The current head of `main` passes **149 tests** (wall time ~0.4s). Every adapter test uses `SimpleNamespace` or `MagicMock` in place of an SDK client, and asserts the *exact* shape of the outgoing request payload (model, messages, cache headers, `response_format`, reasoning directives, few-shot ordering). The sub-tool repositories `mini-omega-lock` and `mini-antemortem-cli` carry their own test suites covering probe execution and analytical trap classification respectively.
 
 | Module | Coverage summary |
 |---|---|
@@ -793,8 +785,8 @@ The test suite runs with `pytest -q` in under one second on a laptop and issues 
 | `providers/` | Factory rejects unknown names; respects `base_url`; lists `anthropic` / `openai` / `gemini` / `ollama`. Anthropic adapter: freeform uses `messages.create` with thinking config when reasoning enabled, omits it when OFF; strict schema uses `messages.parse`; refusal raises; JSON-object mode adds system-prompt suffix. OpenAI adapter: same paths on `chat.completions.create` / `beta.chat.completions.parse`; `reasoning_effort` rejected-retry records `CapabilityEvent`; `prompt_tokens_details.cached_tokens` normalised to `cache_read_input_tokens`; content-filter finish reason raises; missing `parsed` raises. `ollama` alias reports tier `tier_3_local`, `supports_llm_judge=False`, `experimental=True`. |
 | `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / duplicate-check rejection / missing-check raise); `LLMJudge` (strict-schema dispatch, payload composition, non-`JudgeResult` response raise, guarded-mode ship-grade judge refusal); `EnsembleJudge` (rule-first short-circuit, LLM escalation on rule-pass, merged gate_results, non-`RuleJudge` rejection). |
 | `targets/` | `PromptTarget` end-to-end with mocked provider + judge; meta-axis resolution and clamping for out-of-range inputs; usage accumulation across evaluations; `evaluation_history` retention; latency measurement; degraded-capability propagation. |
-| `commands/` | CLI help lists `calibrate` / `report` / `diff`; `--version` shows `omegacal`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips. |
-| `preflight/` | `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement. `mini_antemortem`: all seven trap patterns across positive and negative cases (self-agreement identical/same-vendor/cross-vendor; sample power; variants homogeneity; rubric concentration; judge budget; empty reference; no-held-out). `mini_omega_lock`: judge-consistency CV for identical/variance samples; anchoring-usage calculation; STRICT_SCHEMA probe reliability under mixed failures; context-margin arithmetic (overflow / spacious / zero-window); wall-time projection; noise-floor variance with varied and identical samples. `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample gap widening; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). |
+| `commands/` | CLI help lists `calibrate` / `report` / `diff`; `--version` shows `omegaprompt`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips. |
+| `preflight/` | **Plugin interface only** — no probe or classifier code inside `omegaprompt`. `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement; bounds on `JudgeQualityMeasurement.consistency` (0..1), `EndpointMeasurement.schema_reliability` (0..1). `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample gap widening; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). Sub-tool probe + classifier implementations (with their own test suites) live in the `mini-omega-lock` and `mini-antemortem-cli` repositories. |
 | `test_calibrate_integration.py` | **Drives the real `omega_lock.run_p1`** with a deterministic in-memory `CalibrableTarget` (no mocks on the search engine). Asserts the artifact's `calibrated_params`, `neutral_baseline_params`, `walk_forward`, and `sensitivity_ranking` match `P1Result`'s actual shape — the regression that this test catches is drift between the adapter layer and the search engine that per-module unit tests cannot reach. |
 
 Run with `uv run pytest -q` (or `python -m pytest -q`). The wall-clock time is dominated by Pydantic model compilation on first import.
@@ -803,15 +795,15 @@ Run with `uv run pytest -q` (or `python -m pytest -q`). The wall-clock time is d
 
 ## 13. Comparative positioning
 
-| Approach | What it does well | What `omegacal` adds |
+| Approach | What it does well | What `omegaprompt` adds |
 |---|---|---|
 | **promptfoo** | Runs prompts against test cases with assertion-based grading. | Pre-declared walk-forward gate, sensitivity-ranked axis unlock, `hard_gate × soft_score` fitness, machine-readable diffable artifact. Composable — promptfoo-style assertions plug in as `RuleJudge` checks. |
-| **DSPy** | Prompt synthesis via program abstraction + bootstrapped few-shot. | Orthogonal concern. DSPy *produces* candidate prompts; `omegacal` *decides which one ships* after walk-forward validation. DSPy outputs plug in as `system_prompts` entries in `PromptVariants`. |
+| **DSPy** | Prompt synthesis via program abstraction + bootstrapped few-shot. | Orthogonal concern. DSPy *produces* candidate prompts; `omegaprompt` *decides which one ships* after walk-forward validation. DSPy outputs plug in as `system_prompts` entries in `PromptVariants`. |
 | **Optuna / Ray Tune on prompts** | Generic hyperparameter optimisation. | Walk-forward ship gate and pre-declared kill criteria out of the box; schema-enforced LLM-as-judge via each vendor's native parse path; provider-neutral meta-axes; explicit `CalibrationArtifact` schema CI can diff. |
 | **Provider-native evaluation dashboards** | Rubric-based grading inside one vendor's console. | Cross-vendor judging (break self-agreement bias); local artifact that does not require vendor login; deterministic `diff` for regression detection; `expedition` mode for controlled boundary crossing. |
 | **Hand-rolled eval scripts** | Fast to author for a single workload. | Structured data contract (`Dataset` / `JudgeRubric` / `PromptVariants` / `CalibrationArtifact`); capability-tier policy; pre-declared gates that cannot be lowered after the fact; CI integration without bespoke glue. |
 
-The unique selling point is *discipline over search*. The search engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), which was shipped and validated against a different domain (parameter calibration in quantitative trading) before this prompt adapter was written. `omegacal` contributes the prompt-specific adapter, three provider-neutral judges, the hard-gates-first fitness shape, and the capability / profile / artifact architecture.
+The unique selling point is *discipline over search*. The search engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), which was shipped and validated against a different domain (parameter calibration in quantitative trading) before this prompt adapter was written. `omegaprompt` contributes the prompt-specific adapter, three provider-neutral judges, the hard-gates-first fitness shape, and the capability / profile / artifact architecture.
 
 ---
 
@@ -819,11 +811,11 @@ The unique selling point is *discipline over search*. The search engine is [`ome
 
 ### Not a safety evaluator
 
-`no_safety_violation` can be declared as a hard gate, but the judge is a rubric-scored LLM, not a trained safety classifier. For regulated safety evaluation, pair `omegacal` with a dedicated safety eval suite (AILuminate, HELM, vendor-specific red-team harnesses).
+`no_safety_violation` can be declared as a hard gate, but the judge is a rubric-scored LLM, not a trained safety classifier. For regulated safety evaluation, pair `omegaprompt` with a dedicated safety eval suite (AILuminate, HELM, vendor-specific red-team harnesses).
 
 ### Not a replacement for production telemetry
 
-Offline calibration on a curated dataset is a cheap screening step. Real-traffic A/B with business metrics remains the ground truth. `omegacal` makes the offline step disciplined; it does not replace online evaluation.
+Offline calibration on a curated dataset is a cheap screening step. Real-traffic A/B with business metrics remains the ground truth. `omegaprompt` makes the offline step disciplined; it does not replace online evaluation.
 
 ### Not a benchmark of vendor capability
 
@@ -863,12 +855,12 @@ Guarded mode blocks local providers in the judge position by policy. The policy 
 
 **v1.2 (ecosystem)**
 - Benchmark harness: multi (task × rubric × seed) scorecards.
-- GitHub Action for CI regression gating via `omegacal diff`.
-- HTML report rendering (`omegacal report --format html`).
+- GitHub Action for CI regression gating via `omegaprompt diff`.
+- HTML report rendering (`omegaprompt report --format html`).
 - Native HuggingFace Inference adapter.
 
 **Explicitly out of scope**
-- Hosted dashboard, database-backed history, multi-tenant service. `omegacal` is a local developer tool. Keep it local.
+- Hosted dashboard, database-backed history, multi-tenant service. `omegaprompt` is a local developer tool. Keep it local.
 
 Full changelog: [CHANGELOG.md](CHANGELOG.md).
 
@@ -877,12 +869,12 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md).
 ## 16. Prior art and credits
 
 - **Train / test split with a pre-declared gate.** The foundational ML defence against overfitting, documented in every undergraduate curriculum. The specific implementation here (Pearson rank correlation threshold, pre-declared and unmodifiable) is `omega-lock`'s KC-4 kill criterion.
-- **LLM-as-judge.** Pattern formalised in *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (Zheng et al., 2023). `omegacal` implements the pattern with schema enforcement at the SDK boundary (Pydantic via each vendor's native parse path) so malformed judge responses raise before polluting the fitness.
+- **LLM-as-judge.** Pattern formalised in *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (Zheng et al., 2023). `omegaprompt` implements the pattern with schema enforcement at the SDK boundary (Pydantic via each vendor's native parse path) so malformed judge responses raise before polluting the fitness.
 - **Winchester defence.** A quant-finance discipline: *kill criteria declared before the run cannot be relaxed after.* Used here to argue that `--max-gap` and `--min-kc4` must be enforced in configuration, not retroactively tuned on inspection of scores.
 - **Sensitivity-driven coordinate descent.** Stress measurement and top-K unlock are the parameter-calibration primitives introduced by `omega-lock` (v0.1.4), originally for trading-strategy calibration, ported here to prompt configuration.
 - **Antemortem discipline.** The pre-implementation reconnaissance methodology under which this project was designed and built. Every non-trivial change runs through [`antemortem-cli`](https://github.com/hibou04-ops/antemortem-cli) before the first keystroke. The case studies in the [methodology repository](https://github.com/hibou04-ops/Antemortem) record the recon for this codebase.
 
-Naming: *omega-lock* (parameter calibration) → *omegaprompt* → *omegacal* (the provider-neutral generalisation). The family branding is intentional. `omega-lock` was extracted from a trading-strategy calibration that ended in `KC-4 FAIL` — the overfitting defence firing exactly as designed. `omegacal` is the same defence applied one layer up.
+Naming: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration). The family branding is intentional. `omega-lock` was extracted from a trading-strategy calibration that ended in `KC-4 FAIL` — the overfitting defence firing exactly as designed. `omegaprompt` is the same defence applied one layer up, and the sub-tools `mini-omega-lock` / `mini-antemortem-cli` extend the pattern to preflight measurement.
 
 ---
 
@@ -1056,7 +1048,7 @@ class WalkForwardResult(BaseModel):
 
 class CalibrationArtifact(BaseModel):
     schema_version: str = "2.0"
-    engine_name: str = "omegacal"
+    engine_name: str = "omegaprompt"
     method: str
     unlock_k: int                                    # ge=0
     selected_profile: ExecutionProfile = GUARDED
@@ -1204,7 +1196,7 @@ Every override carries its `parameter`, `default`, `applied`, and `reason`. The 
 
 ### Sub-unit boundary
 
-The in-process implementations of `mini_antemortem` (analytical) and `mini_omega_lock` (empirical) live in `omegaprompt.preflight`. The full standalone versions — which can run against *any* `CalibrableTarget`, not just `PromptTarget` — are separate projects. The `AdaptationPlan` schema above is the stable contract between those projects and `omegacal`; external implementations only need to emit a `PreflightReport` conforming to :mod:`omegaprompt.preflight.contracts` for the adaptation derivation to run.
+`omegaprompt.preflight` ships the **contract + adaptation logic only**. Probe execution (`mini-omega-lock`) and analytical classification (`mini-antemortem-cli`) live in separate repositories / PyPI packages that depend on this contract. An external sub-tool only needs to emit a `PreflightReport` conforming to :mod:`omegaprompt.preflight.contracts` for `derive_adaptation_plan` to turn it into an `AdaptationPlan` the main pipeline consumes. Standalone users install nothing extra; the preflight interface is a no-op surface for them.
 
 ---
 
@@ -1213,16 +1205,16 @@ The in-process implementations of `mini_antemortem` (analytical) and `mini_omega
 Short form:
 
 ```
-omegacal v1.0.0 — provider-neutral prompt calibration engine.
+omegaprompt v1.0.0 — provider-neutral prompt calibration engine.
 https://github.com/hibou04-ops/omegaprompt, 2026.
 ```
 
 BibTeX:
 
 ```bibtex
-@software{omegacal_2026,
+@software{omegaprompt_2026,
   author  = {hibou04-ops},
-  title   = {{omegacal}: Provider-neutral prompt calibration engine
+  title   = {{omegaprompt}: Provider-neutral prompt calibration engine
              with sensitivity-ranked meta-axes, walk-forward ship gates,
              and structural capability reporting},
   version = {1.0.0},

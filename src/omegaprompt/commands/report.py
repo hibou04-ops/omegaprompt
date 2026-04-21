@@ -1,4 +1,4 @@
-"""``omegacal report`` - render a CalibrationArtifact as Markdown.
+"""``omegaprompt report`` - render a CalibrationArtifact as Markdown.
 
 A compact, human-readable summary intended for PR descriptions and CI
 step outputs. The underlying artifact JSON remains the source of truth.

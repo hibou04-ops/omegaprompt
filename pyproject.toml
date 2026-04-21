@@ -1,0 +1,81 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omegaprompt"
+version = "1.0.0"
+description = "Model-agnostic calibration engine for LLM prompts. Provider-neutral meta-axes (reasoning profile, output budget, response schema, tool policy), rule+LLM+ensemble judges, walk-forward ship gate with KC-4 Pearson threshold, and diff-friendly JSON artifacts for CI. Runs on Anthropic, OpenAI, and any OpenAI-compatible endpoint (Azure, Groq, Together.ai, Ollama)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [
+    { name = "hibou04-ops" },
+]
+keywords = [
+    "prompt-engineering",
+    "prompt-calibration",
+    "claude",
+    "anthropic",
+    "llm-as-judge",
+    "walk-forward",
+    "overfitting",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "typer>=0.12.0",
+    "pydantic>=2.6.0",
+    "omega-lock>=0.1.4",
+    "anthropic>=0.40.0",
+    "openai>=1.50.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]
+# Slim installs for users who only need one vendor. Main 'dependencies'
+# includes both so `pip install omegaprompt` works out of the box.
+anthropic = ["anthropic>=0.40.0"]
+openai = ["openai>=1.50.0"]
+
+[project.urls]
+Homepage = "https://github.com/hibou04-ops/omegaprompt"
+Repository = "https://github.com/hibou04-ops/omegaprompt"
+"Parent framework" = "https://github.com/hibou04-ops/omega-lock"
+Methodology = "https://github.com/hibou04-ops/Antemortem"
+Issues = "https://github.com/hibou04-ops/omegaprompt/issues"
+
+[project.scripts]
+omegaprompt = "omegaprompt.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/omegaprompt"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/omegaprompt",
+    "README.md",
+    "README_KR.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+    "examples",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q"

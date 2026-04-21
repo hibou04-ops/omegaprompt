@@ -1,4 +1,4 @@
-"""``omegacal diff`` - compare two calibration artifacts.
+"""``omegaprompt diff`` - compare two calibration artifacts.
 
 Intended for CI: catch regressions when someone edits the prompt or
 variants. Exit code reflects whether the new artifact is strictly
@@ -46,7 +46,7 @@ def diff(
             return "="
         return "up" if b > a else "down"
 
-    typer.echo(f"# omegacal diff\n")
+    typer.echo("# omegaprompt diff\n")
     typer.echo(f"OLD: {old_path}  status={old.status}  calibrated={old.calibrated_fitness:.4f}")
     typer.echo(f"NEW: {new_path}  status={new.status}  calibrated={new.calibrated_fitness:.4f}")
     typer.echo("")

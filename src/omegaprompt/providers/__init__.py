@@ -1,4 +1,4 @@
-"""Provider adapter layer for omegacal.
+"""Provider adapter layer for omegaprompt.
 
 The kernel talks to the outside world only through this package. Each
 adapter implements :class:`omegaprompt.providers.base.LLMProvider` using

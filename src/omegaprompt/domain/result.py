@@ -102,7 +102,7 @@ class CalibrationArtifact(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     schema_version: str = "2.0"
-    engine_name: str = "omegacal"
+    engine_name: str = "omegaprompt"
     method: str = Field(..., description="Search method used (p1 / grid / tpe / ...).")
     unlock_k: int = Field(..., ge=0)
     selected_profile: ExecutionProfile = ExecutionProfile.GUARDED

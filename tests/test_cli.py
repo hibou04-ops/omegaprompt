@@ -26,7 +26,7 @@ def test_version_flag_prints_version():
     result = runner.invoke(app, ["--version"])
     assert result.exit_code == 0
     assert __version__ in result.stdout
-    assert "omegacal" in result.stdout
+    assert "omegaprompt" in result.stdout
 
 
 def test_no_args_returns_nonzero_help():
@@ -83,7 +83,7 @@ def test_report_renders_markdown():
 
         result = runner.invoke(app, ["report", str(artifact_path)])
         assert result.exit_code == 0
-        assert "omegacal calibration" in result.stdout
+        assert "omegaprompt calibration" in result.stdout
         assert "Calibrated fitness" in result.stdout
         assert "system_prompt_variant" in result.stdout
 

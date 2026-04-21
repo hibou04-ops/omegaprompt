@@ -1,0 +1,87 @@
+{
+  "analytical_findings": [
+    {
+      "trap_id": "self_agreement_bias",
+      "label": "REAL",
+      "hypothesis": "Target and judge share a vendor; judge's biases overlap with the target, flattering same-vendor responses.",
+      "severity": "high",
+      "note": "Target and judge are identical: openai/gpt-4o-mini. Judge will share the target's distributional biases.",
+      "remediation": "Use a different vendor or stronger model for --judge-*.",
+      "cite": null
+    },
+    {
+      "trap_id": "small_sample_kc4_power",
+      "label": "REAL",
+      "hypothesis": "Dataset is small enough that Pearson KC-4 has no statistical power; correlation threshold becomes a random pass/fail.",
+      "severity": "high",
+      "note": "Test slice has 5 items. Pearson correlation at n=5 has weak statistical power; KC-4 pass/fail may be random.",
+      "remediation": "Expand test set to at least 20 items, or raise --min-kc4 adaptively (handled by AdaptationPlan).",
+      "cite": null
+    },
+    {
+      "trap_id": "variants_homogeneous",
+      "label": "NEW",
+      "hypothesis": "System prompt variants are too similar; sensitivity on the system_prompt_variant axis will be artificially low.",
+      "severity": "medium",
+      "note": "All 2 system prompts have near-identical length (21-29 chars); they may be too similar to produce meaningful sensitivity.",
+      "remediation": "Author variants that differ in role framing, not just wording; vary length by at least 2x where possible.",
+      "cite": null
+    },
+    {
+      "trap_id": "rubric_weight_concentration",
+      "label": "REAL",
+      "hypothesis": "A single rubric dimension carries the majority of the weight; judge noise on that one dimension dominates the fitness.",
+      "severity": "medium",
+      "note": "Dimension 'accuracy' carries 85% of the rubric weight; judge noise on that single dimension will dominate fitness.",
+      "remediation": "Rebalance rubric so no single dimension exceeds ~50% weight, or explicitly declare this concentration is intentional.",
+      "cite": null
+    },
+    {
+      "trap_id": "judge_budget_too_small",
+      "label": "GHOST",
+      "hypothesis": "Judge output budget is SMALL but rubric has many dimensions + gates; judge response may be truncated before scoring all axes.",
+      "severity": "low",
+      "note": "Judge budget small adequate for 3 axes.",
+      "remediation": "",
+      "cite": null
+    },
+    {
+      "trap_id": "empty_reference_with_strict_rubric",
+      "label": "NEW",
+      "hypothesis": "Dataset items have no reference text while the rubric's dimension descriptions imply comparison to a ground truth.",
+      "severity": "low",
+      "note": "No dataset item has a reference field; judge scores purely by rubric without ground-truth anchor.",
+      "remediation": "If your rubric's descriptions imply comparison to a reference, add reference fields or reword the rubric to be self-contained.",
+      "cite": null
+    },
+    {
+      "trap_id": "no_held_out_slice",
+      "label": "GHOST",
+      "hypothesis": "User did not pass --test; walk-forward cannot run; ship decision has no generalisation evidence.",
+      "severity": "low",
+      "note": "Held-out slice provided; walk-forward will run.",
+      "remediation": "",
+      "cite": null
+    }
+  ],
+  "judge_quality": {
+    "consistency": 0.55,
+    "anchoring_usage": 0.4,
+    "scale_monotonic": true,
+    "samples": 3
+  },
+  "endpoint": {
+    "schema_reliability": 0.67,
+    "context_budget_margin": 0.35,
+    "caching_active": false,
+    "silent_degradation_detected": false
+  },
+  "performance": {
+    "mean_call_latency_ms": 42000.0,
+    "projected_wall_time_seconds": 18720.0,
+    "noise_floor": 0.18
+  },
+  "status": "proceed",
+  "blocker_reasons": [],
+  "warnings": []
+}

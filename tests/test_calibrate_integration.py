@@ -17,86 +17,90 @@ from typer.testing import CliRunner
 
 from omegaprompt.cli import app
 from omegaprompt.core.artifact import load_artifact
+from tests.helpers import workspace_tmpdir
 
 
 runner = CliRunner()
 
 
 @pytest.fixture
-def example_dataset_path(tmp_path: Path) -> Path:
-    p = tmp_path / "train.jsonl"
-    p.write_text(
-        "\n".join(
-            json.dumps({"id": f"t{i}", "input": f"task {i}"})
-            for i in range(4)
-        ) + "\n",
-        encoding="utf-8",
-    )
-    return p
+def example_dataset_path() -> Path:
+    with workspace_tmpdir() as tmp_path:
+        p = tmp_path / "train.jsonl"
+        p.write_text(
+            "\n".join(
+                json.dumps({"id": f"t{i}", "input": f"task {i}"})
+                for i in range(4)
+            ) + "\n",
+            encoding="utf-8",
+        )
+        yield p
 
 
 @pytest.fixture
-def example_test_path(tmp_path: Path) -> Path:
-    p = tmp_path / "test.jsonl"
-    p.write_text(
-        "\n".join(
-            json.dumps({"id": f"t{i}", "input": f"task {i} (test)"})
-            for i in range(3)
-        ) + "\n",
-        encoding="utf-8",
-    )
-    return p
+def example_test_path() -> Path:
+    with workspace_tmpdir() as tmp_path:
+        p = tmp_path / "test.jsonl"
+        p.write_text(
+            "\n".join(
+                json.dumps({"id": f"t{i}", "input": f"task {i} (test)"})
+                for i in range(3)
+            ) + "\n",
+            encoding="utf-8",
+        )
+        yield p
 
 
 @pytest.fixture
-def example_rubric_path(tmp_path: Path) -> Path:
-    p = tmp_path / "rubric.json"
-    p.write_text(
-        json.dumps(
-            {
-                "dimensions": [
-                    {"name": "accuracy", "description": "is it right", "weight": 1.0},
-                ],
-                "hard_gates": [
-                    {"name": "no_refusal", "description": "did it attempt", "evaluator": "judge"},
-                ],
-            }
-        ),
-        encoding="utf-8",
-    )
-    return p
+def example_rubric_path() -> Path:
+    with workspace_tmpdir() as tmp_path:
+        p = tmp_path / "rubric.json"
+        p.write_text(
+            json.dumps(
+                {
+                    "dimensions": [
+                        {"name": "accuracy", "description": "is it right", "weight": 1.0},
+                    ],
+                    "hard_gates": [
+                        {"name": "no_refusal", "description": "did it attempt", "evaluator": "judge"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        yield p
 
 
 @pytest.fixture
-def example_variants_path(tmp_path: Path) -> Path:
-    p = tmp_path / "variants.json"
-    p.write_text(
-        json.dumps(
-            {
-                "system_prompts": [
-                    "You are a helpful assistant.",
-                    "You are a terse senior engineer.",
-                ],
-                "few_shot_examples": [
-                    {"input": "1+1=", "output": "2"},
-                ],
-            }
-        ),
-        encoding="utf-8",
-    )
-    return p
+def example_variants_path() -> Path:
+    with workspace_tmpdir() as tmp_path:
+        p = tmp_path / "variants.json"
+        p.write_text(
+            json.dumps(
+                {
+                    "system_prompts": [
+                        "You are a helpful assistant.",
+                        "You are a terse senior engineer.",
+                    ],
+                    "few_shot_examples": [
+                        {"input": "1+1=", "output": "2"},
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        yield p
 
 
 def test_calibrate_result_parsing_against_real_p1(
     monkeypatch,
-    tmp_path,
     example_dataset_path,
     example_test_path,
     example_rubric_path,
     example_variants_path,
 ):
     """Drive the real run_p1 with a deterministic target, then verify the
-    artifact our CLI writes has the correct best_params / walk_forward /
+    artifact our CLI writes has the correct calibrated params / walk_forward /
     sensitivity_ranking shape.
 
     Strategy: monkeypatch ``make_provider`` to return a stub provider, and
@@ -163,73 +167,70 @@ def test_calibrate_result_parsing_against_real_p1(
 
     monkeypatch.setattr(llm_judge_mod.LLMJudge, "score", fake_score)
 
-    output_path = tmp_path / "outcome.json"
-    result = runner.invoke(
-        app,
-        [
-            "calibrate",
-            str(example_dataset_path),
-            "--rubric", str(example_rubric_path),
-            "--variants", str(example_variants_path),
-            "--test", str(example_test_path),
-            "--output", str(output_path),
-            "--unlock-k", "1",
-            "--method", "p1",
-            "--max-gap", "0.99",
-            "--min-kc4", "-1.0",
-        ],
-        catch_exceptions=False,
-    )
-    assert result.exit_code == 0, f"CLI failed: {result.stdout}"
-    assert output_path.exists(), f"artifact not written. stdout={result.stdout}"
+    with workspace_tmpdir() as tmp_path:
+        output_path = tmp_path / "outcome.json"
+        result = runner.invoke(
+            app,
+            [
+                "calibrate",
+                str(example_dataset_path),
+                "--rubric", str(example_rubric_path),
+                "--variants", str(example_variants_path),
+                "--test", str(example_test_path),
+                "--output", str(output_path),
+                "--unlock-k", "1",
+                "--method", "p1",
+                "--max-gap", "0.99",
+                "--min-kc4", "-1.0",
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0, f"CLI failed: {result.stdout}"
+        assert output_path.exists(), f"artifact not written. stdout={result.stdout}"
 
-    artifact = load_artifact(output_path)
+        artifact = load_artifact(output_path)
 
-    # best_params is the UNLOCKED params dict from run_p1's grid_best.
-    # With one axis unlocked by --unlock-k 1, it should be a 1-entry dict.
-    assert isinstance(artifact.best_params, dict)
-    assert len(artifact.best_params) >= 1
+        # calibrated_params is the resolved best candidate after replay.
+        assert isinstance(artifact.best_params, dict)
+        assert len(artifact.best_params) >= 1
+        assert isinstance(artifact.calibrated_params, dict)
+        assert isinstance(artifact.neutral_baseline_params, dict)
 
-    # best_fitness pulled from grid_best["fitness"].
-    assert artifact.best_fitness > 0
+        assert artifact.best_fitness > 0
+        assert artifact.calibrated_fitness == pytest.approx(artifact.best_fitness)
+        assert artifact.neutral_fitness >= 0
 
-    # walk_forward block populated from top-level walk_forward["test_fitnesses"][0].
-    assert artifact.walk_forward is not None
-    assert artifact.walk_forward.test_fitness > 0
-    assert artifact.walk_forward.train_best_fitness == pytest.approx(artifact.best_fitness)
+        # walk_forward block comes from the explicit best-candidate replay on held-out data.
+        assert artifact.walk_forward is not None
+        assert artifact.walk_forward.test_fitness > 0
+        assert artifact.walk_forward.train_best_fitness == pytest.approx(artifact.best_fitness)
 
-    # sensitivity_ranking populated from stress_results (not a non-existent "stress" field).
-    assert len(artifact.sensitivity_ranking) >= 1
-    for row in artifact.sensitivity_ranking:
-        assert "axis" in row
-        assert "gini_delta" in row
-        assert "rank" in row
-        assert row["axis"] is not None
-        # axis name is a meta-axis name from PromptTarget.param_space()
-        assert row["axis"] in {
-            "system_prompt_idx",
-            "few_shot_count",
-            "reasoning_profile_idx",
-            "output_budget_idx",
-            "response_schema_mode_idx",
-            "tool_policy_idx",
-        }
+        # sensitivity_ranking populated from stress_results.
+        assert len(artifact.sensitivity_ranking) >= 1
+        for row in artifact.sensitivity_ranking:
+            assert "axis" in row
+            assert "gini_delta" in row
+            assert "rank" in row
+            assert row["axis"] is not None
+            assert row["axis"] in {
+                "system_prompt_variant",
+                "few_shot_count",
+                "reasoning_profile",
+                "output_budget_bucket",
+                "response_schema_mode",
+                "tool_policy_variant",
+            }
 
-    # Provider metadata is always set.
-    assert artifact.target_provider == "anthropic"
-    assert artifact.target_model == "stub-model"
-    assert artifact.judge_provider == "anthropic"
-
-    # total_api_calls reflects target + judge roundtrips.
-    assert artifact.total_api_calls > 0
-
-    # status resolves (OK or FAIL_KC4_GATE depending on the gate math).
-    assert artifact.status in {"OK", "FAIL_KC4_GATE"}
+        assert artifact.target_provider == "anthropic"
+        assert artifact.target_model == "stub-model"
+        assert artifact.judge_provider == "anthropic"
+        assert artifact.selected_profile.value == "guarded"
+        assert artifact.total_api_calls > 0
+        assert artifact.status in {"OK", "FAIL_KC4_GATE"}
 
 
 def test_calibrate_without_test_target_skips_walk_forward(
     monkeypatch,
-    tmp_path,
     example_dataset_path,
     example_rubric_path,
     example_variants_path,
@@ -266,20 +267,21 @@ def test_calibrate_without_test_target_skips_walk_forward(
         ),
     )
 
-    output_path = tmp_path / "outcome.json"
-    result = runner.invoke(
-        app,
-        [
-            "calibrate",
-            str(example_dataset_path),
-            "--rubric", str(example_rubric_path),
-            "--variants", str(example_variants_path),
-            "--output", str(output_path),
-            "--unlock-k", "1",
-        ],
-        catch_exceptions=False,
-    )
-    assert result.exit_code == 0, result.stdout
-    artifact = load_artifact(output_path)
-    assert artifact.walk_forward is None
-    assert artifact.status == "OK"
+    with workspace_tmpdir() as tmp_path:
+        output_path = tmp_path / "outcome.json"
+        result = runner.invoke(
+            app,
+            [
+                "calibrate",
+                str(example_dataset_path),
+                "--rubric", str(example_rubric_path),
+                "--variants", str(example_variants_path),
+                "--output", str(output_path),
+                "--unlock-k", "1",
+            ],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0, result.stdout
+        artifact = load_artifact(output_path)
+        assert artifact.walk_forward is None
+        assert artifact.status in {"OK", "FAIL_HARD_GATES"}

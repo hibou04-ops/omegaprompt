@@ -462,7 +462,7 @@ wheels = [
 ]
 
 [[package]]
-name = "omegaprompt"
+name = "omegacal"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [

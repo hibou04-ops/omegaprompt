@@ -99,12 +99,12 @@ def test_param_space_returns_meta_axes():
     specs = t.param_space()
     names = {getattr(s, "name", None) for s in specs}
     assert names == {
-        "system_prompt_idx",
+        "system_prompt_variant",
         "few_shot_count",
-        "reasoning_profile_idx",
-        "output_budget_idx",
-        "response_schema_mode_idx",
-        "tool_policy_idx",
+        "reasoning_profile",
+        "output_budget_bucket",
+        "response_schema_mode",
+        "tool_policy_variant",
     }
 
 
@@ -119,7 +119,7 @@ def test_evaluate_all_pass_gives_full_fitness():
         rubric=_rubric(),
         variants=_variants(),
     )
-    result = t.evaluate({"system_prompt_idx": 1, "few_shot_count": 1, "reasoning_profile_idx": 2})
+    result = t.evaluate({"system_prompt_variant": 1, "few_shot_count": 1, "reasoning_profile": 2})
 
     assert t.total_api_calls == 6  # 3 target + 3 judge
     assert target.call.call_count == 3
@@ -166,7 +166,7 @@ def test_evaluate_resolves_defaults_for_missing_params():
     )
     result = t.evaluate({})
     resolved = result.metadata["resolved_params"]
-    assert resolved["system_prompt_idx"] == 0
+    assert resolved["system_prompt_variant"] == 0
     assert resolved["few_shot_count"] == 0
 
 
@@ -187,13 +187,13 @@ def test_evaluate_clamps_out_of_range_params():
         ),
     )
     result = t.evaluate({
-        "system_prompt_idx": 99,
+        "system_prompt_variant": 99,
         "few_shot_count": -10,
-        "reasoning_profile_idx": 999,
-        "output_budget_idx": -999,
+        "reasoning_profile": 999,
+        "output_budget_bucket": -999,
     })
     resolved = result.metadata["resolved_params"]
-    assert resolved["system_prompt_idx"] == 1
+    assert resolved["system_prompt_variant"] == 1
     assert resolved["few_shot_count"] == 0
 
 
@@ -207,12 +207,12 @@ def test_provider_request_carries_meta_axes():
         rubric=_rubric(),
         variants=_variants(),
     )
-    t.evaluate({"reasoning_profile_idx": 2, "output_budget_idx": 2})
+    t.evaluate({"reasoning_profile": 2, "output_budget_bucket": 2})
     request = target.call.call_args.args[0]
     # reasoning_profiles default = [OFF, STANDARD, DEEP], idx=2 -> DEEP
     assert request.reasoning_profile == ReasoningProfile.DEEP
     # output_budgets default = [SMALL, MEDIUM, LARGE], idx=2 -> LARGE
-    assert request.output_budget == OutputBudgetBucket.LARGE
+    assert request.output_budget_bucket == OutputBudgetBucket.LARGE
 
 
 def test_usage_accumulates_across_evaluations():

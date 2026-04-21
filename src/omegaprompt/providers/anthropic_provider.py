@@ -19,10 +19,13 @@ repeat calls in a calibration run hit cache.
 
 from __future__ import annotations
 
+from time import perf_counter
 from typing import Any
 
 from omegaprompt.domain.enums import ReasoningProfile, ResponseSchemaMode
 from omegaprompt.providers.base import (
+    CapabilityTier,
+    ProviderCapabilities,
     ProviderError,
     ProviderRequest,
     ProviderResponse,
@@ -68,6 +71,23 @@ class AnthropicProvider:
 
         self._client = Anthropic(api_key=api_key) if api_key else Anthropic()
 
+    def capabilities(self) -> ProviderCapabilities:
+        return ProviderCapabilities(
+            provider=self.name,
+            tier=CapabilityTier.CLOUD,
+            supports_strict_schema=True,
+            supports_json_object=True,
+            supports_reasoning_profiles=True,
+            supports_usage_accounting=True,
+            supports_llm_judge=True,
+            ship_grade_judge=True,
+            supports_tools=False,
+            notes=[
+                "Native strict schema path via messages.parse.",
+                "Adaptive thinking + effort tiers preserved behind reasoning_profile.",
+            ],
+        )
+
     def call(self, request: ProviderRequest) -> ProviderResponse:
         if request.response_schema_mode == ResponseSchemaMode.STRICT_SCHEMA:
             return self._call_strict(request)
@@ -106,13 +126,14 @@ class AnthropicProvider:
     def _call_freeform(self, request: ProviderRequest) -> ProviderResponse:
         kwargs: dict[str, Any] = {
             "model": self.model,
-            "max_tokens": max_tokens_for(request.output_budget),
+            "max_tokens": max_tokens_for(request.output_budget_bucket),
             "system": self._system_block(request.system_prompt, request.response_schema_mode),
             "messages": self._messages(request),
             **self._reasoning_kwargs(request.reasoning_profile),
         }
 
         try:
+            started = perf_counter()
             response = self._client.messages.create(**kwargs)
         except Exception as exc:  # pragma: no cover
             raise ProviderError(f"Anthropic call failed: {exc}") from exc
@@ -129,6 +150,7 @@ class AnthropicProvider:
             text=text,
             usage=usage,
             finish_reason=getattr(response, "stop_reason", None),
+            latency_ms=(perf_counter() - started) * 1000.0,
         )
 
     def _call_strict(self, request: ProviderRequest) -> ProviderResponse:
@@ -138,9 +160,10 @@ class AnthropicProvider:
             )
 
         try:
+            started = perf_counter()
             response = self._client.messages.parse(
                 model=self.model,
-                max_tokens=max_tokens_for(request.output_budget),
+                max_tokens=max_tokens_for(request.output_budget_bucket),
                 system=self._system_block(request.system_prompt, request.response_schema_mode),
                 messages=self._messages(request),
                 output_format=request.output_schema,
@@ -167,4 +190,5 @@ class AnthropicProvider:
             parsed=parsed,
             usage=usage,
             finish_reason=getattr(response, "stop_reason", None),
+            latency_ms=(perf_counter() - started) * 1000.0,
         )

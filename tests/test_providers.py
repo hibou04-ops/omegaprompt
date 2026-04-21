@@ -38,7 +38,7 @@ def _request(**kw) -> ProviderRequest:
         "user_message": "UM",
         "few_shots": [],
         "reasoning_profile": ReasoningProfile.STANDARD,
-        "output_budget": OutputBudgetBucket.MEDIUM,
+        "output_budget_bucket": OutputBudgetBucket.MEDIUM,
         "response_schema_mode": ResponseSchemaMode.FREEFORM,
     }
     base.update(kw)
@@ -52,6 +52,8 @@ def test_supported_providers_lists_both():
     names = supported_providers()
     assert "anthropic" in names
     assert "openai" in names
+    assert "gemini" in names
+    assert "ollama" in names
 
 
 def test_default_models_per_provider():
@@ -61,7 +63,7 @@ def test_default_models_per_provider():
 
 def test_make_provider_unknown_raises():
     with pytest.raises(ProviderError, match="Unknown provider"):
-        make_provider("gemini")
+        make_provider("bogus-provider")
 
 
 def test_make_provider_uses_default_model():
@@ -72,6 +74,14 @@ def test_make_provider_uses_default_model():
 def test_make_provider_openai_passes_base_url():
     p = make_provider("openai", client=MagicMock(), base_url="http://localhost:11434/v1")
     assert p.base_url == "http://localhost:11434/v1"
+
+
+def test_make_provider_local_alias_has_local_capabilities():
+    p = make_provider("ollama", client=MagicMock(), base_url="http://localhost:11434/v1")
+    caps = p.capabilities()
+    assert caps.tier.value.startswith("tier_3")
+    assert caps.supports_llm_judge is False
+    assert caps.experimental is True
 
 
 # --------------------------- AnthropicProvider ---------------------------
@@ -112,7 +122,7 @@ def test_anthropic_freeform_applies_thinking_for_deep():
     resp = p.call(_request(
         few_shots=[{"input": "a", "output": "b"}],
         reasoning_profile=ReasoningProfile.DEEP,
-        output_budget=OutputBudgetBucket.LARGE,
+        output_budget_bucket=OutputBudgetBucket.LARGE,
     ))
     assert resp.text == "ok"
     kw = client.messages.create.call_args.kwargs
@@ -130,7 +140,7 @@ def test_anthropic_freeform_drops_thinking_when_off():
     client = MagicMock()
     client.messages.create.return_value = _anthropic_target_response()
     p = AnthropicProvider(model="x", client=client)
-    p.call(_request(reasoning_profile=ReasoningProfile.OFF, output_budget=OutputBudgetBucket.SMALL))
+    p.call(_request(reasoning_profile=ReasoningProfile.OFF, output_budget_bucket=OutputBudgetBucket.SMALL))
     kw = client.messages.create.call_args.kwargs
     assert "thinking" not in kw
     assert "output_config" not in kw
@@ -289,6 +299,24 @@ def test_openai_strict_raises_when_parsed_missing():
             response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
             output_schema=JudgeResult,
         ))
+
+
+def test_local_provider_expedition_falls_back_from_strict_schema():
+    client = MagicMock()
+    client.chat.completions.create.return_value = _openai_target_response('{"scores":{"q":3},"gate_results":{"g":true},"notes":"ok"}')
+    p = make_provider(
+        "ollama",
+        model="llama3.1:8b",
+        client=client,
+        base_url="http://localhost:11434/v1",
+    )
+    resp = p.call(_request(
+        response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
+        output_schema=JudgeResult,
+        execution_profile="expedition",
+    ))
+    assert isinstance(resp.parsed, JudgeResult)
+    assert any(event.capability == "structured_output" for event in resp.degraded_capabilities)
 
 
 # --------------------------- normalize_usage -----------------------------

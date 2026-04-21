@@ -16,16 +16,22 @@ Mappings:
 
 from __future__ import annotations
 
+from time import perf_counter
 from typing import Any
 
 from omegaprompt.domain.enums import ReasoningProfile, ResponseSchemaMode
+from omegaprompt.domain.profiles import ExecutionProfile
 from omegaprompt.providers.base import (
+    CapabilityEvent,
+    CapabilityTier,
+    ProviderCapabilities,
     ProviderError,
     ProviderRequest,
     ProviderResponse,
     empty_usage,
     max_tokens_for,
     normalize_usage,
+    parse_model_from_json_text,
     reasoning_effort_label,
     reasoning_enabled,
 )
@@ -66,6 +72,24 @@ class OpenAIProvider:
             kwargs["base_url"] = base_url
         self._client = OpenAI(**kwargs) if kwargs else OpenAI()
 
+    def capabilities(self) -> ProviderCapabilities:
+        notes = [
+            "Native json_object and beta parse paths when the model supports them.",
+            "Unknown OpenAI-compatible endpoints may degrade schema or reasoning controls.",
+        ]
+        return ProviderCapabilities(
+            provider=self.name,
+            tier=CapabilityTier.CLOUD,
+            supports_strict_schema=True,
+            supports_json_object=True,
+            supports_reasoning_profiles=True,
+            supports_usage_accounting=True,
+            supports_llm_judge=True,
+            ship_grade_judge=True,
+            supports_tools=False,
+            notes=notes,
+        )
+
     def call(self, request: ProviderRequest) -> ProviderResponse:
         if request.response_schema_mode == ResponseSchemaMode.STRICT_SCHEMA:
             return self._call_strict(request)
@@ -91,7 +115,7 @@ class OpenAIProvider:
     def _call_freeform(self, request: ProviderRequest) -> ProviderResponse:
         kwargs: dict[str, Any] = {
             "model": self.model,
-            "max_tokens": max_tokens_for(request.output_budget),
+            "max_tokens": max_tokens_for(request.output_budget_bucket),
             "messages": self._messages(request),
         }
         if request.response_schema_mode == ResponseSchemaMode.JSON_OBJECT:
@@ -102,8 +126,10 @@ class OpenAIProvider:
         reasoning_kwargs = self._maybe_reasoning(request.reasoning_profile)
         if reasoning_kwargs:
             kwargs.update(reasoning_kwargs)
+        degraded: list[CapabilityEvent] = []
 
         try:
+            started = perf_counter()
             response = self._client.chat.completions.create(**kwargs)
         except Exception as exc:  # pragma: no cover
             msg = str(exc).lower()
@@ -111,7 +137,20 @@ class OpenAIProvider:
                 # Retry without reasoning knobs.
                 for k in list(reasoning_kwargs):
                     kwargs.pop(k, None)
+                degraded.append(
+                    CapabilityEvent(
+                        capability="reasoning_profile",
+                        requested=request.reasoning_profile.value,
+                        applied=ReasoningProfile.OFF.value,
+                        reason="endpoint rejected reasoning_effort",
+                        user_visible_note=(
+                            "The endpoint rejected native reasoning controls, so the adapter "
+                            "fell back to a plain completion call."
+                        ),
+                    )
+                )
                 try:
+                    started = perf_counter()
                     response = self._client.chat.completions.create(**kwargs)
                 except Exception as exc2:
                     raise ProviderError(f"OpenAI call failed: {exc2}") from exc2
@@ -128,6 +167,8 @@ class OpenAIProvider:
             text=text.strip(),
             usage=usage,
             finish_reason=getattr(choice, "finish_reason", None),
+            latency_ms=(perf_counter() - started) * 1000.0,
+            degraded_capabilities=degraded,
         )
 
     def _call_strict(self, request: ProviderRequest) -> ProviderResponse:
@@ -138,25 +179,41 @@ class OpenAIProvider:
 
         kwargs: dict[str, Any] = {
             "model": self.model,
-            "max_tokens": max_tokens_for(request.output_budget),
+            "max_tokens": max_tokens_for(request.output_budget_bucket),
             "messages": self._messages(request),
             "response_format": request.output_schema,
         }
         reasoning_kwargs = self._maybe_reasoning(request.reasoning_profile)
         if reasoning_kwargs:
             kwargs.update(reasoning_kwargs)
+        degraded: list[CapabilityEvent] = []
 
         try:
+            started = perf_counter()
             response = self._client.beta.chat.completions.parse(**kwargs)
         except Exception as exc:  # pragma: no cover
             msg = str(exc).lower()
             if "reasoning_effort" in msg and reasoning_kwargs:
                 for k in list(reasoning_kwargs):
                     kwargs.pop(k, None)
+                degraded.append(
+                    CapabilityEvent(
+                        capability="reasoning_profile",
+                        requested=request.reasoning_profile.value,
+                        applied=ReasoningProfile.OFF.value,
+                        reason="endpoint rejected reasoning_effort during strict parse",
+                        user_visible_note=(
+                            "The endpoint rejected native reasoning controls during strict parsing."
+                        ),
+                    )
+                )
                 try:
+                    started = perf_counter()
                     response = self._client.beta.chat.completions.parse(**kwargs)
                 except Exception as exc2:
                     raise ProviderError(f"OpenAI structured call failed: {exc2}") from exc2
+            elif self._schema_fallback_allowed(request.execution_profile, msg):
+                return self._fallback_strict_schema(request, msg)
             else:
                 raise ProviderError(f"OpenAI structured call failed: {exc}") from exc
 
@@ -185,4 +242,44 @@ class OpenAIProvider:
             parsed=parsed,
             usage=usage,
             finish_reason=getattr(choice, "finish_reason", None),
+            latency_ms=(perf_counter() - started) * 1000.0,
+            degraded_capabilities=degraded,
         )
+
+    def _fallback_strict_schema(
+        self,
+        request: ProviderRequest,
+        reason: str,
+    ) -> ProviderResponse:
+        json_request = request.model_copy(
+            update={"response_schema_mode": ResponseSchemaMode.JSON_OBJECT}
+        )
+        freeform = self._call_freeform(json_request)
+        if request.output_schema is None:
+            raise ProviderError("Strict-schema fallback requires output_schema.")
+        try:
+            parsed, event = parse_model_from_json_text(
+                text=freeform.text,
+                schema=request.output_schema,
+                capability="structured_output",
+                reason=reason,
+            )
+        except Exception as exc:
+            raise ProviderError(
+                "OpenAI endpoint could not provide native strict schema support and the "
+                "JSON fallback did not validate."
+            ) from exc
+        return ProviderResponse(
+            text=freeform.text,
+            parsed=parsed,
+            usage=freeform.usage,
+            finish_reason=freeform.finish_reason,
+            latency_ms=freeform.latency_ms,
+            degraded_capabilities=[*freeform.degraded_capabilities, event],
+        )
+
+    def _schema_fallback_allowed(self, profile: ExecutionProfile, error_message: str) -> bool:
+        if profile != ExecutionProfile.EXPEDITION:
+            return False
+        msg = error_message.lower()
+        return "response_format" in msg or "json_schema" in msg or "parse" in msg

@@ -1,6 +1,6 @@
 # omegaprompt
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
 [![PyPI](https://img.shields.io/badge/pypi-1.1.0-blue.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-149%20passing-brightgreen.svg)](tests/)
@@ -1246,7 +1246,7 @@ BibTeX:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Apache 2.0. See [LICENSE](LICENSE).
 
 ## Colophon
 

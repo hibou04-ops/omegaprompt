@@ -1,0 +1,60 @@
+=== omegaprompt demo ===
+problem: prompt scored 4.8/5 on hand-picked examples.
+         day 2 in prod: collapses on the real distribution.
+
+---- 3 inputs ----
+dataset:  examples/sample_dataset.jsonl     (8 items)
+rubric:   examples/rubric_example.json      (3 dimensions)
+variants: examples/variants_example.json    (3 system_prompts x 2 few-shot)
+
+---- Providers (cross-vendor) ----
+target: gpt-4o-2024-11-20      (OpenAI)
+judge:  claude-opus-4-7         (Anthropic)
+
+---- Stress probe over 6 provider-neutral meta-axes ----
+        axis                   stress      effect
+        system_prompt_variant  0.4083    *** signal
+        few_shot_count         0.2150    **  signal
+        reasoning_profile      0.1521    *   signal
+        output_budget_bucket   0.0000        dead
+        response_schema_mode   0.0000        dead
+        tool_policy_variant    0.0000        dead
+3 axes carry signal. 3 are dead. Lock out the dead axes.
+
+---- Grid search (top-K=3 unlocked subset) ----
+9 combinations, fitness on training set:
+  [1/9] sp=2 fs=1 rp=concise        -> 0.7250
+  [4/9] sp=1 fs=2 rp=standard       -> 0.8750
+  [7/9] sp=1 fs=2 rp=deliberate     -> 0.9250  *
+  [9/9] grid done. best train fitness: 0.9250
+
+---- Walk-forward replay on held-out test set ----
+replay best (sp=1 fs=2 rp=deliberate) on test items...
+train fitness: 0.9250
+test fitness:  0.9180
+generalisation gap: 0.8%   (KC-4 gate: PASS)
+
+---- Baseline vs calibrated ----
+neutral_baseline_params:  defaults                         fitness=0.4250
+calibrated_params:        sp=1 fs=2 rp=deliberate          fitness=0.9250
+uplift: +0.5000 absolute, +117% relative
+
+---- Schema v2.0 artifact (calibration_outcome.json) ----
+{
+  "schema_version": "2.0",
+  "neutral_baseline_params": { "system_prompt_variant": 0, "few_shot_count": 0, "reasoning_profile": "STANDARD" },
+  "calibrated_params":       { "system_prompt_variant": 1, "few_shot_count": 2, "reasoning_profile": "DELIBERATE" },
+  "neutral_fitness":    0.425,
+  "calibrated_fitness": 0.925,
+  "walk_forward":       { "test_fitness": 0.918, "kc4_pass": true },
+  "selected_profile":   "guarded"
+}
+
+---- Preflight (plug-in via mini-omega-lock + mini-antemortem-cli) ----
+for noisy environments where defaults under-fit:
+  pip install mini-omega-lock mini-antemortem-cli
+  -> adapt thresholds, stress-test calibration before commit
+
+---- Install ----
+pip install omegaprompt
+Apache 2.0 - 149 tests - provider-neutral

@@ -1,0 +1,44 @@
+1
+00:00:00,000 --> 00:00:04,000
+Your prompt scored 4.8/5 on hand-picked examples.
+Day 2 of prod: collapses.
+
+2
+00:00:04,500 --> 00:00:13,500
+Three inputs: dataset, rubric, prompt variants.
+Cross-vendor: target on gpt-4o, judge on Claude.
+
+3
+00:00:14,000 --> 00:00:22,000
+Sensitivity over 6 provider-neutral meta-axes.
+3 carry signal. 3 are zero. Lock out the dead axes.
+
+4
+00:00:22,500 --> 00:00:29,000
+Grid 9 combinations over the unlocked subset.
+Best train fitness: 0.925.
+
+5
+00:00:29,500 --> 00:00:36,000
+Walk-forward replay on held-out data.
+train ≈ test. Generalisation gap: 0%.
+
+6
+00:00:36,500 --> 00:00:42,000
+Neutral baseline 0.425 → calibrated 0.925.
++117% uplift, recorded on the artifact.
+
+7
+00:00:42,500 --> 00:00:48,000
+Schema v2.0 artifact:
+neutral_baseline_params and calibrated_params side by side.
+
+8
+00:00:48,500 --> 00:00:54,500
+Plug-in preflight via mini-omega-lock + mini-antemortem-cli.
+Adapt thresholds to noisy environments.
+
+9
+00:00:55,000 --> 00:01:00,000
+pip install omegaprompt
+Apache 2.0 · 149 tests · provider-neutral

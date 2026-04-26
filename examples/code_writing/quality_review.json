@@ -1,0 +1,587 @@
+{
+  "config": {
+    "task": "code_writing",
+    "method": "opus_subagent_simulation",
+    "n_items": 8,
+    "n_variants": 5,
+    "rubric_dims": ["correctness", "conciseness", "no_fabricated_apis"],
+    "hard_gates": ["no_refusal", "syntactically_valid", "no_unnecessary_comments"],
+    "reviewer": "claude-sonnet-4-6",
+    "review_date": "2026-04-26",
+    "note_v4_stdlib": "USE_STDLIB shortcut on stdlib-eligible items (cw1,cw3,cw4,cw5,cw7) is scored as correct per evaluation rules. Only cw4 actually emitted the literal USE_STDLIB token."
+  },
+  "per_call": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "verdict": "correct",
+      "notes": "Canonical s[::-1] one-liner.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "verdict": "correct",
+      "notes": "Standard iterative binary search with closed-interval lo/hi. Correct edge-case handling.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 30,
+      "verdict": "correct",
+      "notes": "Context manager + json.load. ~4 lines, matches reference shape.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw4_factorial",
+      "tokens": 53,
+      "verdict": "correct",
+      "notes": "Validates n>=0, iterative product. Reference explicitly endorses this shape alongside math.factorial.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "verdict": "correct",
+      "notes": "One-liner sorted with lambda and reverse=True.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 97,
+      "verdict": "correct",
+      "notes": "threading.Timer with lock, nonlocal timer, @wraps. Correct debounce semantics. ~13 lines, within reference range.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 42,
+      "verdict": "correct",
+      "notes": "Manual dict.get loop. Correct and simple; less elegant than Counter but not over-engineered.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw8_validate_email",
+      "tokens": 58,
+      "verdict": "correct",
+      "notes": "re.compile + match with a reasonable RFC-subset pattern. Uses real APIs only.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "verdict": "correct",
+      "notes": "Identical canonical one-liner to V0.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "verdict": "correct",
+      "notes": "Structurally identical to V0 with minor variable rename (lo/hi). Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 36,
+      "verdict": "correct",
+      "notes": "Adds encoding='utf-8' explicitly — a robustness improvement, not over-engineering.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw4_factorial",
+      "tokens": 53,
+      "verdict": "correct",
+      "notes": "Identical to V0. Validate + iterate. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "verdict": "correct",
+      "notes": "One-liner with kv naming convention. Equivalent to V0.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 101,
+      "verdict": "correct",
+      "notes": "Adds timer.daemon=True (prevents blocking process exit) and uses positional args/kwargs tuple in Timer constructor. Minor difference from V0, functionally correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 33,
+      "verdict": "correct",
+      "notes": "Upgrades to Counter + re.findall with lowercasing. More robust word tokenization than V0's split().",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw8_validate_email",
+      "tokens": 67,
+      "verdict": "correct",
+      "notes": "Adds isinstance(s, str) guard before regex — defensive but concise addition, not over-engineered.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw1_reverse_string",
+      "tokens": 20,
+      "verdict": "correct",
+      "notes": "Type hints added (str -> str). Still a one-liner; type hints are V2's stated format goal, not bloat.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw2_binary_search",
+      "tokens": 93,
+      "verdict": "correct",
+      "notes": "Type hints on arr:list and return:int. Same algorithm as V1. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 56,
+      "verdict": "over_engineered",
+      "notes": "Imports Path from pathlib but open() receives the raw path argument unchanged — Path is imported but never used meaningfully (not called). Also imports Union solely for the annotation. Reference says ~3 lines; this is 7. Type-hint complexity outweighs utility here.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw4_factorial",
+      "tokens": 67,
+      "verdict": "over_engineered",
+      "notes": "Adds isinstance(n, int) type check beyond the reference specification. Reference says validate n>=0 only. The type guard introduces extra lines and diverges from the spec scope.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 34,
+      "verdict": "correct",
+      "notes": "Type hints on d:dict -> dict. Still a one-liner. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 122,
+      "verdict": "over_engineered",
+      "notes": "Uses a dict wrapper `timer = {'t': None}` to avoid `nonlocal` — this is a Python 2 workaround unnecessary in Python 3 and adds conceptual complexity. All other variants used nonlocal directly. Highest token count for any cw6 entry.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 47,
+      "verdict": "correct",
+      "notes": "Uses re.findall with \\b\\w+\\b word boundary, Counter, type hints. Functionally correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw8_validate_email",
+      "tokens": 78,
+      "verdict": "correct",
+      "notes": "isinstance guard + regex match. Type-annotated. Consistent with V1 pattern. Defensible.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "verdict": "correct",
+      "notes": "Canonical one-liner.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "verdict": "correct",
+      "notes": "Clean iterative binary search. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 33,
+      "verdict": "correct",
+      "notes": "Adds encoding='utf-8' implicitly via keyword-only open(). Context manager. ~3 lines. Clean.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw4_factorial",
+      "tokens": 18,
+      "verdict": "correct",
+      "notes": "math.factorial wrapper — the ideal stdlib-delegating answer. Reference explicitly endorses this. Only variant besides V4 to choose math.factorial.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "verdict": "correct",
+      "notes": "One-liner, kv lambda. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 104,
+      "verdict": "correct",
+      "notes": "Uses lambda in Timer (avoids positional args/kwargs passing issue), lock, nonlocal, @wraps. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 33,
+      "verdict": "correct",
+      "notes": "Counter + re.findall with lowercasing. Correct and concise.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw8_validate_email",
+      "tokens": 58,
+      "verdict": "correct",
+      "notes": "Compiled regex + bool(match). Clean. No isinstance guard (slightly narrower than V1/V2 but correct per spec).",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "verdict": "correct",
+      "notes": "Canonical one-liner.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "verdict": "correct",
+      "notes": "Clean iterative binary search. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 27,
+      "verdict": "correct",
+      "notes": "Most minimal form: open() without explicit encoding. Functional per spec; reference does not mandate encoding parameter.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw4_factorial",
+      "tokens": 8,
+      "verdict": "correct",
+      "notes": "USE_STDLIB shortcut literal: 'USE_STDLIB: math.factorial'. Scored as correct per evaluation rules — this is the canonical response for stdlib-eligible items under V4.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "verdict": "correct",
+      "notes": "One-liner. Correct.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 86,
+      "verdict": "partial",
+      "notes": "Missing `from functools import wraps` and the @wraps decorator. Without @wraps the wrapped function loses its __name__, __doc__, and __wrapped__ attributes. All other variants included @wraps. Functionally debounces correctly but violates the decorator contract.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 24,
+      "verdict": "correct",
+      "notes": "Counter(s.split()) — simplest correct solution per spec. No regex needed if spec says 'each word'. Matches reference's first suggestion.",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw8_validate_email",
+      "tokens": 58,
+      "verdict": "correct",
+      "notes": "Same clean pattern as V3prime. No isinstance guard (acceptable per spec).",
+      "gates": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_unnecessary_comments": true
+      }
+    }
+  ],
+  "per_variant": [
+    {
+      "variant": "V0_baseline",
+      "total_items": 8,
+      "verdicts": {
+        "correct": 8,
+        "partial": 0,
+        "wrong_root_cause": 0,
+        "over_engineered": 0,
+        "fabricated_api": 0
+      },
+      "correctness_rate": 1.0,
+      "no_fabricated_apis_violations": 0,
+      "no_unnecessary_comments_violations": 0,
+      "mean_tokens": 51.5,
+      "qualitative_notes": "Solid baseline. All 8 outputs correct with no fabrications. cw7 uses manual dict.get loop instead of Counter — less idiomatic but not over-engineered. cw4 uses iterative implementation (reference-endorsed). Clean, readable code throughout."
+    },
+    {
+      "variant": "V1_role_terse",
+      "total_items": 8,
+      "verdicts": {
+        "correct": 8,
+        "partial": 0,
+        "wrong_root_cause": 0,
+        "over_engineered": 0,
+        "fabricated_api": 0
+      },
+      "correctness_rate": 1.0,
+      "no_fabricated_apis_violations": 0,
+      "no_unnecessary_comments_violations": 0,
+      "mean_tokens": 52.75,
+      "qualitative_notes": "Perfect score. Minor improvements over V0 in several items: adds encoding='utf-8' for cw3, upgrades cw7 to Counter+regex, adds isinstance guard and daemon flag in cw6. Slightly higher token count than V0 due to these enhancements. All enhancements are substantive, not padding."
+    },
+    {
+      "variant": "V2_format",
+      "total_items": 8,
+      "verdicts": {
+        "correct": 5,
+        "partial": 0,
+        "wrong_root_cause": 0,
+        "over_engineered": 3,
+        "fabricated_api": 0
+      },
+      "correctness_rate": 0.625,
+      "no_fabricated_apis_violations": 0,
+      "no_unnecessary_comments_violations": 0,
+      "mean_tokens": 64.625,
+      "qualitative_notes": "Highest token count but 3 over_engineered verdicts: cw3 (unused Path import + Union annotation), cw4 (isinstance type guard beyond spec), cw6 (dict-wrapper workaround instead of nonlocal). Type hints on the other 5 items are appropriate for V2's format goal. The over-engineering pattern suggests the format prompt induces unnecessary defensive typing and import bloat."
+    },
+    {
+      "variant": "V3prime_rules",
+      "total_items": 8,
+      "verdicts": {
+        "correct": 8,
+        "partial": 0,
+        "wrong_root_cause": 0,
+        "over_engineered": 0,
+        "fabricated_api": 0
+      },
+      "correctness_rate": 1.0,
+      "no_fabricated_apis_violations": 0,
+      "no_unnecessary_comments_violations": 0,
+      "mean_tokens": 47.25,
+      "qualitative_notes": "Best overall variant. Perfect correctness + 7.8% fewer tokens than V0. Notably, cw4 independently chose math.factorial (18 tokens) without the explicit USE_STDLIB guard that V4 uses — demonstrating that rule-following alone surfaced the ideal stdlib solution. Clean concise code throughout with no over-engineering."
+    },
+    {
+      "variant": "V4_guard",
+      "total_items": 8,
+      "verdicts": {
+        "correct": 7,
+        "partial": 1,
+        "wrong_root_cause": 0,
+        "over_engineered": 0,
+        "fabricated_api": 0
+      },
+      "correctness_rate": 0.875,
+      "no_fabricated_apis_violations": 0,
+      "no_unnecessary_comments_violations": 0,
+      "mean_tokens": 41.875,
+      "qualitative_notes": "Token leader at 41.9 mean tokens (-18.7% vs V0). One partial: cw6 missing @wraps — likely over-pruned by the aggressive token-saving guard. USE_STDLIB shortcut for cw4 (8 tokens) is the most extreme savings. cw7's Counter(s.split()) is the simplest correct solution. The @wraps omission is the only real quality trade-off: decorators without @wraps break introspection tools."
+    }
+  ],
+  "summary": [
+    "V3prime_rules is the quality winner: 8/8 correct (100%), lowest token count among full-code variants (47.3 mean), and it independently selected math.factorial for cw4 without needing the explicit USE_STDLIB guard — demonstrating that well-specified rules produce stdlib-aware choices organically.",
+    "V4_guard is the token leader (41.9 mean, -18.7% vs V0) and maintains near-perfect quality, but introduces one partial verdict: cw6 omits @wraps, breaking decorator introspection. The USE_STDLIB shortcut for cw4 (8 tokens) is the most extreme saving and is functionally correct per evaluation rules.",
+    "V2_format is the only variant with over_engineered verdicts (3 of 8): cw3 imports unused Path and Union, cw4 adds a type guard beyond spec, cw6 uses a dict-wrapper workaround instead of Python 3's nonlocal. Higher token cost (64.6 mean) does not translate to quality gains.",
+    "V0_baseline and V1_role_terse both achieve 100% correctness. V1 makes several micro-improvements (encoding, Counter, daemon flag) with minimal token overhead, confirming the role/terse prompt adds signal without hurting quality.",
+    "No fabricated APIs appeared in any of the 40 outputs — a strong result. No unnecessary comments were present in any output. All 40 entries pass both hard gates without exception.",
+    "Surprising pattern: V3prime_rules organically chose math.factorial (18 tokens) for cw4 without any explicit USE_STDLIB guard instruction, while V0/V1 both wrote the longer validate+iterate form. The rules-based prompt internalized stdlib preference better than the baseline.",
+    "V4's @wraps omission on cw6 is the only quality regression visible across all variants and appears to be a side-effect of aggressive token-minimization: the guard prompt prunes boilerplate including the functionally meaningful wraps decorator.",
+    "Token vs quality tradeoff: V4 saves ~20% tokens vs V0 at the cost of one partial verdict; V3prime saves ~8% tokens at zero quality cost. V3prime offers the better efficiency frontier for production use."
+  ]
+}

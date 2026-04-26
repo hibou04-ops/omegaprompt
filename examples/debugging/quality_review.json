@@ -1,0 +1,717 @@
+{
+  "meta": {
+    "reviewer": "claude-sonnet-4-6",
+    "review_date": "2026-04-26",
+    "rubric_dimensions": ["root_cause_accuracy", "fix_minimality", "no_fabricated_claims"],
+    "rubric_weights": [0.5, 0.3, 0.2],
+    "verdict_criteria": {
+      "correct": "Root cause correctly identified per reference mechanism; fix addresses cause and is executable; no fabricated claims.",
+      "partial": "Root cause identified but fix has a notable gap (e.g., silently suppresses error rather than handling it), OR INSUFFICIENT_INFO recognized implicitly but no explicit guard fired.",
+      "wrong_root_cause": "Root cause misidentified or response proceeds as if debuggable when question is too ambiguous (fails addresses_actual_error).",
+      "missed": "Response completely omits relevant root cause or is empty/off-topic."
+    },
+    "db8_note": "db8 (ambiguous slow) is the INSUFFICIENT_INFO sentinel. V4 fires an explicit INSUFFICIENT_INFO guard (correct). V2 and V3prime open with 'Insufficient information' but then proceed to advise without blocking (partial). V0 and V1 attempt to debug without flagging the case (wrong_root_cause; fails addresses_actual_error gate)."
+  },
+  "scores": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "db1_zero_division",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correctly identifies empty-list divide-by-zero. Offers multiple fix options (raise ValueError, return None/0/nan) which is slightly beyond minimal but all are valid."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db2_keyerror",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correctly identifies missing 'email' key. Fix uses .get() with explicit handling. Mentions alternate causes (nested, differently named) which is slightly speculative but not fabricated."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db3_typerror_concat",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Root cause and fix are exact. F-string is minimal and idiomatic."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db4_late_binding_loop",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Exact mechanism named (capture by reference, i==3 after loop). Default-argument fix is minimal and correct."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db5_off_by_one_range",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Concise and accurate. range(1, 11) is the minimal fix."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db6_mutating_during_iter",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct root cause. Offers both list(d) snapshot and dict comprehension rebuild — both valid, slightly beyond minimal."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db7_async_no_await",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correctly identifies unawaited coroutine. Fix includes async context manager and await. Also mentions sync alternative which is slightly beyond minimal but correct."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db8_ambiguous_no_repro",
+      "verdict": "wrong_root_cause",
+      "scores": {
+        "root_cause_accuracy": 1,
+        "fix_minimality": 1,
+        "no_fabricated_claims": 4
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": false,
+        "fix_executable": false
+      },
+      "notes": "FAIL: Does not fire INSUFFICIENT_INFO guard. Proceeds to enumerate common suspects and ask for a profile. Reference requires the reviewer to refuse to debug and request code/profiling first. addresses_actual_error FAIL (actual issue is insufficient info, not any specific slow path). fix_executable FAIL (no fix possible without a reproducer; advising to send a profile is not a fix)."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db1_zero_division",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Clean root cause + minimal fix with guard."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db2_keyerror",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": ".get() with explicit ValueError is correct and minimal."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db3_typerror_concat",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Exact root cause and idiomatic f-string fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db4_late_binding_loop",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct mechanism and default-argument fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db5_off_by_one_range",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Minimal, exact."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db6_mutating_during_iter",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct root cause and single minimal fix (list snapshot)."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db7_async_no_await",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Unawaited coroutine identified. Fix uses async context manager + await correctly."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db8_ambiguous_no_repro",
+      "verdict": "wrong_root_cause",
+      "scores": {
+        "root_cause_accuracy": 1,
+        "fix_minimality": 1,
+        "no_fabricated_claims": 4
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": false,
+        "fix_executable": false
+      },
+      "notes": "FAIL: Does not fire INSUFFICIENT_INFO guard. Proceeds to enumerate suspects and ask for flame graph. Same failure mode as V0. addresses_actual_error FAIL. fix_executable FAIL."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db1_zero_division",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Root cause exact. 'return 0' fallback explicitly allowed by reference. Minimal one-liner fix."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db2_keyerror",
+      "verdict": "partial",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Root cause correct. Fix `(user_data.get('email') or '').lower()` silently returns an empty string for a missing key instead of explicitly handling the missing case. Reference requires handling or raising — this masks the error. Partial: fix passes syntactically but suppresses the failure mode."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db3_typerror_concat",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Exact. F-string is idiomatic and minimal."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db4_late_binding_loop",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct and minimal. Default-argument fix exact."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db5_off_by_one_range",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Minimal and exact."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db6_mutating_during_iter",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct and minimal. list(d) snapshot fix is exact."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db7_async_no_await",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct. Fix uses async context manager + await as a one-liner. Executable."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db8_ambiguous_no_repro",
+      "verdict": "partial",
+      "scores": {
+        "root_cause_accuracy": 4,
+        "fix_minimality": 3,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": false
+      },
+      "notes": "Opens with 'Insufficient information' — recognizes the case. But then offers a 'Fix' action (capture cProfile/py-spy and share hotspots) rather than refusing to diagnose. fix_executable FAIL: the 'fix' is procedural advice, not an executable code fix. Partial credit: guard recognized but not fired cleanly."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db1_zero_division",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Exact root cause. Inline ternary fix is minimal; alternate raise ValueError note is appropriate."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db2_keyerror",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": ".get() with empty-string default and note about explicit handling satisfies reference's 'handle OR validate' requirement."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db3_typerror_concat",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct. Offers both str() concatenation and f-string. Slightly redundant but not scope creep."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db4_late_binding_loop",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Precise mechanism and minimal fix."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db5_off_by_one_range",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Minimal and exact."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db6_mutating_during_iter",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct. Offers both list(d) and dict-comprehension rebuild — both valid."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db7_async_no_await",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct root cause. Code block with async context manager and await is clean and executable."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db8_ambiguous_no_repro",
+      "verdict": "partial",
+      "scores": {
+        "root_cause_accuracy": 4,
+        "fix_minimality": 3,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": false
+      },
+      "notes": "Opens with 'Insufficient information — no reproduction, no profile... Cannot identify a root cause without data.' Then offers procedural steps (collect timings, run profiler). Better than V0/V1 — clearly states inability to diagnose. But fix_executable FAIL: steps 1-3 are process instructions, not executable code. Partial: implicit guard recognized, not clean INSUFFICIENT_INFO block."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db1_zero_division",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct and minimal."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db2_keyerror",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": ".get() with None check and conditional return. Explicit handling satisfies reference."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db3_typerror_concat",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct and minimal. Offers str() concat and mentions f-string as alternative."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db4_late_binding_loop",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Exact mechanism and fix."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db5_off_by_one_range",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Minimal and exact."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db6_mutating_during_iter",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct and minimal. Single list-snapshot fix."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db7_async_no_await",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 4,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "Correct root cause. Inline one-liner fix has a dangling result.json() call that does nothing — structurally correct but the return value is unused in the snippet. Minor style issue; fix_executable passes since the core await+context manager pattern is correct."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db8_ambiguous_no_repro",
+      "verdict": "correct",
+      "scores": {
+        "root_cause_accuracy": 5,
+        "fix_minimality": 5,
+        "no_fabricated_claims": 5
+      },
+      "hard_gates": {
+        "no_refusal": true,
+        "addresses_actual_error": true,
+        "fix_executable": true
+      },
+      "notes": "CORRECT guard fire: 'INSUFFICIENT_INFO: no code, no reproducer, no profiling/timing data...' Explicit sentinel token, no speculation, no false diagnosis. All three hard gates pass (no_refusal: guard response counts as an attempt; addresses_actual_error: the actual issue is insufficient info, which is named; fix_executable: no fix is proposed, which is correct behavior)."
+    }
+  ],
+  "aggregates": {
+    "V0_baseline": {
+      "correct": 7,
+      "partial": 0,
+      "wrong_root_cause": 1,
+      "missed": 0,
+      "hard_gate_failures": 2,
+      "hard_gate_failed_items": ["db8_ambiguous_no_repro (addresses_actual_error, fix_executable)"]
+    },
+    "V1_role_terse": {
+      "correct": 7,
+      "partial": 0,
+      "wrong_root_cause": 1,
+      "missed": 0,
+      "hard_gate_failures": 2,
+      "hard_gate_failed_items": ["db8_ambiguous_no_repro (addresses_actual_error, fix_executable)"]
+    },
+    "V2_format": {
+      "correct": 6,
+      "partial": 2,
+      "wrong_root_cause": 0,
+      "missed": 0,
+      "hard_gate_failures": 1,
+      "hard_gate_failed_items": ["db8_ambiguous_no_repro (fix_executable)"],
+      "partial_items": ["db2_keyerror (silent empty-string suppresses missing key)", "db8_ambiguous_no_repro (implicit guard only)"]
+    },
+    "V3prime_rules": {
+      "correct": 7,
+      "partial": 1,
+      "wrong_root_cause": 0,
+      "missed": 0,
+      "hard_gate_failures": 1,
+      "hard_gate_failed_items": ["db8_ambiguous_no_repro (fix_executable)"],
+      "partial_items": ["db8_ambiguous_no_repro (implicit guard, then procedural steps offered)"]
+    },
+    "V4_guard": {
+      "correct": 8,
+      "partial": 0,
+      "wrong_root_cause": 0,
+      "missed": 0,
+      "hard_gate_failures": 0,
+      "hard_gate_failed_items": []
+    }
+  },
+  "summary_rankings": {
+    "by_correct_count": ["V4_guard (8)", "V0_baseline (7)", "V1_role_terse (7)", "V3prime_rules (7)", "V2_format (6)"],
+    "by_hard_gate_passes": ["V4_guard (0 failures)", "V2_format (1 failure)", "V3prime_rules (1 failure)", "V0_baseline (2 failures)", "V1_role_terse (2 failures)"],
+    "token_efficiency_vs_accuracy": {
+      "V2_format": {
+        "mean_tokens": 46.75,
+        "reduction_vs_V0": "-43.6%",
+        "accuracy_maintained": "6/8 correct, 2 partial, 0 wrong_root_cause — maintained on db1/db3-db7, soft on db2 and db8"
+      },
+      "V4_guard": {
+        "mean_tokens": 53.75,
+        "reduction_vs_V0": "-35.2%",
+        "accuracy_maintained": "8/8 correct — best accuracy"
+      }
+    }
+  }
+}

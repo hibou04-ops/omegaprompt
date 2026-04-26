@@ -1,0 +1,419 @@
+{
+  "meta": {
+    "reviewed_by": "claude-sonnet-4-6",
+    "review_date": "2026-04-26",
+    "rubric_weights": {"accuracy": 0.5, "concreteness": 0.3, "appropriate_depth": 0.2},
+    "score_formula": "accuracy*0.5 + concreteness*0.3 + appropriate_depth*0.2"
+  },
+  "results": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex1_what_is_async",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 4},
+      "weighted_score": 4.8,
+      "notes": "Accurate, multiple runnable examples, thorough coverage of coroutine model and event loop. Slight over-depth with 'infectious' analogy (but accurate). No gate failures."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex2_difference_is_vs_eq",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Correct on value vs identity distinction, correct CPython int-caching gotcha with accurate range (256), correct PEP 8 note. All examples valid and runnable."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex3_what_is_gil",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate GIL explanation, correct CPU vs I/O distinction, valid workarounds list, PEP 703 mention accurate, runnable threading example."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex4_explain_for_loop",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 3},
+      "weighted_score": 4.6,
+      "notes": "Correct but verbosely over-explains a universally-known concept. V4 ALREADY_OBVIOUS would be better here. No inaccuracies."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex5_explain_closure",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 4},
+      "weighted_score": 4.8,
+      "notes": "Accurate closure definition, correct `nonlocal` explanation, runnable counter example, cell object inspection is a useful bonus. Slight over-depth in final section."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 4},
+      "weighted_score": 4.8,
+      "notes": "Accurate table, correct flow description, correct use-cases. Slightly heavy at 455 tokens but all content is valid."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex7_explain_slots",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Correct on memory layout, correct 40-50% savings claim, valid AttributeError demo, accurate dataclass 3.10 note."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex8_explain_yield",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 4},
+      "weighted_score": 4.8,
+      "notes": "Accurate generator mechanics, correct StopIteration note, valid `yield from` and send() coverage. 426 tokens is heavy but content valid."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex1_what_is_async",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, single clear runnable `gather` example that demonstrates concurrency, appropriate depth. No over-padding."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex2_difference_is_vs_eq",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, runnable list/None examples, gotcha about small int caching correctly flagged as implementation detail not to rely on."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex3_what_is_gil",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate GIL mechanics, CPU vs I/O distinction, PEP 703 mention, runnable threading example demonstrating the problem."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex4_explain_for_loop",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 3},
+      "weighted_score": 4.6,
+      "notes": "Correct but answers a trivially-known concept when ALREADY_OBVIOUS would be appropriate. No inaccuracies."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex5_explain_closure",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, captures-by-reference clarification is important and correct, two-counter example nicely demonstrates independent state."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate creation vs initialization distinction, immutable subclass example is the canonical correct use-case."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex7_explain_slots",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, 40-50% claim correct, memory comparison comment (56 MB vs 152 MB for 1M instances) is a useful concrete figure."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex8_explain_yield",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate lazy/frozen-state mechanics, Fibonacci example is clean and demonstrates lazy behavior well."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex1_what_is_async",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "What/Why/Example format. Accurate, minimal runnable `asyncio.run(fetch())` example is sufficient. Tight at 102 tokens."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex2_difference_is_vs_eq",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate value vs identity distinction, correct singleton usage, clean runnable example."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex3_what_is_gil",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, ThreadPoolExecutor vs ProcessPoolExecutor side-by-side is the clearest possible demonstration of the GIL's effect."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex4_explain_for_loop",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 4, "appropriate_depth": 3},
+      "weighted_score": 4.3,
+      "notes": "Correct but answers a trivially-known concept. Single-char example `for ch in 'abc'` is minimal/correct but uninspiring. ALREADY_OBVIOUS (as in V4) would be better here."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex5_explain_closure",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, cell objects reference is technically correct, counter example is clean."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, Singleton example is canonical and correct, `a is b` validation is useful."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex7_explain_slots",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, AttributeError example demonstrates the constraint clearly."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex8_explain_yield",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate lazy-iteration framing, `count_up` example is minimal and correct."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex1_what_is_async",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `gather` example with timing comment (`~1s not 3s`) is excellent for understanding concurrency benefit."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex2_difference_is_vs_eq",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, explicitly calls out CPython caching as implementation detail (not guarantee), `256 is 256` vs `1000 is 1000` is a great gotcha demo."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex3_what_is_gil",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, uses `perf_counter` (better than `time()`), PEP 703 note accurate."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex4_explain_for_loop",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 3},
+      "weighted_score": 4.6,
+      "notes": "Correct but over-explains a trivially obvious concept. File-iteration example is useful but ALREADY_OBVIOUS guard would be better."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex5_explain_closure",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, captures-by-reference and `nonlocal` explained correctly."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `__init__` re-running on Singleton gotcha (`a.value == 2`) is correct and important to call out."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex7_explain_slots",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `sys` import included but memory sizes not printed — minor missed opportunity but no inaccuracy."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex8_explain_yield",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `yield from` and `send()` mentioned, streaming file-read example is a great practical use-case."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex1_what_is_async",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `asyncio.create_task` mentioned alongside `asyncio.run` (correct additional option), `~1s not 3s` timing comment excellent."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex2_difference_is_vs_eq",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, misconception about CPython caching explicitly flagged as implementation detail."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex3_what_is_gil",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, ProcessPoolExecutor comment (`~4x faster on 4 cores`) is a useful quantification."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex4_explain_for_loop",
+      "verdict": "already_obvious_correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "ALREADY_OBVIOUS guard correctly triggered: 'What is a for loop?' is universally known to working programmers. Matches train.jsonl reference. Guard saves 86-144 tokens vs other variants."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex5_explain_closure",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `__closure__` cells reference is a nice concrete mechanism detail."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `UpperStr` immutable subclass example is cleaner than Singleton for demonstrating `__new__`'s primary use-case."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex7_explain_slots",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, `sys.getsizeof(ps)` comment (48 bytes) is concrete and useful."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex8_explain_yield",
+      "verdict": "correct",
+      "hard_gates": {"no_refusal": true, "no_misleading_analogy": true, "no_fabricated_facts": true},
+      "scores": {"accuracy": 5, "concreteness": 5, "appropriate_depth": 5},
+      "weighted_score": 5.0,
+      "notes": "Accurate, infinite Fibonacci generator with `[next(g) for _ in range(7)]` is the canonical lazy-generator demo."
+    }
+  ],
+  "aggregate": {
+    "by_variant": [
+      {
+        "variant": "V0_baseline",
+        "mean_weighted_score": 4.85,
+        "all_hard_gates_pass": true,
+        "mean_tokens": 328.375,
+        "verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"],
+        "notes": "Accurate throughout but verbose — averages 328 tokens. Deepest coverage but unnecessary for most questions."
+      },
+      {
+        "variant": "V1_role_terse",
+        "mean_weighted_score": 4.95,
+        "all_hard_gates_pass": true,
+        "mean_tokens": 177.375,
+        "verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"],
+        "notes": "High quality, appropriately terse, no accuracy loss. Answers ex4 (for loop) when it could be ALREADY_OBVIOUS."
+      },
+      {
+        "variant": "V2_format",
+        "mean_weighted_score": 4.91,
+        "all_hard_gates_pass": true,
+        "mean_tokens": 128.625,
+        "verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"],
+        "notes": "What/Why/Example format preserves accuracy and includes runnable examples in the fewest tokens (-60.8% vs V0). Ex4 for-loop is the only sub-optimal response (minimal but correct). Token efficiency is the standout."
+      },
+      {
+        "variant": "V3prime_rules",
+        "mean_weighted_score": 4.95,
+        "all_hard_gates_pass": true,
+        "mean_tokens": 170.625,
+        "verdicts": ["correct", "correct", "correct", "correct", "correct", "correct", "correct", "correct"],
+        "notes": "Excellent quality, similar to V1 but with slightly more depth in examples. Does not apply ALREADY_OBVIOUS guard for ex4."
+      },
+      {
+        "variant": "V4_guard",
+        "mean_weighted_score": 5.0,
+        "all_hard_gates_pass": true,
+        "mean_tokens": 139.875,
+        "verdicts": ["correct", "correct", "correct", "already_obvious_correct", "correct", "correct", "correct", "correct"],
+        "notes": "Highest mean weighted score. Only variant to correctly fire ALREADY_OBVIOUS for ex4. All non-trivial items score 5.0. Best quality-per-token ratio overall."
+      }
+    ],
+    "quality_ranking": ["V4_guard", "V3prime_rules", "V1_role_terse", "V2_format", "V0_baseline"],
+    "token_efficiency_ranking": ["V2_format", "V4_guard", "V3prime_rules", "V1_role_terse", "V0_baseline"],
+    "best_quality_variant": "V4_guard",
+    "best_quality_per_token_variant": "V4_guard",
+    "best_token_efficiency_preserving_accuracy": "V2_format"
+  }
+}

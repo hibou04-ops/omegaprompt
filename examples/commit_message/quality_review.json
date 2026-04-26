@@ -1,0 +1,660 @@
+{
+  "task": "commit_message",
+  "rubric_version": "1.0",
+  "review_date": "2026-04-26",
+  "scoring_notes": {
+    "type_accuracy": "weight=0.3, scale 1-5; correct CC type per item expected type",
+    "subject_clarity": "weight=0.4, scale 1-5; imperative mood, <=70 chars, clear",
+    "body_appropriateness": "weight=0.3, scale 1-5; explains WHY, omitted when trivial",
+    "composite": "type_accuracy*0.3 + subject_clarity*0.4 + body_appropriateness*0.3"
+  },
+  "items": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm1_typo_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix; 'Fix' is imperative and correct concept but not conventional-commits typed. No body appropriate for trivial change."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm2_feature_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 4,
+      "composite": 3.7,
+      "notes": "No CC prefix. Body restates WHAT (the endpoint details visible in diff) rather than WHY it is needed."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm3_refactor",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 3,
+      "composite": 3.3,
+      "notes": "No CC prefix. Body says 'cleaner, more concise code' — touches on WHY but vague. Type conceptually correct without prefix."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm4_perf_fix",
+      "verdict": "wrong_type",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 2,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 3.5,
+      "notes": "Subject says 'Fix' implying bug-fix type; this is a perf optimization. Body correctly explains N+1 -> 2 queries. No CC prefix."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm5_whitespace",
+      "verdict": "over_described",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 2,
+      "composite": 3.0,
+      "notes": "No CC prefix; 'Normalize' is imperative. Body 'No functional changes.' is technically acceptable but redundant for pure whitespace — the rubric asks body to be omitted for trivial changes."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm6_test_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 4,
+      "composite": 3.7,
+      "notes": "No CC prefix. Body adds context about previously untested behavior — good WHY signal."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm7_breaking_change",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": true
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix or `!` marker in subject, but body contains explicit 'BREAKING CHANGE:' footer — satisfies the hard gate. Body explains caller impact."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm8_docs_only",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 4,
+      "composite": 3.7,
+      "notes": "No CC prefix. Body explains authentication details — somewhat restates diff but adds navigational context."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm1_typo_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix. Terse single-line appropriate for trivial fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm2_feature_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix. Body explains WHY (avoids client-side filtering) — good motivational context."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm3_refactor",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix. 'Simplify' in subject; body explains WHY the hand-rolled logic was redundant — strong motivational framing."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm4_perf_fix",
+      "verdict": "wrong_type",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 2,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 3.7,
+      "notes": "No CC prefix. Subject says 'Fix' (wrong type — perf). Body clearly explains N+1 -> batch join-in-memory pattern."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm5_whitespace",
+      "verdict": "trivial_correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 4.3,
+      "notes": "Terse single-line, no body — ideal for trivial whitespace. No CC prefix but concept matches style."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm6_test_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix. Body mentions 'previously untested' — good WHY context."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm7_breaking_change",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": true
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 5,
+      "composite": 4.0,
+      "notes": "No CC prefix. Has 'BREAKING CHANGE:' marker — hard gate satisfied. Body explains caller impact and MFA enforcement motivation."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm8_docs_only",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 3,
+      "subject_clarity": 4,
+      "body_appropriateness": 4,
+      "composite": 3.7,
+      "notes": "No CC prefix. Body describes what was documented; somewhat restates diff but adds navigation cues."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm1_typo_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 4,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 4.7,
+      "notes": "CC prefix 'docs(readme)'. 'docs' is valid for README typo fix (alternative: 'fix'). Single-line appropriate for trivial change. Imperative 'fix'."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm2_feature_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 4,
+      "composite": 4.7,
+      "notes": "CC 'feat(api)'. Correct type and scope. No body — acceptable for simple endpoint addition, though reference allows optional body for context."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm3_refactor",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 4,
+      "composite": 4.7,
+      "notes": "CC 'refactor(utils)'. Correct type. No body — subject suffices; diff is self-explanatory."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm4_perf_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 4,
+      "composite": 4.7,
+      "notes": "CC 'perf(posts)'. Correct type. No body — subject covers the key change; body would add context but is optional."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm5_whitespace",
+      "verdict": "trivial_correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'style(auth)'. Correct type. Single-line, no body — perfect for trivial whitespace change."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm6_test_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'test(clamp)'. Correct type. Subject concisely covers both test cases. No body needed."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm7_breaking_change",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": true
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'feat(auth)!' with `!` breaking-change indicator in subject PLUS 'BREAKING CHANGE:' footer. Both conventional-commits signals present. Hard gate fully satisfied."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm8_docs_only",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'docs(api)'. Correct type. Single-line subject is clear and sufficient."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm1_typo_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 4,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 4.7,
+      "notes": "CC 'docs(readme)'. Slightly longer than V2 (10 vs 9 tokens). Correct and clear."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm2_feature_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 4,
+      "composite": 4.7,
+      "notes": "CC 'feat(api)'. No body. Very similar to V2."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm3_refactor",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'refactor(utils)'. Body explains WHY: validation+conversion in single call. Appropriate depth for non-trivial refactor."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm4_perf_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'perf(posts)'. Body explains single query keyed by id — good WHY context."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm5_whitespace",
+      "verdict": "trivial_correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'style(auth)'. Single-line, no body — perfect."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm6_test_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'test(clamp)'. Correct. Slightly different wording from V2 but equally clear."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm7_breaking_change",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": true
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'feat(auth)!' + 'BREAKING CHANGE:' in body. Hard gate satisfied. Slightly more concise body than V2 (34 vs 37 tokens)."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm8_docs_only",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'docs(api)'. Identical to V2. Correct and concise."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm1_typo_fix",
+      "verdict": "trivial_correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'fix:'. Uses 'fix' type which matches reference ('fix: correct typo'). Guard variant correctly chose fix over docs. Single-line appropriate."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm2_feature_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 4,
+      "composite": 4.7,
+      "notes": "CC 'feat(api)'. No body — acceptable."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm3_refactor",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'refactor(utils)'. Body explains WHY: reduce code surface, rely on stdlib validation. Good motivational framing."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm4_perf_fix",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'perf(posts)'. Body explains before/after: N+1 selects -> unique author_ids -> single query + in-memory join. Best body of all variants for cm4."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm5_whitespace",
+      "verdict": "trivial_correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'style:'. No body — correct for trivial whitespace. References specific file path in subject."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm6_test_add",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'test(clamp)'. Correct and clear."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm7_breaking_change",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": true
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'feat(auth)!' + 'BREAKING CHANGE:' body. Hard gate fully satisfied. Body explains caller impact and failure mode (two-argument calls will fail) — most informative of all variants."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm8_docs_only",
+      "verdict": "correct",
+      "hard_gates": {
+        "no_refusal": true,
+        "imperative_mood": true,
+        "breaking_change_flagged": "n/a"
+      },
+      "type_accuracy": 5,
+      "subject_clarity": 5,
+      "body_appropriateness": 5,
+      "composite": 5.0,
+      "notes": "CC 'docs(api)'. Slightly more concise than V3prime. Correct."
+    }
+  ],
+  "variant_summary": [
+    {
+      "variant": "V0_baseline",
+      "mean_composite": 3.7,
+      "hard_gate_failures": [],
+      "wrong_type_items": ["cm4_perf_fix"],
+      "over_described_items": ["cm5_whitespace"],
+      "trivial_correct_items": [],
+      "notes": "No conventional-commits prefix. Type signals implicit at best; cm4 uses 'Fix' for a perf optimization. Body on cm5 is unnecessary."
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean_composite": 3.95,
+      "hard_gate_failures": [],
+      "wrong_type_items": ["cm4_perf_fix"],
+      "over_described_items": [],
+      "trivial_correct_items": ["cm5_whitespace"],
+      "notes": "No CC prefix. Better WHY framing than V0. cm4 still uses 'Fix' (wrong type). cm5 correctly omits body."
+    },
+    {
+      "variant": "V2_format",
+      "mean_composite": 4.85,
+      "hard_gate_failures": [],
+      "wrong_type_items": [],
+      "over_described_items": [],
+      "trivial_correct_items": ["cm5_whitespace"],
+      "notes": "Token winner (-52.3%). Full CC compliance across all 8 items. cm7 has both '!' subject marker and BREAKING CHANGE footer. All hard gates pass. Minor: some items forgo optional bodies that V3/V4 include — acceptable per rubric."
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean_composite": 4.925,
+      "hard_gate_failures": [],
+      "wrong_type_items": [],
+      "over_described_items": [],
+      "trivial_correct_items": ["cm5_whitespace"],
+      "notes": "CC format with selective bodies. Near-perfect. Adds helpful WHY bodies on cm3, cm4. Slightly more tokens than V2 (148 vs 106)."
+    },
+    {
+      "variant": "V4_guard",
+      "mean_composite": 4.975,
+      "hard_gate_failures": [],
+      "wrong_type_items": [],
+      "over_described_items": [],
+      "trivial_correct_items": ["cm1_typo_fix", "cm5_whitespace"],
+      "notes": "Highest quality. All CC typed. cm1 correctly uses 'fix' matching reference. cm4 and cm7 have the best bodies across all variants. cm7 explicitly states two-argument calls will fail. Highest token cost (177)."
+    }
+  ]
+}

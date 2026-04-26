@@ -1,0 +1,486 @@
+{
+  "meta": {
+    "reviewer": "claude-sonnet-4-6",
+    "review_date": "2026-04-26",
+    "rubric": "accuracy(0.5) + naturalness(0.3) + preservation_discipline(0.2); hard gates: no_refusal, code_preservation, no_added_commentary"
+  },
+  "results": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr1_ko_en_simple",
+      "output": "Could you help me prepare the materials for tomorrow's meeting?",
+      "verdict": "correct",
+      "notes": "Adds 'the' before 'materials'; semantically equivalent to reference, natural English.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr2_en_ko_technical",
+      "output": "데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포가 실패했습니다.",
+      "verdict": "correct",
+      "notes": "Uses '시간 초과' instead of '타임아웃' loanword preferred by Korean developers for technical content. Slightly less natural in dev context but not incorrect. '후에' vs reference '후' is minor.",
+      "scores": { "accuracy": 5, "naturalness": 3, "preservation_discipline": 5 },
+      "weighted_score": 4.4,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr3_already_in_target",
+      "output": "The meeting is at 3pm.",
+      "verdict": "correct",
+      "notes": "Echoed source as-is (source was already English); technically a correct result but no NO_TRANSLATION_NEEDED guard signal. V0 does not have the guard.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr4_idiom",
+      "output": "이건 식은 죽 먹기야.",
+      "verdict": "correct",
+      "notes": "Idiomatic Korean equivalent used correctly. '야' (informal/casual) vs reference '예요' (polite). Register is slightly more casual than the neutral reference but the idiom mapping is right.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr5_with_code",
+      "output": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌이 발생합니다.",
+      "verdict": "correct",
+      "notes": "All code identifiers preserved. '합계' (slightly more verbose than reference '합') and '충돌이 발생합니다' vs reference '크래시합니다' — both natural; '충돌이 발생합니다' is slightly wordy but accurate.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr6_proper_nouns",
+      "output": "GitHub은 Copilot이 2024년 11월부터 VS Code와 기본적으로 통합될 것이라고 발표했습니다.",
+      "verdict": "inaccurate",
+      "notes": "'기본적으로' (basically/fundamentally) is a mistranslation of 'natively'. Reference and other variants use '네이티브로'. Proper nouns are preserved, but the key adverb is wrong.",
+      "scores": { "accuracy": 2, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 3.3,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr7_ambiguous_term",
+      "output": "이 모델은 어텐션을 사용하여 관련 컨텍스트에 가중치를 부여합니다.",
+      "verdict": "correct",
+      "notes": "Uses transliteration '어텐션' only; reference suggests appending original English form for this ambiguous technical term. Loses disambiguation value for readers unfamiliar with the term.",
+      "scores": { "accuracy": 4, "naturalness": 4, "preservation_discipline": 3 },
+      "weighted_score": 3.8,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr8_code_only",
+      "output": "```python\ndef hello():\n    print('hi')\n```",
+      "verdict": "correct",
+      "notes": "Code returned unchanged. No NO_TRANSLATION_NEEDED guard (V0 doesn't have it). Output is technically valid: code preserved, nothing translated.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr1_ko_en_simple",
+      "output": "Could you help me prepare the materials for tomorrow's meeting?",
+      "verdict": "correct",
+      "notes": "Identical to V0 output. Natural and accurate.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr2_en_ko_technical",
+      "output": "데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포에 실패했습니다.",
+      "verdict": "correct",
+      "notes": "'배포에 실패했습니다' (failed at deployment) is grammatically sound and arguably more natural than '배포가 실패했습니다' in this context. Still uses '시간 초과' instead of '타임아웃'.",
+      "scores": { "accuracy": 5, "naturalness": 3, "preservation_discipline": 5 },
+      "weighted_score": 4.4,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr3_already_in_target",
+      "output": "The meeting is at 3pm.",
+      "verdict": "correct",
+      "notes": "Source already in target language; V1 echoes it correctly without guard signal.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr4_idiom",
+      "output": "이건 식은 죽 먹기야.",
+      "verdict": "correct",
+      "notes": "Identical to V0. Idiom correctly mapped; casual register.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr5_with_code",
+      "output": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌이 발생합니다.",
+      "verdict": "correct",
+      "notes": "Identical to V0. Code preserved; '합계' and '충돌이 발생합니다' are accurate if slightly verbose.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr6_proper_nouns",
+      "output": "GitHub은 Copilot이 2024년 11월부터 VS Code에 네이티브로 통합될 것이라고 발표했습니다.",
+      "verdict": "correct",
+      "notes": "Uses '네이티브로' (correct). 'VS Code에 네이티브로' (into VS Code) vs reference 'VS Code와 네이티브로' (with VS Code). '에' makes it slightly less natural; reference '와' is idiomatic in Korean for software integration phrasing.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr7_ambiguous_term",
+      "output": "이 모델은 어텐션을 사용하여 관련 컨텍스트에 가중치를 부여합니다.",
+      "verdict": "correct",
+      "notes": "Same as V0 — transliteration only, missing the disambiguation English annotation for this ambiguous technical term.",
+      "scores": { "accuracy": 4, "naturalness": 4, "preservation_discipline": 3 },
+      "weighted_score": 3.8,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr8_code_only",
+      "output": "```python\ndef hello():\n    print('hi')\n```",
+      "verdict": "correct",
+      "notes": "Code preserved unchanged. No guard signal (V1 doesn't have it).",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr1_ko_en_simple",
+      "output": "Could you help me prepare the materials for tomorrow's meeting?",
+      "verdict": "correct",
+      "notes": "Same as V0/V1.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr2_en_ko_technical",
+      "output": "데이터베이스 마이그레이션 스크립트가 30초 후 시간 초과되어 배포에 실패했습니다.",
+      "verdict": "correct",
+      "notes": "'후' (without 에) matches reference structure. '배포에 실패' is natural. Still '시간 초과' instead of '타임아웃'. Slightly more natural flow than V0.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr3_already_in_target",
+      "output": "The meeting is at 3pm.",
+      "verdict": "correct",
+      "notes": "Echo of source (already English). No guard signal.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr4_idiom",
+      "output": "이건 식은 죽 먹기야.",
+      "verdict": "correct",
+      "notes": "Same as V0/V1.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr5_with_code",
+      "output": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있으면 충돌합니다.",
+      "verdict": "correct",
+      "notes": "'비어 있으면 충돌합니다' is more concise and natural than V0/V1. Code preserved. '합계' still slightly verbose vs reference '합'.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr6_proper_nouns",
+      "output": "GitHub은 Copilot이 2024년 11월부터 VS Code와 네이티브로 통합될 것이라고 발표했습니다.",
+      "verdict": "correct",
+      "notes": "'네이티브로' correct. 'VS Code와 네이티브로' matches reference phrasing closely. Proper nouns preserved.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr7_ambiguous_term",
+      "output": "이 모델은 어텐션을 사용하여 관련 컨텍스트에 가중치를 부여합니다.",
+      "verdict": "correct",
+      "notes": "Transliteration only; no English annotation for disambiguation. Same issue as V0/V1.",
+      "scores": { "accuracy": 4, "naturalness": 4, "preservation_discipline": 3 },
+      "weighted_score": 3.8,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr8_code_only",
+      "output": "```python\ndef hello():\n    print('hi')\n```",
+      "verdict": "correct",
+      "notes": "Code preserved. No guard signal.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr1_ko_en_simple",
+      "output": "Could you help me prepare the materials for tomorrow's meeting?",
+      "verdict": "correct",
+      "notes": "Same as all other variants.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr2_en_ko_technical",
+      "output": "데이터베이스 마이그레이션 스크립트가 30초 후 시간 초과되어 배포가 실패했습니다.",
+      "verdict": "correct",
+      "notes": "'후' (no 에) and '배포가 실패' match reference phrasing. '시간 초과' still used over '타임아웃'.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr3_already_in_target",
+      "output": "The meeting is at 3pm.",
+      "verdict": "correct",
+      "notes": "Echo of source. No guard signal (V3' doesn't have it).",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr4_idiom",
+      "output": "이건 식은 죽 먹기야.",
+      "verdict": "correct",
+      "notes": "Same as all other variants.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr5_with_code",
+      "output": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌합니다.",
+      "verdict": "correct",
+      "notes": "Code preserved. '충돌합니다' concise. '비어 있을 때 충돌합니다' is natural. '합계' still slightly verbose.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr6_proper_nouns",
+      "output": "GitHub은 2024년 11월부터 Copilot이 VS Code와 네이티브로 통합될 것이라고 발표했습니다.",
+      "verdict": "correct",
+      "notes": "Word order shifted: subject moved 'GitHub은... Copilot이' split by date clause. Slightly unusual Korean word order; reference and other variants keep 'GitHub은 Copilot이' adjacent. Meaning preserved. Proper nouns intact.",
+      "scores": { "accuracy": 5, "naturalness": 3, "preservation_discipline": 5 },
+      "weighted_score": 4.4,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr7_ambiguous_term",
+      "output": "이 모델은 어텐션(attention)을 사용하여 관련 컨텍스트에 가중치를 부여합니다.",
+      "verdict": "correct",
+      "notes": "Adds English annotation '(attention)' after transliteration — best handling of this ambiguous technical term. Closest to rubric guidance.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr8_code_only",
+      "output": "```python\ndef hello():\n    print('hi')\n```",
+      "verdict": "correct",
+      "notes": "Code preserved. No guard signal (V3' doesn't have it).",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr1_ko_en_simple",
+      "output": "Could you help me prepare the materials for tomorrow's meeting?",
+      "verdict": "correct",
+      "notes": "Same as all other variants.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr2_en_ko_technical",
+      "output": "데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포가 실패했습니다.",
+      "verdict": "correct",
+      "notes": "'후에' (V0 pattern) returned; same caveats as V0 on '시간 초과' vs '타임아웃' and '후에' vs '후'.",
+      "scores": { "accuracy": 5, "naturalness": 3, "preservation_discipline": 5 },
+      "weighted_score": 4.4,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr3_already_in_target",
+      "output": "NO_TRANSLATION_NEEDED",
+      "verdict": "no_translation_needed_correct",
+      "notes": "Guard fired correctly: source 'The meeting is at 3pm.' is already English (target language). V4-only guard behavior confirmed.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr4_idiom",
+      "output": "이건 식은 죽 먹기야.",
+      "verdict": "correct",
+      "notes": "Same as all other variants.",
+      "scores": { "accuracy": 5, "naturalness": 4, "preservation_discipline": 5 },
+      "weighted_score": 4.7,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr5_with_code",
+      "output": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌합니다.",
+      "verdict": "correct",
+      "notes": "Code preserved. Concise ending. Same as V3'.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr6_proper_nouns",
+      "output": "GitHub은 Copilot이 2024년 11월부터 VS Code와 네이티브로 통합될 것이라고 발표했습니다.",
+      "verdict": "correct",
+      "notes": "Matches reference almost verbatim. '네이티브로', 'VS Code와', natural word order. Best tr6 output across all variants.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr7_ambiguous_term",
+      "output": "이 모델은 어텐션(attention)을 사용하여 관련 컨텍스트에 가중치를 부여합니다.",
+      "verdict": "correct",
+      "notes": "Includes English annotation — same as V3'. Best handling of the ambiguous technical term.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr8_code_only",
+      "output": "NO_TRANSLATION_NEEDED",
+      "verdict": "no_translation_needed_correct",
+      "notes": "Guard fired correctly: input is a pure code block with no translatable natural language. V4-only guard behavior confirmed.",
+      "scores": { "accuracy": 5, "naturalness": 5, "preservation_discipline": 5 },
+      "weighted_score": 5.0,
+      "hard_gates": { "no_refusal": true, "code_preservation": true, "no_added_commentary": true },
+      "gates_pass": true
+    }
+  ],
+  "variant_summary": [
+    {
+      "variant": "V0_baseline",
+      "mean_weighted_score": 4.61,
+      "hard_gate_failures": 0,
+      "critical_issues": ["tr6: '기본적으로' mistranslates 'natively'", "tr7: missing English annotation for ambiguous term"],
+      "strengths": ["All hard gates pass", "Idiom correctly mapped"]
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean_weighted_score": 4.66,
+      "hard_gate_failures": 0,
+      "critical_issues": ["tr7: missing English annotation", "tr2/tr6: minor preposition choices"],
+      "strengths": ["All hard gates pass", "Fixed 'natively' vs V0"]
+    },
+    {
+      "variant": "V2_format",
+      "mean_weighted_score": 4.78,
+      "hard_gate_failures": 0,
+      "critical_issues": ["tr7: missing English annotation for ambiguous term"],
+      "strengths": ["Best tr5 phrasing (concise, natural)", "Best tr6 phrasing among V0-V2", "All hard gates pass"]
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean_weighted_score": 4.76,
+      "hard_gate_failures": 0,
+      "critical_issues": ["tr6: unusual word order (date clause splits subject-object)"],
+      "strengths": ["Best tr7 handling (어텐션(attention))", "Concise tr5 ending", "All hard gates pass"]
+    },
+    {
+      "variant": "V4_guard",
+      "mean_weighted_score": 4.76,
+      "hard_gate_failures": 0,
+      "critical_issues": ["tr2: '시간 초과' less natural than '타임아웃' for developer audience"],
+      "strengths": ["NO_TRANSLATION_NEEDED correctly fired on tr3 and tr8", "Best tr6 output", "Best tr7 handling", "All hard gates pass"]
+    }
+  ]
+}

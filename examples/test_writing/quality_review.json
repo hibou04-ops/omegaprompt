@@ -1,0 +1,456 @@
+{
+  "meta": {
+    "reviewer": "claude-sonnet-4-6",
+    "reviewed_at": "2026-04-26",
+    "rubric_weights": {"coverage": 0.4, "test_correctness": 0.4, "minimality": 0.2}
+  },
+  "reviews": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw1_factorial",
+      "verdict": "over_tested",
+      "notes": "Mixes 4 individual tests with a parallel parametrized block covering the same values (0,1,2,3,4,5,6,7). Duplication inflates token count. Error case covered correctly.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 2},
+      "weighted_score": 4.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw2_clamp",
+      "verdict": "over_tested",
+      "notes": "Infinite-float tests are valid (max/min handles them), but duplicating the same boundaries in both named tests and a parametrized block is unnecessary. All functional paths covered.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 2},
+      "weighted_score": 4.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw3_word_count",
+      "verdict": "correct",
+      "notes": "Covers empty, single, multi-word, repeated, case, whitespace, tabs/newlines, whitespace-only, and punctuation-attached. Good coverage. Punctuation test is valid — the function doesn't strip punctuation.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 3},
+      "weighted_score": 4.4,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw4_trivial_one_assert",
+      "verdict": "over_tested",
+      "notes": "4 separate named tests plus a parametrized block — exactly the anti-pattern the reference warns against. Reference says one parametrized test is all that's needed.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 1},
+      "weighted_score": 3.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw5_validate_email",
+      "verdict": "correct",
+      "notes": "Mixes individual tests and parametrized sets but coverage is solid. Valid and invalid sets well-represented.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 3},
+      "weighted_score": 4.2,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw6_remove_negatives",
+      "verdict": "correct",
+      "notes": "All required paths covered: empty, all-positive, all-negative, mixed, zero-kept, mutation check. Clean and correct.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw7_async_fetch",
+      "verdict": "correct",
+      "notes": "Tests success and a single HTTP error path. Uses AsyncMock correctly. Missing explicit 5xx test but the single raises test is sufficient. No fabricated edge cases.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.4,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw8_sort_stable",
+      "verdict": "correct",
+      "notes": "Covers empty, already-sorted, reverse-sorted, stable equal-priorities, and no-mutation. Full coverage of reference requirements.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw1_factorial",
+      "verdict": "correct",
+      "notes": "Covers 0, 1, 5, 10, and the ValueError. No parametrize (reference recommends it) but all values exercised individually. Correct and compact.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw2_clamp",
+      "verdict": "correct",
+      "notes": "Covers within-range, below-lo, above-hi, equal-to-lo, equal-to-hi, lo==hi, and ValueError. Solid coverage without inflation.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw3_word_count",
+      "verdict": "correct",
+      "notes": "Covers simple, repeated, case-insensitive, empty, whitespace-only, and multi-whitespace/tabs/newlines. All reference cases hit.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw4_trivial_one_assert",
+      "verdict": "over_tested",
+      "notes": "Three separate test functions (positive, zero, negative) with no parametrize — exactly what the reference says to avoid for a trivial function like double().",
+      "scores": {"coverage": 3, "test_correctness": 5, "minimality": 1},
+      "weighted_score": 3.4,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw5_validate_email",
+      "verdict": "correct",
+      "notes": "Good use of parametrize for both valid and invalid sets. Wide variety including subdomains, +tag, and boundary TLD lengths.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw6_remove_negatives",
+      "verdict": "correct",
+      "notes": "Covers mixed, all-positive, all-negative, empty, zero-kept, and float values. All paths correct. Float test is valid — function uses >= 0 on numeric values generically.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw7_async_fetch",
+      "verdict": "correct",
+      "notes": "Uses httpx.MockTransport (the preferred approach per reference). Tests success with URL assertion, 404, and 500. Separate 4xx and 5xx tests are useful since both go through raise_for_status().",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw8_sort_stable",
+      "verdict": "correct",
+      "notes": "Covers basic sort, empty, single, stability with mixed priorities, negative priorities, and no-mutation. Thorough and accurate.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw1_factorial",
+      "verdict": "over_tested",
+      "notes": "Both named individual tests and a parametrized block covering overlapping values (0,1 appear in both). Redundant but syntactically fine.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 2},
+      "weighted_score": 4.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw2_clamp",
+      "verdict": "correct",
+      "notes": "Covers within-range, below-lo, above-hi, lo==hi, ValueError, and infinity. Parametrize block partially duplicates named tests. math.inf is a valid float input handled by Python's max/min — not a fabricated edge case.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 3},
+      "weighted_score": 4.2,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw3_word_count",
+      "verdict": "correct",
+      "notes": "Covers empty, single, multi-unique, repeated, case-insensitive, extra-whitespace, tabs/newlines. Good coverage matching reference.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw4_trivial_one_assert",
+      "verdict": "over_tested",
+      "notes": "3 separate named tests plus a parametrized block with 4 cases — duplicate coverage for a trivial function. Anti-pattern per reference.",
+      "scores": {"coverage": 3, "test_correctness": 5, "minimality": 1},
+      "weighted_score": 3.4,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw5_validate_email",
+      "verdict": "correct",
+      "notes": "Two parametrized sets plus a type-check test. test_returns_bool is borderline unnecessary (the regex always returns bool) but not harmful. Coverage solid.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw6_remove_negatives",
+      "verdict": "correct",
+      "notes": "Covers empty, all-positive, all-negative, mixed, zero-kept, and mutation check. Full reference coverage.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw7_async_fetch",
+      "verdict": "correct",
+      "notes": "Uses MockTransport; tests success, 404, 500. Identical to V1_role_terse and V3prime for this item. Good.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw8_sort_stable",
+      "verdict": "correct",
+      "notes": "Covers empty, single, already-sorted, reverse, stability, and no-mutation. Full reference coverage.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw1_factorial",
+      "verdict": "correct",
+      "notes": "Covers 0, 1, 5, 10, and ValueError. Reference asks for parametrize on positive cases; V3prime uses individual functions instead. Coverage is complete; parametrize style is absent but correctness is unaffected.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw2_clamp",
+      "verdict": "missing_coverage",
+      "notes": "Covers within-range, below-lo, above-hi, lo==hi, ValueError. Does NOT test value==lo (boundary at lower edge) or value==hi (boundary at upper edge) explicitly. Reference specifies both. Functional paths partially missing.",
+      "scores": {"coverage": 3, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.2,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw3_word_count",
+      "verdict": "correct",
+      "notes": "Covers basic multi-word, repeated, case-insensitive, empty, and multi-whitespace collapse. All reference cases present.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw4_trivial_one_assert",
+      "verdict": "parametrize_well_used",
+      "notes": "Single parametrized test with (0,0), (3,6), (-4,-8) — exactly what the reference mandates. Minimal and correct.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw5_validate_email",
+      "verdict": "correct",
+      "notes": "Clean parametrized valid/invalid split. 'first.last@example.co' is valid (2-char TLD). 'trailing@example.c' correctly tests 1-char TLD rejection. Coverage matches reference.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw6_remove_negatives",
+      "verdict": "missing_coverage",
+      "notes": "Covers mixed, zero-kept, empty, and all-non-negative. Missing explicit all-negative dict case. Reference requires 'all negative → {}' as a distinct path.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw7_async_fetch",
+      "verdict": "correct",
+      "notes": "Uses MockTransport; tests success (with URL assertion) and one HTTP error. Only one error status tested (404) but that is sufficient — raise_for_status() behavior is the same for all 4xx/5xx.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw8_sort_stable",
+      "verdict": "correct",
+      "notes": "Covers basic ordering, stability with mixed priorities, empty, and single-element. Compact and correct. No mutation test, but the reference doesn't strictly require it for sorted().",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw1_factorial",
+      "verdict": "parametrize_well_used",
+      "notes": "Single parametrized block (0,1,2,5,10) plus separate error test. Exactly what reference recommends. Clean separation of happy-path and error case.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw2_clamp",
+      "verdict": "parametrize_well_used",
+      "notes": "Parametrized block covers within-range, below-lo, above-hi, equal-to-lo, equal-to-hi, float. ValueError in separate test. Full coverage with minimal lines.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw3_word_count",
+      "verdict": "correct",
+      "notes": "Covers basic, repeated, case-insensitive, empty, and whitespace collapse. All reference paths hit.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw4_trivial_one_assert",
+      "verdict": "parametrize_well_used",
+      "notes": "Single parametrized test with (0,0), (1,2), (-3,-6), (1000,2000) — matches reference recommendation exactly. Best approach for this trivial function.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw5_validate_email",
+      "verdict": "correct",
+      "notes": "Two parametrized sets, good variety. 'user name@example.com' tests space in local part. Full coverage.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw6_remove_negatives",
+      "verdict": "correct",
+      "notes": "Covers mixed, zero-kept, empty, all-negative, and all-non-negative. Full reference coverage. No mutation test but dict comprehension guarantees a new dict.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 5.0,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw7_async_fetch",
+      "verdict": "correct",
+      "notes": "Uses MockTransport; tests success and one HTTP error (404). Same as V3prime for this item. Sufficient coverage.",
+      "scores": {"coverage": 4, "test_correctness": 5, "minimality": 5},
+      "weighted_score": 4.6,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw8_sort_stable",
+      "verdict": "correct",
+      "notes": "Covers basic ordering, stability (equal keys), stability (mixed priorities), empty, and single-element. test_sort_by_priority_stable_mixed is an additional valuable stability check beyond V3prime.",
+      "scores": {"coverage": 5, "test_correctness": 5, "minimality": 4},
+      "weighted_score": 4.8,
+      "hard_gates": {"no_refusal": true, "syntactically_valid": true, "no_fabricated_edge_cases": true},
+      "gates_pass": true
+    }
+  ],
+  "variant_summary": [
+    {
+      "variant": "V0_baseline",
+      "mean_tokens": 265.5,
+      "mean_weighted_score": 4.35,
+      "gates_all_pass": true,
+      "over_tested_count": 3,
+      "missing_coverage_count": 0,
+      "fabricated_edge_cases": false
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean_tokens": 194.875,
+      "mean_weighted_score": 4.7,
+      "gates_all_pass": true,
+      "over_tested_count": 1,
+      "missing_coverage_count": 0,
+      "fabricated_edge_cases": false
+    },
+    {
+      "variant": "V2_format",
+      "mean_tokens": 225.625,
+      "mean_weighted_score": 4.475,
+      "gates_all_pass": true,
+      "over_tested_count": 2,
+      "missing_coverage_count": 0,
+      "fabricated_edge_cases": false
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean_tokens": 151.75,
+      "mean_weighted_score": 4.675,
+      "gates_all_pass": true,
+      "over_tested_count": 0,
+      "missing_coverage_count": 2,
+      "fabricated_edge_cases": false
+    },
+    {
+      "variant": "V4_guard",
+      "mean_tokens": 168.25,
+      "mean_weighted_score": 4.875,
+      "gates_all_pass": true,
+      "over_tested_count": 0,
+      "missing_coverage_count": 0,
+      "fabricated_edge_cases": false
+    }
+  ]
+}

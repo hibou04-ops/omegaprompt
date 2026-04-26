@@ -4,7 +4,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-1.1.0-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![PyPI](https://img.shields.io/badge/pypi-1.2.0-blue.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-149%20passing-brightgreen.svg)](tests/)
 [![Providers](https://img.shields.io/badge/providers-anthropic%20%7C%20openai%20%7C%20openai--compatible%20%7C%20local-informational.svg)](#7-provider-adapters)
 [![Schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)

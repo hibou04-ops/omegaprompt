@@ -1,0 +1,44 @@
+cm1_typo_fix_BEGIN
+Fix typo in npm install command in README
+cm1_typo_fix_END
+cm2_feature_add_BEGIN
+Add endpoint to fetch posts by user ID
+
+Adds GET /users/{user_id}/posts endpoint to retrieve a user's posts
+with a configurable limit (default: 20).
+cm2_feature_add_END
+cm3_refactor_BEGIN
+Refactor parse_date to use strptime
+
+Replace manual date string parsing with datetime.strptime for cleaner,
+more concise code.
+cm3_refactor_END
+cm4_perf_fix_BEGIN
+Fix N+1 query in get_posts_with_authors
+
+Replace per-post author lookup with a single batched query, reducing
+database round-trips from N+1 to 2 regardless of post count.
+cm4_perf_fix_END
+cm5_whitespace_BEGIN
+Normalize whitespace in verify function
+
+No functional changes.
+cm5_whitespace_END
+cm6_test_add_BEGIN
+Add tests for clamp edge cases
+
+Cover the case where lo > hi raises ValueError, and verify that values
+below the range are clamped to the lower bound.
+cm6_test_add_END
+cm7_breaking_change_BEGIN
+Require MFA code for login
+
+BREAKING CHANGE: `login()` now requires an `mfa_code` parameter.
+All callers must be updated to pass the user's MFA code.
+cm7_breaking_change_END
+cm8_docs_only_BEGIN
+Document JWT authentication requirements
+
+Add details on the required Authorization header format, token issuance
+via POST /auth/login, and the 24-hour token expiration.
+cm8_docs_only_END

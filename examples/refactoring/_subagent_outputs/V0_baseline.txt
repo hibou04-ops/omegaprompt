@@ -1,0 +1,135 @@
+rf1_nested_if_BEGIN
+```python
+if user is None or not user.is_active or not user.has_permission('read'):
+    return None
+return data
+```
+
+Using guard clauses flattens the nested conditionals into a single early-return check. This reduces indentation, makes the failure conditions explicit, and keeps the happy path at the base level of the function.
+rf1_nested_if_END
+
+rf2_loop_to_comprehension_BEGIN
+```python
+return [n * n for n in numbers]
+```
+rf2_loop_to_comprehension_END
+
+rf3_string_concat_loop_BEGIN
+The original code is O(n²) because each `+=` on a string creates a new string object, copying all previously accumulated characters. Use `str.join()` instead, which is O(n):
+
+```python
+return '\n'.join(lines) + '\n'
+```
+
+If a trailing newline isn't required, simplify further: `return '\n'.join(lines)`.
+
+The `'\n'.join(lines) + '\n'` form is typically the most idiomatic and fastest.
+rf3_string_concat_loop_END
+
+rf4_dict_setdefault_BEGIN
+```python
+d.setdefault(key, []).append(value)
+```
+
+Or, if you're building this dict from scratch and want even cleaner semantics, use `collections.defaultdict`:
+
+```python
+from collections import defaultdict
+d = defaultdict(list)
+d[key].append(value)
+```
+
+Use `setdefault` when you can't change the dict's type. Use `defaultdict` when you control the dict's construction — faster and reads more naturally.
+rf4_dict_setdefault_END
+
+rf5_multiple_returns_BEGIN
+A few options, depending on what you value:
+
+**Option 1 — Table-driven (most maintainable):**
+```python
+def grade(score):
+    thresholds = [(90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')]
+    for cutoff, letter in thresholds:
+        if score >= cutoff:
+            return letter
+    return 'F'
+```
+
+**Option 2 — Single return via `next()`:**
+```python
+def grade(score):
+    thresholds = [(90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')]
+    return next((letter for cutoff, letter in thresholds if score >= cutoff), 'F')
+```
+
+**Option 3 — `bisect` (O(log n), useful for many bands):**
+```python
+from bisect import bisect_right
+
+def grade(score):
+    cutoffs = [60, 70, 80, 90]
+    letters = ['F', 'D', 'C', 'B', 'A']
+    return letters[bisect_right(cutoffs, score)]
+```
+
+A note: the original five-return version is widely considered idiomatic Python and is arguably *clearer* than any of the above for a fixed, small set of bands. "Single return" is a stylistic preference, not a correctness or performance win. I'd recommend Option 1 if the thresholds may change, and otherwise leaving the original as-is.
+rf5_multiple_returns_END
+
+rf6_long_function_extract_BEGIN
+```python
+def validate_order(order):
+    assert 'customer_id' in order, 'missing customer_id'
+    assert order['total'] > 0, 'invalid total'
+    assert order['items'], 'empty items'
+
+
+def process_order(order):
+    validate_order(order)
+    # ... 20 lines of business logic ...
+```
+
+Two further suggestions:
+
+1. **Replace `assert` with explicit exceptions.** `assert` statements are stripped when Python is run with `-O` (optimizations enabled), which would silently disable all your validation in production.
+   ```python
+   def validate_order(order):
+       if 'customer_id' not in order:
+           raise ValueError('missing customer_id')
+       if order['total'] <= 0:
+           raise ValueError('invalid total')
+       if not order['items']:
+           raise ValueError('empty items')
+   ```
+
+2. **Consider a dedicated exception type** (e.g., `class InvalidOrderError(ValueError): ...`) so callers can catch validation failures distinctly from other errors.
+rf6_long_function_extract_END
+
+rf7_already_clean_BEGIN
+This function is already clean — it has a clear signature, type annotations, an explicit precondition check with an informative error message, and a concise idiomatic implementation. There's nothing meaningful to refactor.
+
+A few minor, optional polish ideas:
+
+1. **Use a guard-style docstring** so the contract is discoverable.
+2. **Generalize the type** if you want to support `int` and other ordered numerics — use a `TypeVar` bound to `SupportsRichComparison`, or just `numbers.Real`.
+
+My recommendation: leave it as-is. Refactoring clean code adds risk without benefit.
+rf7_already_clean_END
+
+rf8_replace_lambda_with_def_BEGIN
+Use `operator.attrgetter` — it's the idiomatic replacement for a lambda that just pulls attributes, and it's also faster (implemented in C):
+
+```python
+from operator import attrgetter
+validators = sorted(items, key=attrgetter('priority', 'created_at', 'id'))
+```
+
+If the sort key needs any logic beyond attribute access (e.g., reversing one field, applying a transform), promote the lambda to a named function instead:
+
+```python
+def _sort_key(x):
+    return (x.priority, x.created_at, x.id)
+validators = sorted(items, key=_sort_key)
+```
+
+For this exact case — a tuple of plain attribute lookups — `attrgetter` is the better refactor.
+rf8_replace_lambda_with_def_END

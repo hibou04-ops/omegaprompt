@@ -1,0 +1,665 @@
+{
+  "config": {
+    "items_total": 16,
+    "variants_total": 5,
+    "judge_method": "agent_review"
+  },
+  "per_call": [
+    {
+      "variant_idx": 0,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented empty-input, overflow, modulo adjustment issues. No NO_ISSUE."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug, multiply by 0, fix range(1,n+1)."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource leak, context manager fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection but missed N+1 pattern. Vague performance note only."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found KeyError secondary, missed assert -O stripping (primary)."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found late-binding closure, lambda v=v fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found OBO slicing, items[-n:] fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Named bug is error handling not missing await. Fix code incidentally adds await."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, safe fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented error message clarity and None type edge cases. No NO_ISSUE."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [
+        "no_fabricated_claims"
+      ],
+      "notes": "Invents false math: modulo-per-step obscures cumulative differences vs at-end. Both are equivalent. Fabricated bug with false reasoning."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug, multiply by 0, fix range(1,n+1)."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource leak, context manager fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection but missed N+1 query pattern."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found KeyError secondary, missed assert -O stripping (primary)."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found late-binding closure, all print 3, lambda v=v fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found OBO index issue, items[-n:] fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Named bug is error handling, not missing await. Fix incidentally adds await."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, list-of-keys fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented lo==hi edge case as logical issue. Clamp handles this correctly."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented empty-data handling issue. Returns 0 for empty bytes is correct behavior."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug, fix range(1,n+1)."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c4_file_leak",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Primary issue named as missing mode specifier, not resource leak. Fix correct but root cause wrong."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection but missed N+1 pattern."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Added type checks only. Missed assert -O stripping (primary) and KeyError ordering."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c9_late_binding",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Misidentified problem as values mutation. Proposed fix (nested def) still has same late-binding bug."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Framed as n-exceeds-len only. Missed core -1 OBO (returns n+1 items). Fix correct."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, os.listdir fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Named issue is error handling. Missing await not identified. Fix incidentally adds await."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, list-of-keys fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented clarity/edge-case issue. Proposed error message modification. Strict: any invented issue = fabricated."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invents empty input and overflow issues before NO_ISSUE on core logic. Strict: any invented issue = fabricated."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug, multiply by 0 for n>0, fix range(1,n+1)."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, non-atomic increment, threading.Lock fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource leak from lack of explicit close, context manager fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection but missed N+1 query antipattern."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found KeyError secondary. Missed assert -O stripping (primary)."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c9_late_binding",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Claims no issue for immutable integers. Wrong: all print 3 regardless of type."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Focused on n>len edge case, not the -1 OBO. Fix correct but root cause explanation off."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Describes bug as state being lost (wrong: state accumulates). Opposite direction from actual bug."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Explicitly identified missing await. Cited specific line. async-with + await fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, dict comprehension fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented error message clarity issue. Strict: any invented issue = fabricated."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Mentions empty-data issue before NO_ISSUE. Strict: any invented issue = fabricated."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found bug. Fix i+1 over range(n) is valid (1..n). Also range(1,n+1) version provided."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c4_file_leak",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Primary issue named as missing mode specifier. Resource leak is real primary bug. Context manager mentioned but not as main fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection but missed N+1 pattern."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Only focused on items structure. Missed assert -O stripping and KeyError ordering."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c9_late_binding",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Claims no issue for immutable integers. Wrong: all print 3. Explicitly says NO_ISSUE."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Framed as bounds-checking issue, missed -1 OBO (returns n+1 items). Fix correct."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, os.listdir fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Named issue is error handling, not missing await. Fix incidentally adds await."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, list-of-keys fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t6_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly said NO_ISSUE for clean code."
+    }
+  ],
+  "per_variant": [
+    {
+      "variant_idx": 0,
+      "verdicts": {
+        "correct": 11,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 1,
+        "partial": 2
+      },
+      "buggy_precision": 0.7857,
+      "buggy_recall": 0.7857,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Verbose (avg ~600 tok). Correctly catches most bugs but fabricates on both clean items. Consistently misses assert-O stripping and t4 missing await primary cause."
+    },
+    {
+      "variant_idx": 1,
+      "verdicts": {
+        "correct": 11,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 1,
+        "partial": 2
+      },
+      "buggy_precision": 0.7857,
+      "buggy_recall": 0.7857,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 1,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Focused style. Similar recall to V0 but shorter. V1 c10 is unique: invents false mathematical claim about modulo equivalence -- a hard no_fabricated_claims violation. Both clean items fabricated."
+    },
+    {
+      "variant_idx": 2,
+      "verdicts": {
+        "correct": 8,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 2,
+        "partial": 4
+      },
+      "buggy_precision": 0.5714,
+      "buggy_recall": 0.5714,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Compact output_format style. Lowest token count. c9 wrong root cause (proposed fix still broken). c4 misidentifies root cause. Still fabricates on both clean items."
+    },
+    {
+      "variant_idx": 3,
+      "verdicts": {
+        "correct": 9,
+        "missed": 1,
+        "fabricated": 2,
+        "wrong_root_cause": 1,
+        "partial": 3
+      },
+      "buggy_precision": 0.6923,
+      "buggy_recall": 0.6429,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Verbose with NO_ISSUE codas. Only variant to correctly find t4 missing await. But c9 and t2 mutable_default_dict wrong. Both clean items fabricated."
+    },
+    {
+      "variant_idx": 4,
+      "verdicts": {
+        "correct": 9,
+        "missed": 1,
+        "fabricated": 1,
+        "wrong_root_cause": 1,
+        "partial": 4
+      },
+      "buggy_precision": 0.6154,
+      "buggy_recall": 0.5714,
+      "clean_false_positive_rate": 0.5,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Hybrid NO_ISSUE variant. Correctly handles t6 (bare NO_ISSUE). Still fabricates on c10. c9 missed entirely. Most concise among verbose variants."
+    }
+  ],
+  "summary": [
+    "Best overall variant: V0 (buggy_precision=0.786, buggy_recall=0.786, clean_fpr=1.0, 0 hard-gate violations). V0 and V1 are tied on recall/precision but V1 has a unique no_fabricated_claims violation (false math on c10), making V0 the cleanest single answer.",
+    "V4 (NO_ISSUE hybrid) partially handles clean code: correctly emits bare NO_ISSUE for t6_clean_code but still fabricates on c10_clean_code (hedges with an invented empty-bytes concern before the NO_ISSUE coda). Clean FPR is 0.5, the best of any variant, but not a clean win.",
+    "All 5 variants fabricate on c10_clean_code (checksum). The universal trigger is the empty-bytes edge case -- the model invents an issue (returning 0 for empty input) that is mathematically correct behavior.",
+    "c9_late_binding is the most inconsistently handled buggy item: V3 and V4 explicitly mark NO_ISSUE (wrong, bug is real), V2 proposes a broken fix, V0 and V1 correctly identify and fix it.",
+    "t4_forgotten_await (missing await) is systematically mislabeled as an error-handling gap by V0/V1/V2/V4; only V3 explicitly names the missing await as the root cause.",
+    "c6_ordered_check: assert -O stripping (assert disabled by python -O) is the primary bug per reference. Zero variants identified it; all treated the KeyError ordering issue as the primary concern, resulting in partial scores across the board.",
+    "c5_n_plus_1: all variants found the SQL injection issue but none explicitly identified the N+1 query antipattern (N separate DB round trips), resulting in universal partial scores.",
+    "V1 c10 is the only no_fabricated_claims hard-gate violation: it invents a false mathematical claim that modulo-per-step obscures cumulative differences versus modulo-at-end (the two are arithmetically equivalent).",
+    "Quality vs token tradeoff is real: V2 (compact ~100-200 tok/review) has the most wrong_root_cause errors and lowest precision (0.571). Verbose V0/V1 (~500-700 tok) achieve 0.786 on both metrics but token cost is 3-5x higher.",
+    "No variant achieved a clean false-positive rate below 0.5. The 7B model has a systematic tendency to over-review clean code, inventing minor style/edge-case issues rather than confidently saying NO_ISSUE."
+  ]
+}

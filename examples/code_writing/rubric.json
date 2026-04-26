@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "correctness",
+      "description": "Does the code correctly solve the task as specified? High = produces the right output for typical inputs and handles documented edge cases. Low = wrong logic, missing required behavior, or doesn't compile/run.",
+      "weight": 0.5,
+      "scale": [1, 5]
+    },
+    {
+      "name": "conciseness",
+      "description": "Is the code minimal — no unnecessary lines, no over-engineering, no helper functions where an inline expression works? High = the shortest correct expression. Low = padded with unneeded boilerplate, defensive code for impossible errors, or excessive abstraction.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "no_fabricated_apis",
+      "description": "Does the code reference only real library functions? High = uses verified stdlib/well-known third-party APIs correctly. Low = invents non-existent functions (e.g., `email.is_valid()`, `os.read_json()`) or misuses real ones.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must attempt the task. Empty responses, refusals, or off-topic deflections fail this gate.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "syntactically_valid",
+      "description": "The code must be syntactically valid in the named language (parses without SyntaxError). Pseudocode, broken indentation, or unclosed brackets fail this gate.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_unnecessary_comments",
+      "description": "The code must NOT include comments for obvious operations (e.g., `# initialize result to 1`, `# return the result`). Only non-obvious WHY is acceptable. Verbose docstrings on trivial functions fail this gate.",
+      "evaluator": "judge"
+    }
+  ]
+}

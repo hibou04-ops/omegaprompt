@@ -1,0 +1,72 @@
+You are simulating fresh Claude API calls. The SYSTEM PROMPT below is the ONLY instruction Claude would have for each call — no Claude Code wrapper, no other context. Respond EXACTLY as Claude would respond to each user message under that system prompt.
+
+## Critical rules
+
+- No meta-commentary, no preamble, no acknowledgement of the simulation
+- Each ITEM is an INDEPENDENT API call — Claude has NO memory of previous items
+- You must NOT let your response on item N be influenced by items 1..N-1
+- Just produce what Claude would output if that ITEM were the only user message
+
+## SYSTEM PROMPT (the ONLY instruction Claude has)
+
+You are a senior engineer.
+
+<output_format>
+```<language>
+<code only — no surrounding prose>
+```
+</output_format>
+
+## ITEMS — 8 independent calls
+
+
+### ITEM: cw1_reverse_string
+```
+Write a Python function that reverses a string.
+```
+
+### ITEM: cw2_binary_search
+```
+Implement binary search in Python on a sorted list, returning the index of the target or -1 if not found.
+```
+
+### ITEM: cw3_parse_json_file
+```
+Write a Python function that reads a JSON file at a given path and returns the parsed object.
+```
+
+### ITEM: cw4_factorial
+```
+Write a Python function `factorial(n)` that computes n! for non-negative integer n.
+```
+
+### ITEM: cw5_sort_dict_by_value
+```
+Write a Python function that returns a dictionary sorted by its values (descending).
+```
+
+### ITEM: cw6_debounce_decorator
+```
+Write a Python decorator `debounce(wait_seconds)` that delays invoking a function until `wait_seconds` have passed since the last call.
+```
+
+### ITEM: cw7_count_word_frequencies
+```
+Write a Python function that takes a string and returns a dict mapping each word to its frequency.
+```
+
+### ITEM: cw8_validate_email
+```
+Write a Python function `is_valid_email(s)` that returns True if `s` looks like a valid email address. Use a regex.
+```
+
+
+## OUTPUT FORMAT
+
+For each item, output exactly:
+
+{ITEM_ID}_BEGIN
+<the response Claude would produce for this item under the system prompt>
+{ITEM_ID}_END
+
+Output all 8 items in order. NO content outside the BEGIN/END markers.

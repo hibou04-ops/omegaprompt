@@ -1,0 +1,238 @@
+t1_off_by_one_slice_BEGIN
+**Line 2:** `return items[len(items) - n - 1:]`
+
+**Bug:** Off-by-one error. The slice index is `len(items) - n - 1`, which returns `n + 1` items instead of `n`. For example, `last_n([1,2,3,4,5], 2)` returns `[3,4,5]` instead of `[4,5]`.
+
+**Fix:** Use Python's negative indexing, which also handles `n=0` and `n > len(items)` correctly:
+
+```python
+def last_n(items, n):
+    return items[-n:] if n > 0 else []
+```
+
+Note the guard: `items[-0:]` is equivalent to `items[0:]`, which returns the entire list — not an empty one. The conditional handles `n == 0` correctly.
+t1_off_by_one_slice_END
+
+t2_mutable_default_dict_BEGIN
+**Line 1:** `def greet(name, history={}):`
+
+**Bug:** Mutable default argument. The `history={}` dict is created **once** at function-definition time and shared across all calls that don't pass `history` explicitly. Visit counts will accumulate across unrelated callers, leaking state and producing surprising results.
+
+**Fix:** Use `None` as the sentinel and create a fresh dict inside the function:
+
+```python
+def greet(name, history=None):
+    if history is None:
+        history = {}
+    history[name] = history.get(name, 0) + 1
+    return f"Hello {name}, visit #{history[name]}"
+```
+t2_mutable_default_dict_END
+
+t3_command_injection_BEGIN
+**Line 4:** `f"ls {directory}"` passed with `shell=True`.
+
+**Bug:** Shell command injection. `directory` is attacker-controlled (web form). An input like `.; rm -rf ~` will be executed by the shell. This is a critical RCE vulnerability.
+
+**Fix:** Drop `shell=True` and pass arguments as a list. Better: skip the subprocess entirely and use `os.listdir`/`pathlib`:
+
+```python
+import os
+def list_files(directory):
+    return "\n".join(os.listdir(directory))
+```
+t3_command_injection_END
+
+t4_forgotten_await_BEGIN
+**Line 4:** `response = httpx.AsyncClient().get(...)` — and **line 5:** `response.json()`.
+
+**Bugs:**
+1. **Missing `await`.** `AsyncClient.get()` returns a coroutine; `response` is the coroutine object, not a `Response`. Calling `.json()` on it raises `AttributeError`.
+2. **Leaked client.** `httpx.AsyncClient()` is never closed, leaking the underlying connection pool.
+
+**Fix:**
+
+```python
+async def fetch_user(user_id):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"/users/{user_id}")
+        return response.json()
+```
+t4_forgotten_await_END
+
+t5_dict_iter_mutation_BEGIN
+**Line 2-4:** Iterating `for key in d:` while `del d[key]` mutates `d`.
+
+**Bug:** Mutating a dict during iteration raises `RuntimeError: dictionary changed size during iteration` on the next loop step.
+
+**Fix:** Iterate over a snapshot of the keys, or build a new dict:
+
+```python
+def remove_negatives(d):
+    return {k: v for k, v in d.items() if v >= 0}
+```
+t5_dict_iter_mutation_END
+
+t6_clean_code_BEGIN
+No bugs. The function is correct, well-typed, and handles the degenerate `lo > hi` case explicitly with a clear error message. `max(lo, min(value, hi))` is the standard idiom for clamping. Ship it.
+t6_clean_code_END
+
+c1_factorial_BEGIN
+**Line 3:** `for i in range(n):` starts at `i=0`, so `result *= 0` on the first iteration — `factorial(n)` always returns `0` for `n >= 1`.
+
+**Fix:**
+
+```python
+def factorial(n):
+    if n < 0:
+        raise ValueError("factorial is undefined for negative integers")
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+```
+c1_factorial_END
+
+c2_counter_race_BEGIN
+**Line 6:** `self.count += 1`
+
+**Bug:** Race condition. `+=` is not atomic — it compiles to a load, an add, and a store. The interpreter can switch threads between bytecodes, so concurrent increments can be lost.
+
+**Fix:**
+
+```python
+import threading
+
+class Counter:
+    def __init__(self):
+        self.count = 0
+        self._lock = threading.Lock()
+
+    def increment(self):
+        with self._lock:
+            self.count += 1
+```
+c2_counter_race_END
+
+c3_sql_injection_BEGIN
+**Line 1:** `cursor.execute("SELECT * FROM users WHERE name = '" + user_input + "'")`
+
+**Bug:** SQL injection. `user_input` is concatenated directly into the query, so input like `'; DROP TABLE users; --` lets an attacker run arbitrary SQL.
+
+**Fix:** Use a parameterized query:
+
+```python
+cursor.execute("SELECT * FROM users WHERE name = ?", (user_input,))
+```
+c3_sql_injection_END
+
+c4_file_leak_BEGIN
+**Line 2:** `f = open(path)`
+
+**Bugs:**
+1. File handle leak — `f` is never closed.
+2. Implicit text mode + default encoding silently corrupts non-ASCII data.
+
+**Fix:**
+
+```python
+def process_file(path):
+    with open(path, "r", encoding="utf-8") as f:
+        return f.read()
+```
+c4_file_leak_END
+
+c5_n_plus_1_BEGIN
+**Line 3:** `db.query(f"SELECT * FROM posts WHERE user_id = {u.id}")`
+
+1. **N+1 query.** One additional SQL round-trip per user.
+2. **SQL injection.** `u.id` is interpolated into the query string.
+
+**Fix:** Fetch all posts in a single query:
+
+```python
+from collections import defaultdict
+def get_users_with_posts(users):
+    user_ids = [u.id for u in users]
+    placeholders = ",".join(["?"] * len(user_ids))
+    rows = db.query(f"SELECT * FROM posts WHERE user_id IN ({placeholders})", user_ids)
+    posts_by_user = defaultdict(list)
+    for row in rows:
+        posts_by_user[row.user_id].append(row)
+    return [{"user": u, "posts": posts_by_user[u.id]} for u in users]
+```
+c5_n_plus_1_END
+
+c6_ordered_check_BEGIN
+**Lines 2-4:**
+1. **`assert` for input validation is unsafe.** `python -O` strips assert statements.
+2. **Order of checks is wrong / can `KeyError`.** Line 2 reads `order['total']` before line 3 confirms required keys exist.
+
+**Fix:**
+
+```python
+def validate_order(order: dict) -> None:
+    for field in ("customer_id", "total", "items"):
+        if field not in order:
+            raise ValueError(f"missing required field: {field}")
+    if order["total"] <= 0:
+        raise ValueError(f"total must be positive, got {order['total']!r}")
+    if not order["items"]:
+        raise ValueError("items must be non-empty")
+```
+c6_ordered_check_END
+
+c7_concat_loop_BEGIN
+**Lines 3-4:** `result += line + '\n'` inside the loop.
+
+**Bug:** Quadratic-time string concatenation. CPython has an optimization that sometimes makes this in-place, but it's fragile and absent on other implementations.
+
+**Fix:** Use `str.join`:
+
+```python
+def join_lines(lines):
+    return '\n'.join(lines) + '\n'
+```
+c7_concat_loop_END
+
+c8_mutable_default_BEGIN
+**Line 1:** `def add_event(event: str, log: list = []) -> list:`
+
+**Bug:** Mutable default argument. The `[]` is created once at function-definition time and shared across every call that doesn't pass `log` explicitly.
+
+**Fix:**
+
+```python
+def add_event(event: str, log: list | None = None) -> list:
+    if log is None:
+        log = []
+    log.append(event)
+    return log
+```
+c8_mutable_default_END
+
+c9_late_binding_BEGIN
+**Line 4:** `callbacks.append(lambda: print(v))`
+
+**Bug:** Late binding of closure variables. The lambda captures `v` by reference, not by value. All three callbacks print `3`.
+
+**Fix:** Bind `v` as a default argument:
+
+```python
+def make_callbacks(values):
+    callbacks = []
+    for v in values:
+        callbacks.append(lambda v=v: print(v))
+    return callbacks
+```
+c9_late_binding_END
+
+c10_clean_code_BEGIN
+No bugs. The function is correct: it computes the sum of all bytes modulo 256, which is a valid (if weak) checksum.
+
+Minor, optional notes:
+- **Performance:** for large inputs, `sum(data) % 256` is faster.
+- **Strength:** as a security check, an additive 8-bit sum is trivially forgeable.
+
+Code itself is fine.
+c10_clean_code_END

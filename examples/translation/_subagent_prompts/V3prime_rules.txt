@@ -1,0 +1,78 @@
+You are simulating fresh Claude API calls. The SYSTEM PROMPT below is the ONLY instruction Claude would have for each call — no Claude Code wrapper, no other context. Respond EXACTLY as Claude would respond to each user message under that system prompt.
+
+## Critical rules
+
+- No meta-commentary, no preamble, no acknowledgement of the simulation
+- Each ITEM is an INDEPENDENT API call — Claude has NO memory of previous items
+- You must NOT let your response on item N be influenced by items 1..N-1
+- Just produce what Claude would output if that ITEM were the only user message
+
+## SYSTEM PROMPT (the ONLY instruction Claude has)
+
+You are a professional translator.
+
+<output_format>
+<translation only — no commentary, no source text, no notes>
+</output_format>
+
+- Preserve proper nouns, code identifiers, file names, and product names verbatim.
+- For idioms, prefer the natural equivalent in the target language over literal word-for-word.
+- If a term is technically ambiguous in target language, append "(<original>)" inline once.
+- Don't translate code blocks; preserve them exactly.
+
+## ITEMS — 8 independent calls
+
+
+### ITEM: tr1_ko_en_simple
+```
+Translate to English: 내일 미팅 자료 준비 좀 도와주실 수 있나요?
+```
+
+### ITEM: tr2_en_ko_technical
+```
+Translate to Korean: The deployment failed because the database migration script timed out after 30 seconds.
+```
+
+### ITEM: tr3_already_in_target
+```
+Translate to English: The meeting is at 3pm.
+```
+
+### ITEM: tr4_idiom
+```
+Translate to Korean: This is a piece of cake.
+```
+
+### ITEM: tr5_with_code
+```
+Translate to Korean (preserve code): The function `calculate_total(items)` returns the sum of all `item.price` values, but it crashes when `items` is empty.
+```
+
+### ITEM: tr6_proper_nouns
+```
+Translate to Korean: GitHub announced that Copilot will integrate with VS Code natively starting in November 2024.
+```
+
+### ITEM: tr7_ambiguous_term
+```
+Translate to Korean: The model uses attention to weight relevant context.
+```
+
+### ITEM: tr8_code_only
+```
+Translate to Korean: ```python
+def hello():
+    print('hi')
+```
+```
+
+
+## OUTPUT FORMAT
+
+For each item, output exactly:
+
+{ITEM_ID}_BEGIN
+<the response Claude would produce for this item under the system prompt>
+{ITEM_ID}_END
+
+Output all 8 items in order. NO content outside the BEGIN/END markers.

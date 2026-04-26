@@ -1,0 +1,32 @@
+db1_zero_division_BEGIN
+Root cause: `len(xs)` is 0 when `xs` is empty, causing division by zero.
+Fix: Guard the empty case, e.g. `return sum(xs) / len(xs) if xs else 0`.
+db1_zero_division_END
+db2_keyerror_BEGIN
+Root cause: The parsed JSON payload has no `'email'` key.
+Fix: Use `.get` with a default, e.g. `return (user_data.get('email') or '').lower()`.
+db2_keyerror_END
+db3_typerror_concat_BEGIN
+Root cause: `age` is an `int`, which can't be concatenated to a `str` with `+`.
+Fix: Convert it, e.g. `return f'Hello {name}, you are {age}'`.
+db3_typerror_concat_END
+db4_late_binding_loop_BEGIN
+Root cause: Lambdas capture `i` by reference; all read its final value (3) after the loop.
+Fix: Bind via default argument, e.g. `fns.append(lambda i=i: i)`.
+db4_late_binding_loop_END
+db5_off_by_one_range_BEGIN
+Root cause: `range(1, 10)` stops before 10 (stop is exclusive).
+Fix: Use `range(1, 11)`.
+db5_off_by_one_range_END
+db6_mutating_during_iter_BEGIN
+Root cause: Deleting keys from `d` while iterating over it mutates the dict mid-iteration.
+Fix: Iterate over a snapshot, e.g. `for k in list(d): if d[k] is None: del d[k]`.
+db6_mutating_during_iter_END
+db7_async_no_await_BEGIN
+Root cause: `AsyncClient().get(...)` returns a coroutine, not a `Response`; it was never awaited.
+Fix: Await it inside an async context, e.g. `async with httpx.AsyncClient() as c: result = await c.get('/api/x')`.
+db7_async_no_await_END
+db8_ambiguous_no_repro_BEGIN
+Root cause: Insufficient information — no reproducer, profile, or trace to localize the slowdown.
+Fix: Capture a profile (e.g. `cProfile`/`py-spy`) and timing logs on a reproducible run, then share the hotspots.
+db8_ambiguous_no_repro_END

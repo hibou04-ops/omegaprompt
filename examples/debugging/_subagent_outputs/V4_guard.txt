@@ -1,0 +1,38 @@
+db1_zero_division_BEGIN
+Root cause: `len(xs)` is 0 when `xs` is an empty list, causing division by zero.
+Fix: Guard against empty input, e.g. `return sum(xs) / len(xs) if xs else 0` (or raise a clearer error).
+db1_zero_division_END
+
+db2_keyerror_BEGIN
+Root cause: The parsed JSON payload has no `'email'` key.
+Fix: Use `.get('email')` and handle the missing case, e.g. `email = user_data.get('email'); return email.lower() if email else None`.
+db2_keyerror_END
+
+db3_typerror_concat_BEGIN
+Root cause: `age` is an `int` and Python won't implicitly concatenate it with `str`.
+Fix: Convert `age` to a string, e.g. `return 'Hello ' + name + ', you are ' + str(age)` (or use an f-string).
+db3_typerror_concat_END
+
+db4_late_binding_loop_BEGIN
+Root cause: Python closures capture variables by reference, not by value, so each lambda reads `i` after the loop ends (i == 3).
+Fix: Bind `i` at lambda definition time via a default argument: `fns.append(lambda i=i: i)`.
+db4_late_binding_loop_END
+
+db5_off_by_one_range_BEGIN
+Root cause: `range(1, 10)` stops before 10 because the stop value is exclusive.
+Fix: Use `range(1, 11)`.
+db5_off_by_one_range_END
+
+db6_mutating_during_iter_BEGIN
+Root cause: Deleting keys from `d` while iterating over it mutates the dict's size during iteration.
+Fix: Iterate over a snapshot of the keys, e.g. `for k in list(d): if d[k] is None: del d[k]`.
+db6_mutating_during_iter_END
+
+db7_async_no_await_BEGIN
+Root cause: `httpx.AsyncClient().get(...)` returns a coroutine, not a `Response`; coroutines have no `.json()` method.
+Fix: Await it inside an async function and use the client as a context manager, e.g. `async with httpx.AsyncClient() as c: result = await c.get('/api/x'); result.json()`.
+db7_async_no_await_END
+
+db8_ambiguous_no_repro_BEGIN
+INSUFFICIENT_INFO: no code, no reproducer, no profiling/timing data, no description of the workload, environment, or what "slow sometimes" means (latency vs throughput, frequency, inputs that trigger it).
+db8_ambiguous_no_repro_END

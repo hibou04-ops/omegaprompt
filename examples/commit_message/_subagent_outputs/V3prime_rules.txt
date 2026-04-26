@@ -1,0 +1,40 @@
+cm1_typo_fix_BEGIN
+docs(readme): fix typo in npm install command
+cm1_typo_fix_END
+
+cm2_feature_add_BEGIN
+feat(api): add endpoint to fetch posts for a user
+cm2_feature_add_END
+
+cm3_refactor_BEGIN
+refactor(utils): use strptime for date parsing
+
+Replaces manual split/int parsing with strptime, which handles
+validation and conversion in a single call.
+cm3_refactor_END
+
+cm4_perf_fix_BEGIN
+perf(posts): batch author lookup to avoid N+1 queries
+
+Fetch all authors in a single query keyed by id instead of
+issuing one query per post.
+cm4_perf_fix_END
+
+cm5_whitespace_BEGIN
+style(auth): normalize whitespace in verify
+cm5_whitespace_END
+
+cm6_test_add_BEGIN
+test(clamp): cover invalid bounds and below-range value
+cm6_test_add_END
+
+cm7_breaking_change_BEGIN
+feat(auth)!: require mfa_code in login
+
+BREAKING CHANGE: login() now requires an mfa_code argument;
+existing callers must be updated to pass it.
+cm7_breaking_change_END
+
+cm8_docs_only_BEGIN
+docs(api): document JWT authentication header and token lifetime
+cm8_docs_only_END

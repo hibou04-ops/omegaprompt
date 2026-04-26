@@ -1,0 +1,56 @@
+cm1_typo_fix_BEGIN
+Fix typo in npm install command in README
+cm1_typo_fix_END
+
+cm2_feature_add_BEGIN
+Add endpoint to fetch posts by user ID
+
+Exposes `GET /users/{user_id}/posts` with a configurable `limit`
+(default 20) so clients can retrieve a user's posts without
+filtering the full posts collection client-side.
+cm2_feature_add_END
+
+cm3_refactor_BEGIN
+Simplify parse_date using strptime
+
+Replace manual split/int parsing with `datetime.strptime`. The
+stdlib parser already validates the `YYYY-MM-DD` format and
+raises `ValueError` on bad input, so the hand-rolled logic was
+redundant.
+cm3_refactor_END
+
+cm4_perf_fix_BEGIN
+Fix N+1 query in get_posts_with_authors
+
+Previously fetched each post's author with a separate query,
+producing N+1 round-trips. Now collect distinct author IDs and
+load them in a single `WHERE id = ANY($1)` query, then join
+in memory.
+cm4_perf_fix_END
+
+cm5_whitespace_BEGIN
+Normalize whitespace in verify()
+cm5_whitespace_END
+
+cm6_test_add_BEGIN
+Add tests for clamp edge cases
+
+Cover the `lo > hi` validation error and the below-range
+clamping behavior, which were previously untested.
+cm6_test_add_END
+
+cm7_breaking_change_BEGIN
+Require MFA code for login
+
+BREAKING CHANGE: `login()` now takes a mandatory `mfa_code`
+argument. All callers must be updated to pass the user's
+current MFA token; logins without MFA are no longer accepted.
+cm7_breaking_change_END
+
+cm8_docs_only_BEGIN
+Document JWT authentication requirements
+
+Describe the `Authorization: Bearer <token>` header, point
+readers to `POST /auth/login` for token issuance, and note
+the 24-hour expiry.
+cm8_docs_only_END

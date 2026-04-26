@@ -1,0 +1,26 @@
+cm1_typo_fix_BEGIN
+docs(readme): fix typo in install command
+cm1_typo_fix_END
+cm2_feature_add_BEGIN
+feat(api): add endpoint to list posts by user
+cm2_feature_add_END
+cm3_refactor_BEGIN
+refactor(utils): simplify parse_date using strptime
+cm3_refactor_END
+cm4_perf_fix_BEGIN
+perf(posts): batch author lookup to avoid N+1 queries
+cm4_perf_fix_END
+cm5_whitespace_BEGIN
+style(auth): normalize whitespace in verify
+cm5_whitespace_END
+cm6_test_add_BEGIN
+test(clamp): cover invalid range and below-range inputs
+cm6_test_add_END
+cm7_breaking_change_BEGIN
+feat(auth)!: require mfa_code parameter in login
+
+BREAKING CHANGE: login() now requires an mfa_code argument; existing callers must supply the user's MFA code.
+cm7_breaking_change_END
+cm8_docs_only_BEGIN
+docs(api): document JWT authentication header and token lifetime
+cm8_docs_only_END

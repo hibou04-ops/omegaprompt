@@ -1,0 +1,287 @@
+{
+  "task": "debugging",
+  "config": {
+    "method": "opus_subagent_simulation",
+    "n_items": 8,
+    "n_variants": 5
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 82.875,
+      "sum": 663,
+      "min": 43,
+      "max": 137
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 65.625,
+      "sum": 525,
+      "min": 36,
+      "max": 120
+    },
+    {
+      "variant": "V2_format",
+      "mean": 46.75,
+      "sum": 374,
+      "min": 32,
+      "max": 57
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 65.875,
+      "sum": 527,
+      "min": 44,
+      "max": 101
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 53.75,
+      "sum": 430,
+      "min": 34,
+      "max": 74
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "db1_zero_division",
+      "tokens": 104,
+      "text": "The bug: `average([])` is called with an empty list. `len(xs)` returns `0`, and `sum([]) / 0` raises `ZeroDivisionError`.\n\nFix: Handle the empty-list case explicitly.\n\n```python\ndef average(xs):\n    if not xs:\n        raise ValueError(\"average() arg is an empty sequence\")\n    return sum(xs) / len(xs)\n```\n\nPick the empty-input behavior that fits your domain (raise, return `None`, `0`, or `nan`)."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db2_keyerror",
+      "tokens": 66,
+      "text": "The bug: the parsed JSON object has no `'email'` key. Either the payload is missing the field, the field is named differently, or it's nested.\n\nFix:\n```python\nemail = user_data.get('email')\nif email is None:\n    raise ValueError(\"payload missing 'email'\")\nreturn email.lower()\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db3_typerror_concat",
+      "tokens": 55,
+      "text": "The bug: `age` is `int`, can't be concatenated with `+` to a `str`. Convert `age`.\n\nFix (idiomatic):\n```python\ndef greet(name, age):\n    return f'Hello {name}, you are {age}'\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db4_late_binding_loop",
+      "tokens": 75,
+      "text": "The bug: Python closures capture variables by reference. Each lambda closes over the same `i`; after the loop `i == 3`, so all return `3`.\n\nFix: bind `i` at definition time via default argument.\n```python\nfns = []\nfor i in range(1, 4):\n    fns.append(lambda i=i: i)\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db5_off_by_one_range",
+      "tokens": 43,
+      "text": "The bug: `range(start, stop)` is half-open — excludes `stop`. So `range(1, 10)` yields 1..9.\n\nFix: `range(1, 11)`."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db6_mutating_during_iter",
+      "tokens": 77,
+      "text": "The bug: can't add or remove keys from a dict while iterating — raises RuntimeError.\n\nFix: iterate over a snapshot of the keys.\n```python\nfor k in list(d):\n    if d[k] is None:\n        del d[k]\n```\nOr rebuild: `d = {k: v for k, v in d.items() if v is not None}`."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db7_async_no_await",
+      "tokens": 106,
+      "text": "The bug: `httpx.AsyncClient().get(...)` is a coroutine, not a Response. Never awaited, so `result` is a coroutine object — no `.json()`, hence AttributeError.\n\nTwo fixes needed: `await` the call, and use `AsyncClient` as a context manager.\n```python\nasync with httpx.AsyncClient() as client:\n    response = await client.get('/api/x')\n    return response.json()\n```\nFor sync, use `httpx.Client` or `httpx.get`."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "db8_ambiguous_no_repro",
+      "tokens": 137,
+      "text": "\"Slow sometimes\" without repro is not debuggable as-is. Need data:\n1. What \"slow\" means (latency p50/p95/p99, throughput?)\n2. When it happens (load? time of day? specific input?)\n3. Reproducer (smallest input/sequence that triggers it)\n4. Profile (cProfile / py-spy) for slow vs fast runs\n5. Environment (runtime, hardware, neighbors)\n\nCommon culprits: GC pauses, GIL contention, N+1 queries, cold caches, I/O variance, swap, quadratic algorithms, hot-path logging.\n\nSend a profile from one slow run vs one fast run."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db1_zero_division",
+      "tokens": 75,
+      "text": "**Root cause:** `len(xs)` is `0` when `xs` is empty, so `sum(xs) / len(xs)` divides by zero.\n\n**Minimal fix:** Guard the empty case.\n```python\ndef average(xs):\n    if not xs:\n        raise ValueError(\"average() arg is an empty sequence\")\n    return sum(xs) / len(xs)\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db2_keyerror",
+      "tokens": 59,
+      "text": "**Root cause:** The decoded JSON object has no `'email'` key.\n\n**Minimal fix:** Use `.get()` and handle the missing case.\n```python\nemail = user_data.get('email')\nif not email:\n    raise ValueError(\"payload missing 'email'\")\nreturn email.lower()\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db3_typerror_concat",
+      "tokens": 54,
+      "text": "**Root cause:** `age` is an `int`; Python's `+` won't implicitly coerce numbers to `str`.\n\n**Minimal fix:**\n```python\ndef greet(name, age):\n    return f'Hello {name}, you are {age}'\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db4_late_binding_loop",
+      "tokens": 59,
+      "text": "**Root cause:** Python closures capture variables by reference. All lambdas close over the same `i`; after the loop `i == 3`.\n\n**Minimal fix:**\n```python\nfor i in range(1, 4):\n    fns.append(lambda i=i: i)\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db5_off_by_one_range",
+      "tokens": 36,
+      "text": "**Root cause:** `range(start, stop)` is half-open — yields up to but not including `stop`.\n\n**Minimal fix:** `range(1, 11)`."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db6_mutating_during_iter",
+      "tokens": 56,
+      "text": "**Root cause:** Mutating `d` via `del d[k]` while iterating its view — CPython raises `RuntimeError`.\n\n**Minimal fix:**\n```python\nfor k in list(d):\n    if d[k] is None:\n        del d[k]\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db7_async_no_await",
+      "tokens": 66,
+      "text": "**Root cause:** `httpx.AsyncClient().get(...)` is a coroutine, not a Response. Never awaited — coroutines have no `.json()`.\n\n**Minimal fix:**\n```python\nasync with httpx.AsyncClient() as client:\n    response = await client.get('/api/x')\ndata = response.json()\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "db8_ambiguous_no_repro",
+      "tokens": 120,
+      "text": "\"Slow sometimes\" with no repro is a measurement problem first. Need:\n\n1. Define \"slow\" and \"sometimes\" — p50/p95/p99 latency, frequency, correlations.\n2. Add per-request timing logs.\n3. `py-spy record --pid <pid>` during a slow window for a flame graph.\n4. Common suspects: GC pauses, lock/GIL contention, DB query plan flips, cold caches, noisy neighbor, N+1.\n\n**Minimal next step:** structured per-request timing + py-spy sample. Come back with a flame graph or latency histogram."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db1_zero_division",
+      "tokens": 47,
+      "text": "Root cause: `len(xs)` is 0 when `xs` is empty, causing division by zero.\nFix: Guard the empty case, e.g. `return sum(xs) / len(xs) if xs else 0`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db2_keyerror",
+      "tokens": 42,
+      "text": "Root cause: The parsed JSON payload has no `'email'` key.\nFix: Use `.get` with a default, e.g. `return (user_data.get('email') or '').lower()`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db3_typerror_concat",
+      "tokens": 47,
+      "text": "Root cause: `age` is an `int`, which can't be concatenated to a `str` with `+`.\nFix: Convert it, e.g. `return f'Hello {name}, you are {age}'`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db4_late_binding_loop",
+      "tokens": 45,
+      "text": "Root cause: Lambdas capture `i` by reference; all read its final value (3) after the loop.\nFix: Bind via default argument, e.g. `fns.append(lambda i=i: i)`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db5_off_by_one_range",
+      "tokens": 32,
+      "text": "Root cause: `range(1, 10)` stops before 10 (stop is exclusive).\nFix: Use `range(1, 11)`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db6_mutating_during_iter",
+      "tokens": 50,
+      "text": "Root cause: Deleting keys from `d` while iterating over it mutates the dict mid-iteration.\nFix: Iterate over a snapshot, e.g. `for k in list(d): if d[k] is None: del d[k]`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db7_async_no_await",
+      "tokens": 57,
+      "text": "Root cause: `AsyncClient().get(...)` returns a coroutine, not a `Response`; it was never awaited.\nFix: Await it inside an async context, e.g. `async with httpx.AsyncClient() as c: result = await c.get('/api/x')`."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "db8_ambiguous_no_repro",
+      "tokens": 54,
+      "text": "Root cause: Insufficient information — no reproducer, profile, or trace to localize the slowdown.\nFix: Capture a profile (e.g. `cProfile`/`py-spy`) and timing logs on a reproducible run, then share the hotspots."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db1_zero_division",
+      "tokens": 62,
+      "text": "Root cause: `len(xs)` is 0 when `xs` is an empty list, causing division by zero.\nFix: Guard against empty input: `return sum(xs) / len(xs) if xs else 0` (or raise `ValueError` if empty input is invalid for the caller)."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db2_keyerror",
+      "tokens": 46,
+      "text": "Root cause: The parsed JSON payload has no `'email'` key.\nFix: `return user_data.get('email', '').lower()` (or validate the payload and handle the missing-key case explicitly per the caller's contract)."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db3_typerror_concat",
+      "tokens": 69,
+      "text": "Root cause: `age` is an `int` and cannot be concatenated to a `str` with `+`.\nFix: Convert `age` to string: `return 'Hello ' + name + ', you are ' + str(age)` (or use an f-string: `f'Hello {name}, you are {age}'`)."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db4_late_binding_loop",
+      "tokens": 58,
+      "text": "Root cause: Python closures capture variables by reference, not by value; all lambdas reference the same `i`, which is `3` after the loop ends.\nFix: Bind `i` at lambda creation via a default argument: `fns.append(lambda i=i: i)`."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db5_off_by_one_range",
+      "tokens": 44,
+      "text": "Root cause: `range(start, stop)` is exclusive of `stop`, so `range(1, 10)` yields 1..9.\nFix: `for i in range(1, 11):`."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db6_mutating_during_iter",
+      "tokens": 77,
+      "text": "Root cause: Deleting keys from `d` while iterating over it mutates the dict's size mid-iteration.\nFix: Iterate over a snapshot of the keys: `for k in list(d): if d[k] is None: del d[k]` (or rebuild: `d = {k: v for k, v in d.items() if v is not None}`)."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db7_async_no_await",
+      "tokens": 70,
+      "text": "Root cause: `AsyncClient().get(...)` returns a coroutine, not a `Response`; coroutines have no `.json()` method.\nFix: Await it inside an async context using a managed client:\n```\nasync with httpx.AsyncClient() as client:\n    response = await client.get('/api/x')\n    data = response.json()\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "db8_ambiguous_no_repro",
+      "tokens": 101,
+      "text": "Root cause: Insufficient information — no reproduction, no profile, no metric defining \"slow\" or \"sometimes.\" Cannot identify a root cause without data.\nFix: Collect evidence before changing code: (1) capture timings/logs to define when \"slow\" occurs, (2) run a profiler (e.g., `cProfile`, `py-spy`) on a slow run, (3) compare against a fast run to isolate the differing call path. Report findings, then debug the specific hotspot."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db1_zero_division",
+      "tokens": 56,
+      "text": "Root cause: `len(xs)` is 0 when `xs` is an empty list, causing division by zero.\nFix: Guard against empty input, e.g. `return sum(xs) / len(xs) if xs else 0` (or raise a clearer error)."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db2_keyerror",
+      "tokens": 51,
+      "text": "Root cause: The parsed JSON payload has no `'email'` key.\nFix: Use `.get('email')` and handle the missing case, e.g. `email = user_data.get('email'); return email.lower() if email else None`."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db3_typerror_concat",
+      "tokens": 58,
+      "text": "Root cause: `age` is an `int` and Python won't implicitly concatenate it with `str`.\nFix: Convert `age` to a string, e.g. `return 'Hello ' + name + ', you are ' + str(age)` (or use an f-string)."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db4_late_binding_loop",
+      "tokens": 57,
+      "text": "Root cause: Python closures capture variables by reference, not by value, so each lambda reads `i` after the loop ends (i == 3).\nFix: Bind `i` at lambda definition time via a default argument: `fns.append(lambda i=i: i)`."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db5_off_by_one_range",
+      "tokens": 34,
+      "text": "Root cause: `range(1, 10)` stops before 10 because the stop value is exclusive.\nFix: Use `range(1, 11)`."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db6_mutating_during_iter",
+      "tokens": 54,
+      "text": "Root cause: Deleting keys from `d` while iterating over it mutates the dict's size during iteration.\nFix: Iterate over a snapshot of the keys, e.g. `for k in list(d): if d[k] is None: del d[k]`."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db7_async_no_await",
+      "tokens": 74,
+      "text": "Root cause: `httpx.AsyncClient().get(...)` returns a coroutine, not a `Response`; coroutines have no `.json()` method.\nFix: Await it inside an async function and use the client as a context manager, e.g. `async with httpx.AsyncClient() as c: result = await c.get('/api/x'); result.json()`."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "db8_ambiguous_no_repro",
+      "tokens": 46,
+      "text": "INSUFFICIENT_INFO: no code, no reproducer, no profiling/timing data, no description of the workload, environment, or what \"slow sometimes\" means (latency vs throughput, frequency, inputs that trigger it)."
+    }
+  ]
+}

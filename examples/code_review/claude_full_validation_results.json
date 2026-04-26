@@ -1,0 +1,533 @@
+{
+  "config": {
+    "method": "opus_subagent_simulation",
+    "model": "claude-opus-4-7 (via subagent)",
+    "n_items": 16,
+    "n_variants": 5,
+    "tokenizer": "cl100k_base"
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "output_mean_tiktoken": 201.6875,
+      "output_sd_tiktoken": 66.21149824615057,
+      "output_min_tiktoken": 126,
+      "output_max_tiktoken": 356,
+      "output_sum_tiktoken": 3227
+    },
+    {
+      "variant": "V1_role_terse",
+      "output_mean_tiktoken": 112.5,
+      "output_sd_tiktoken": 37.78535871648347,
+      "output_min_tiktoken": 52,
+      "output_max_tiktoken": 183,
+      "output_sum_tiktoken": 1800
+    },
+    {
+      "variant": "V2_xml_format",
+      "output_mean_tiktoken": 79.1875,
+      "output_sd_tiktoken": 31.070283230121994,
+      "output_min_tiktoken": 37,
+      "output_max_tiktoken": 166,
+      "output_sum_tiktoken": 1267
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "output_mean_tiktoken": 102.125,
+      "output_sd_tiktoken": 39.28506925877396,
+      "output_min_tiktoken": 53,
+      "output_max_tiktoken": 205,
+      "output_sum_tiktoken": 1634
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "output_mean_tiktoken": 85.6875,
+      "output_sd_tiktoken": 46.21358927126666,
+      "output_min_tiktoken": 3,
+      "output_max_tiktoken": 194,
+      "output_sum_tiktoken": 1371
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_tiktoken": 356,
+      "text": "**Issue: Off-by-one error**\n\nThe slice is incorrect. `items[len(items) - n - 1:]` returns the last `n + 1` items, not the last `n`.\n\nFor example, with `items = [1, 2, 3, 4, 5]` and `n = 2`:\n- `len(items) - n - 1` = `5 - 2 - 1` = `2`\n- `items[2:]` returns `[3, 4, 5]` — three items instead of two.\n\n**Fix:**\n\n```python\ndef last_n(items, n):\n    return items[len(items) - n:]\n```\n\nOr, more idiomatically:\n\n```python\ndef last_n(items, n):\n    return items[-n:] if n > 0 else []\n```\n\n**Additional concerns:**\n\n1. **Edge case `n = 0`:** With the idiomatic `items[-n:]` form, `items[-0:]` is `items[0:]` (the whole list), so `n = 0` must be guarded.\n2. **Edge case `n > len(items)`:** Both the original and `items[-n:]` form behave inconsistently. `items[-n:]` with `n > len(items)` returns the whole list, which is usually the desired behavior — but the original returns a slice from a negative index, which also returns the whole list (silently masking the bug). Document the intended behavior.\n3. **Negative `n`:** Should be rejected explicitly with a `ValueError` rather than producing surprising slice behavior.\n4. **No type hints or docstring.**"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_tiktoken": 326,
+      "text": "**Issue: Mutable default argument**\n\nThe default value `history={}` is evaluated **once** at function definition time, not on each call. All calls that don't pass `history` explicitly share the same dictionary, which causes state to leak across calls and is almost never the intended behavior.\n\n**Demonstration:**\n\n```python\ngreet(\"Alice\")  # \"Hello Alice, visit #1\"\ngreet(\"Alice\")  # \"Hello Alice, visit #2\"  -- shared state!\ngreet(\"Bob\")    # \"Hello Bob, visit #1\"\ngreet(\"Alice\")  # \"Hello Alice, visit #3\"\n```\n\nIf this *is* intended (a persistent visit counter), it should be made explicit rather than hidden in a default argument.\n\n**Recommended fix — use `None` sentinel:**\n\n```python\ndef greet(name, history=None):\n    if history is None:\n        history = {}\n    history[name] = history.get(name, 0) + 1\n    return f\"Hello {name}, visit #{history[name]}\"\n```\n\n**If a persistent counter is actually intended,** make it explicit:\n\n```python\nfrom collections import defaultdict\n\n_visit_count: dict[str, int] = defaultdict(int)\n\ndef greet(name: str) -> str:\n    _visit_count[name] += 1\n    return f\"Hello {name}, visit #{_visit_count[name]}\"\n```\n\nOr wrap state in a class to avoid module-level mutable globals.\n\n**Additional concerns:**\n\n- No type hints.\n- Not thread-safe if used concurrently.\n- No input validation."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t3_command_injection",
+      "output_tokens_tiktoken": 195,
+      "text": "**Critical security issue: Shell command injection**\n\nBecause `directory` comes from a web form and is interpolated directly into a shell command with `shell=True`, this is a textbook **command injection vulnerability**. An attacker can submit input like `; rm -rf / #` and the shell will execute it. This must be fixed before deployment.\n\n**Recommended fix — avoid the shell entirely:**\n\n```python\nimport os\ndef list_files(directory: str) -> list[str]:\n    base = \"/var/app/userfiles\"\n    full = os.path.realpath(os.path.join(base, directory))\n    if not full.startswith(base + os.sep):\n        raise ValueError(\"Invalid directory\")\n    return os.listdir(full)\n```\n\nNote that even with `shell=False`, you still need to **validate `directory`** to prevent path traversal.\n\n**Other issues:** path traversal protection, no error handling, stderr discarded, returns raw shell output, cross-platform (`ls` not on Windows)."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t4_forgotten_await",
+      "output_tokens_tiktoken": 160,
+      "text": "**Issue 1: Missing `await` on the coroutine**\n\n`AsyncClient().get(...)` returns a **coroutine**, not a `Response`. Calling `.json()` on a coroutine will raise `AttributeError`.\n\n**Issue 2: `AsyncClient` is never closed (resource leak)**\n\nA new `AsyncClient` is created on every call and never `.aclose()`-ed.\n\n**Recommended fix:**\n\n```python\nimport httpx\n\nasync def fetch_user(user_id: int, client: httpx.AsyncClient) -> dict:\n    response = await client.get(f\"/users/{user_id}\")\n    response.raise_for_status()\n    return response.json()\n```\n\n**Other concerns:** relative URL needs base_url, no timeout, no type hints, user_id not validated."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_tiktoken": 154,
+      "text": "**Critical issue: Mutating a dict while iterating over it**\n\nDeleting keys from a dict during iteration raises `RuntimeError: dictionary changed size during iteration` in CPython.\n\n**Recommended fix — iterate over a snapshot of the keys:**\n\n```python\ndef remove_negatives(d: dict) -> dict:\n    for key in list(d):\n        if d[key] < 0:\n            del d[key]\n    return d\n```\n\n**Or, build a new dict:**\n\n```python\ndef remove_negatives(d: dict) -> dict:\n    return {k: v for k, v in d.items() if v >= 0}\n```\n\n**Additional concerns:** zero handling intent, mutation+return confusion, type assumption, no type hints."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t6_clean_code",
+      "output_tokens_tiktoken": 136,
+      "text": "This function is well-written.\n\n**Strengths:** Type hints correct. Input validation. Idiomatic clamp. Single responsibility.\n\n**Minor suggestions:**\n\n1. **Docstring:** would help, especially for `lo > hi` behavior.\n2. **NaN handling:** `min`/`max` propagate NaN unpredictably. If NaN inputs possible, decide a policy.\n3. **Type strictness:** signature accepts `int` due to numeric coercion. If strict, use `numbers.Real`.\n4. **Generic version:** if you ever want non-float comparables, a `TypeVar` could be more reusable.\n\nOverall: clean, correct, ready to ship."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c1_factorial",
+      "output_tokens_tiktoken": 174,
+      "text": "**Critical bug: Multiplies by zero on the first iteration**\n\n`range(n)` produces `0, 1, 2, ..., n-1`. The first value is `0`, so `result *= 0` makes the result `0` for **every** input `n >= 1`.\n\n**Fix:**\n\n```python\ndef factorial(n: int) -> int:\n    if n < 0:\n        raise ValueError(\"factorial is undefined for negative integers\")\n    result = 1\n    for i in range(1, n + 1):\n        result *= i\n    return result\n```\n\n**Or, just use the standard library:**\n\n```python\nimport math\nmath.factorial(n)\n```\n\n**Additional issues:** no negative `n` handling, no non-integer handling, no type hints/docstring."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c2_counter_race",
+      "output_tokens_tiktoken": 191,
+      "text": "**Critical issue: Race condition — `self.count += 1` is not atomic**\n\n`self.count += 1` compiles to **multiple** bytecodes (LOAD_ATTR, LOAD_CONST, BINARY_ADD, STORE_ATTR). A thread switch can occur between any of these. With many threads incrementing concurrently, updates are **lost**.\n\n**Recommended fix — guard with a lock:**\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self._count = 0\n        self._lock = threading.Lock()\n\n    def increment(self) -> None:\n        with self._lock:\n            self._count += 1\n\n    @property\n    def count(self) -> int:\n        with self._lock:\n            return self._count\n```\n\n**Alternatives:** `itertools.count`, `multiprocessing.Value`.\n\n**Other concerns:** direct attribute access, no reset/decrement, no type hints."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c3_sql_injection",
+      "output_tokens_tiktoken": 144,
+      "text": "**Critical security issue: SQL injection**\n\nThis is a textbook SQL injection vulnerability. Concatenating `user_input` directly into the SQL string lets an attacker inject arbitrary SQL.\n\n**Recommended fix — use parameterized queries:**\n\n```python\ncursor.execute(\"SELECT * FROM users WHERE name = ?\", (user_input,))\n```\n\n**Important: never use `.format()`, f-strings, or `%` to build SQL with user input.**\n\n**Additional concerns:**\n1. **`SELECT *`** — returns all columns.\n2. **No `LIMIT`** — may return many rows unexpectedly.\n3. **Identifier injection:** parameterization protects values, not identifiers.\n4. **Logging** sensitive data."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c4_file_leak",
+      "output_tokens_tiktoken": 171,
+      "text": "**Issue 1: File handle leak — file is never closed**\n\n`open(path)` is called but `f.close()` is never called.\n\n**Recommended fix — use a `with` statement:**\n\n```python\ndef process_file(path: str) -> str:\n    with open(path) as f:\n        return f.read()\n```\n\n**Issue 2: No encoding specified**\n\nUse `encoding=\"utf-8\"`.\n\n**Issue 3:** No error handling.\n**Issue 4:** Reads entire file into memory.\n**Issue 5:** Misleading name — `process_file` doesn't process anything.\n\n**Cleaned up:**\n\n```python\ndef read_file(path: str, encoding: str = \"utf-8\") -> str:\n    with open(path, encoding=encoding) as f:\n        return f.read()\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c5_n_plus_1",
+      "output_tokens_tiktoken": 227,
+      "text": "**Issue 1: N+1 query problem (performance)**\n\nFor N users, this issues N separate database queries. For 1,000 users, that's 1,000 round trips.\n\n**Recommended fix — single query with IN clause:**\n\n```python\ndef get_users_with_posts(users):\n    user_ids = [u.id for u in users]\n    posts_by_user = {}\n    for post in db.query(\n        \"SELECT * FROM posts WHERE user_id IN %s\",\n        (tuple(user_ids),),\n    ):\n        posts_by_user.setdefault(post.user_id, []).append(post)\n    return [{'user': u, 'posts': posts_by_user.get(u.id, [])} for u in users]\n```\n\n**Issue 2: SQL injection vulnerability** — `f\"... {u.id}\"` interpolates directly. Always parameterize.\n\n**Issue 3:** `SELECT *` returns all columns.\n**Issue 4:** No handling of empty `users`.\n**Issue 5:** Returns raw rows mixed with ORM objects.\n\n**Other concerns:** no type hints, no pagination, no ORDER BY."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c6_ordered_check",
+      "output_tokens_tiktoken": 262,
+      "text": "**Issue 1: `assert` should not be used for runtime input validation**\n\n`assert` statements are **stripped when Python runs with `-O`**. Validation silently disappears in production.\n\n**Use explicit checks:**\n\n```python\ndef validate_order(order: dict) -> None:\n    if 'customer_id' not in order:\n        raise ValueError(\"order is missing 'customer_id'\")\n    if 'items' not in order or not order['items']:\n        raise ValueError(\"order must contain at least one item\")\n    if 'total' not in order:\n        raise ValueError(\"order is missing 'total'\")\n    if order['total'] <= 0:\n        raise ValueError(f\"order total must be positive, got {order['total']}\")\n```\n\n**Issue 2: Order of checks creates `KeyError` instead of clear error**\n\nThe current code checks `order['total'] > 0` before checking that `'customer_id'` exists.\n\n**Issue 3: Empty error messages** — `assert order['total'] > 0` raises with no message.\n\n**Issue 4: Weak typing** — use `TypedDict` or `pydantic`.\n\n**Issue 5:** Returns `None` — consider returning a parsed/validated `Order` object."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c7_concat_loop",
+      "output_tokens_tiktoken": 240,
+      "text": "**Issue 1: Quadratic-time string concatenation**\n\nIn Python, strings are immutable, so `result += line + '\\n'` creates a new string each iteration. This is O(n^2) in total length.\n\n(Note: CPython has an optimization that may make this amortized O(n), but it's not guaranteed.)\n\n**Recommended fix — use `str.join`:**\n\n```python\ndef join_lines(lines):\n    return '\\n'.join(lines) + '\\n'\n```\n\n**Issue 2: Trailing newline behavior is ambiguous** — original always appends, `join` doesn't. Pick one and document.\n\n**Issue 3: Edge case — empty `lines`** — guard:\n\n```python\nreturn '\\n'.join(lines) + '\\n' if lines else ''\n```\n\n**Issue 4:** No validation of `lines` contents.\n**Issue 5:** Naming.\n\n**Final recommendation:**\n\n```python\ndef join_lines(lines: list[str]) -> str:\n    \"\"\"Join lines with '\\\\n' separator and a trailing newline.\"\"\"\n    if not lines:\n        return ''\n    return '\\n'.join(lines) + '\\n'\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c8_mutable_default",
+      "output_tokens_tiktoken": 163,
+      "text": "**Critical issue: Mutable default argument**\n\n`log: list = []` is evaluated **once** when the function is defined. Every call that omits `log` shares the **same list**, so events leak across calls.\n\n**Recommended fix — use `None` sentinel:**\n\n```python\ndef add_event(event: str, log: list[str] | None = None) -> list[str]:\n    if log is None:\n        log = []\n    log.append(event)\n    return log\n```\n\n**Additional concerns:**\n1. **Mutates and returns the same list** — confusing.\n2. **Type hint imprecision:** `list` should be `list[str]`.\n3. **No docstring.**\n4. **Thread safety.**\n5. **`event` validation.**"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c9_late_binding",
+      "output_tokens_tiktoken": 202,
+      "text": "**Issue: Late binding of closure variable `v`**\n\nIn Python, closures capture variables by **reference**, not by value. Every lambda captures the **same** variable `v`. By the time callbacks run, `v` is whatever value it had at the **end** of the loop.\n\n**Demonstration:** prints `3, 3, 3`, not `1, 2, 3`.\n\n**Recommended fix — bind `v` as a default argument:**\n\n```python\ndef make_callbacks(values):\n    callbacks = []\n    for v in values:\n        callbacks.append(lambda v=v: print(v))\n    return callbacks\n```\n\n**Or, use `functools.partial`:**\n\n```python\nfrom functools import partial\ndef make_callbacks(values):\n    return [partial(print, v) for v in values]\n```\n\n**Or, factory function** (most explicit).\n\n**Additional concerns:** no type hints, `print` side effect, linters catch this, naming."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c10_clean_code",
+      "output_tokens_tiktoken": 126,
+      "text": "This function is correct and reasonably clean.\n\n**Strengths:** Type hints correct. Algorithm clear. Single responsibility.\n\n**Minor observations:**\n\n1. **`% 256` inside the loop is redundant** — can use `sum(data) % 256`.\n2. **Docstring** would clarify which checksum.\n3. **Naming:** `checksum` is generic — name the specific algorithm.\n4. **Empty input:** consistent with original.\n5. **Performance for large inputs:** `sum()` is fast.\n\nOverall: small, correct, readable. Main suggestion is to simplify to `return sum(data) % 256`."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_tiktoken": 183,
+      "text": "**Line 2:** `return items[len(items) - n - 1:]`\n\n**Bug:** Off-by-one error. The slice index is `len(items) - n - 1`, which returns `n + 1` items instead of `n`. For example, `last_n([1,2,3,4,5], 2)` returns `[3,4,5]` instead of `[4,5]`.\n\n**Fix:** Use Python's negative indexing, which also handles `n=0` and `n > len(items)` correctly:\n\n```python\ndef last_n(items, n):\n    return items[-n:] if n > 0 else []\n```\n\nNote the guard: `items[-0:]` is equivalent to `items[0:]`, which returns the entire list — not an empty one. The conditional handles `n == 0` correctly."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_tiktoken": 134,
+      "text": "**Line 1:** `def greet(name, history={}):`\n\n**Bug:** Mutable default argument. The `history={}` dict is created **once** at function-definition time and shared across all calls that don't pass `history` explicitly. Visit counts will accumulate across unrelated callers, leaking state and producing surprising results.\n\n**Fix:** Use `None` as the sentinel and create a fresh dict inside the function:\n\n```python\ndef greet(name, history=None):\n    if history is None:\n        history = {}\n    history[name] = history.get(name, 0) + 1\n    return f\"Hello {name}, visit #{history[name]}\"\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t3_command_injection",
+      "output_tokens_tiktoken": 116,
+      "text": "**Line 4:** `f\"ls {directory}\"` passed with `shell=True`.\n\n**Bug:** Shell command injection. `directory` is attacker-controlled (web form). An input like `.; rm -rf ~` will be executed by the shell. This is a critical RCE vulnerability.\n\n**Fix:** Drop `shell=True` and pass arguments as a list. Better: skip the subprocess entirely and use `os.listdir`/`pathlib`:\n\n```python\nimport os\ndef list_files(directory):\n    return \"\\n\".join(os.listdir(directory))\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t4_forgotten_await",
+      "output_tokens_tiktoken": 142,
+      "text": "**Line 4:** `response = httpx.AsyncClient().get(...)` — and **line 5:** `response.json()`.\n\n**Bugs:**\n1. **Missing `await`.** `AsyncClient.get()` returns a coroutine; `response` is the coroutine object, not a `Response`. Calling `.json()` on it raises `AttributeError`.\n2. **Leaked client.** `httpx.AsyncClient()` is never closed, leaking the underlying connection pool.\n\n**Fix:**\n\n```python\nasync def fetch_user(user_id):\n    async with httpx.AsyncClient() as client:\n        response = await client.get(f\"/users/{user_id}\")\n        return response.json()\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_tiktoken": 100,
+      "text": "**Line 2-4:** Iterating `for key in d:` while `del d[key]` mutates `d`.\n\n**Bug:** Mutating a dict during iteration raises `RuntimeError: dictionary changed size during iteration` on the next loop step.\n\n**Fix:** Iterate over a snapshot of the keys, or build a new dict:\n\n```python\ndef remove_negatives(d):\n    return {k: v for k, v in d.items() if v >= 0}\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t6_clean_code",
+      "output_tokens_tiktoken": 52,
+      "text": "No bugs. The function is correct, well-typed, and handles the degenerate `lo > hi` case explicitly with a clear error message. `max(lo, min(value, hi))` is the standard idiom for clamping. Ship it."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c1_factorial",
+      "output_tokens_tiktoken": 108,
+      "text": "**Line 3:** `for i in range(n):` starts at `i=0`, so `result *= 0` on the first iteration — `factorial(n)` always returns `0` for `n >= 1`.\n\n**Fix:**\n\n```python\ndef factorial(n):\n    if n < 0:\n        raise ValueError(\"factorial is undefined for negative integers\")\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c2_counter_race",
+      "output_tokens_tiktoken": 109,
+      "text": "**Line 6:** `self.count += 1`\n\n**Bug:** Race condition. `+=` is not atomic — it compiles to a load, an add, and a store. The interpreter can switch threads between bytecodes, so concurrent increments can be lost.\n\n**Fix:**\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.count = 0\n        self._lock = threading.Lock()\n\n    def increment(self):\n        with self._lock:\n            self.count += 1\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c3_sql_injection",
+      "output_tokens_tiktoken": 87,
+      "text": "**Line 1:** `cursor.execute(\"SELECT * FROM users WHERE name = '\" + user_input + \"'\")`\n\n**Bug:** SQL injection. `user_input` is concatenated directly into the query, so input like `'; DROP TABLE users; --` lets an attacker run arbitrary SQL.\n\n**Fix:** Use a parameterized query:\n\n```python\ncursor.execute(\"SELECT * FROM users WHERE name = ?\", (user_input,))\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c4_file_leak",
+      "output_tokens_tiktoken": 81,
+      "text": "**Line 2:** `f = open(path)`\n\n**Bugs:**\n1. File handle leak — `f` is never closed.\n2. Implicit text mode + default encoding silently corrupts non-ASCII data.\n\n**Fix:**\n\n```python\ndef process_file(path):\n    with open(path, \"r\", encoding=\"utf-8\") as f:\n        return f.read()\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c5_n_plus_1",
+      "output_tokens_tiktoken": 179,
+      "text": "**Line 3:** `db.query(f\"SELECT * FROM posts WHERE user_id = {u.id}\")`\n\n1. **N+1 query.** One additional SQL round-trip per user.\n2. **SQL injection.** `u.id` is interpolated into the query string.\n\n**Fix:** Fetch all posts in a single query:\n\n```python\nfrom collections import defaultdict\ndef get_users_with_posts(users):\n    user_ids = [u.id for u in users]\n    placeholders = \",\".join([\"?\"] * len(user_ids))\n    rows = db.query(f\"SELECT * FROM posts WHERE user_id IN ({placeholders})\", user_ids)\n    posts_by_user = defaultdict(list)\n    for row in rows:\n        posts_by_user[row.user_id].append(row)\n    return [{\"user\": u, \"posts\": posts_by_user[u.id]} for u in users]\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c6_ordered_check",
+      "output_tokens_tiktoken": 161,
+      "text": "**Lines 2-4:**\n1. **`assert` for input validation is unsafe.** `python -O` strips assert statements.\n2. **Order of checks is wrong / can `KeyError`.** Line 2 reads `order['total']` before line 3 confirms required keys exist.\n\n**Fix:**\n\n```python\ndef validate_order(order: dict) -> None:\n    for field in (\"customer_id\", \"total\", \"items\"):\n        if field not in order:\n            raise ValueError(f\"missing required field: {field}\")\n    if order[\"total\"] <= 0:\n        raise ValueError(f\"total must be positive, got {order['total']!r}\")\n    if not order[\"items\"]:\n        raise ValueError(\"items must be non-empty\")\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c7_concat_loop",
+      "output_tokens_tiktoken": 82,
+      "text": "**Lines 3-4:** `result += line + '\\n'` inside the loop.\n\n**Bug:** Quadratic-time string concatenation. CPython has an optimization that sometimes makes this in-place, but it's fragile and absent on other implementations.\n\n**Fix:** Use `str.join`:\n\n```python\ndef join_lines(lines):\n    return '\\n'.join(lines) + '\\n'\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c8_mutable_default",
+      "output_tokens_tiktoken": 99,
+      "text": "**Line 1:** `def add_event(event: str, log: list = []) -> list:`\n\n**Bug:** Mutable default argument. The `[]` is created once at function-definition time and shared across every call that doesn't pass `log` explicitly.\n\n**Fix:**\n\n```python\ndef add_event(event: str, log: list | None = None) -> list:\n    if log is None:\n        log = []\n    log.append(event)\n    return log\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c9_late_binding",
+      "output_tokens_tiktoken": 88,
+      "text": "**Line 4:** `callbacks.append(lambda: print(v))`\n\n**Bug:** Late binding of closure variables. The lambda captures `v` by reference, not by value. All three callbacks print `3`.\n\n**Fix:** Bind `v` as a default argument:\n\n```python\ndef make_callbacks(values):\n    callbacks = []\n    for v in values:\n        callbacks.append(lambda v=v: print(v))\n    return callbacks\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c10_clean_code",
+      "output_tokens_tiktoken": 79,
+      "text": "No bugs. The function is correct: it computes the sum of all bytes modulo 256, which is a valid (if weak) checksum.\n\nMinor, optional notes:\n- **Performance:** for large inputs, `sum(data) % 256` is faster.\n- **Strength:** as a security check, an additive 8-bit sum is trivially forgeable.\n\nCode itself is fine."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_tiktoken": 71,
+      "text": "Issue (line 3): Slice `items[len(items) - n - 1:]` returns the last `n + 1` items (off-by-one), and misbehaves when `n == 0` (returns last 1 item instead of empty).\nFix: `return items[-n:] if n > 0 else []`"
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_tiktoken": 58,
+      "text": "Issue (line 1): Mutable default argument `history={}` is shared across all calls, so visit counts persist between unrelated invocations.\nFix: `def greet(name, history=None):` and add `if history is None: history = {}` at the top of the body."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t3_command_injection",
+      "output_tokens_tiktoken": 83,
+      "text": "Issue (line 4): `shell=True` with an f-string interpolating untrusted `directory` allows command injection (e.g., `directory=\"; rm -rf /\"`).\nFix: Drop the shell and pass an argument list: `subprocess.run([\"ls\", directory], shell=False, capture_output=True, text=True)` (or, better, use `os.listdir(directory)` with path validation)."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t4_forgotten_await",
+      "output_tokens_tiktoken": 86,
+      "text": "Issue (line 3): `httpx.AsyncClient().get(...)` returns a coroutine that is never awaited; the client is also never closed, and `.json()` is called on the coroutine instead of a response.\nFix:\n```python\nasync def fetch_user(user_id):\n    async with httpx.AsyncClient() as client:\n        response = await client.get(f\"/users/{user_id}\")\n        return response.json()\n```"
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_tiktoken": 80,
+      "text": "Issue (line 2): Mutating `d` while iterating over it raises `RuntimeError: dictionary changed size during iteration`.\nFix: Iterate over a snapshot of the keys: `for key in list(d): if d[key] < 0: del d[key]` (or rebuild: `return {k: v for k, v in d.items() if v >= 0}`)."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t6_clean_code",
+      "output_tokens_tiktoken": 37,
+      "text": "Issue (line 1): No issues — bounds are validated and `max(lo, min(value, hi))` correctly clamps including NaN-free numeric inputs.\nFix: None required."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c1_factorial",
+      "output_tokens_tiktoken": 84,
+      "text": "Issue (line 3): `range(n)` starts at 0, so `result *= 0` on the first iteration makes `factorial(n)` always return 0 (and `factorial(0)` should be 1, not 0).\nFix: Use `range(1, n + 1)`: `for i in range(1, n + 1): result *= i`."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c2_counter_race",
+      "output_tokens_tiktoken": 82,
+      "text": "Issue (line 6): `self.count += 1` is not atomic (load-add-store), so concurrent `increment()` calls from multiple threads lose updates.\nFix: Guard with a lock:\n```python\ndef __init__(self):\n    self.count = 0\n    self._lock = threading.Lock()\n\ndef increment(self):\n    with self._lock:\n        self.count += 1\n```"
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c3_sql_injection",
+      "output_tokens_tiktoken": 75,
+      "text": "Issue (line 1): String-concatenated `user_input` into the SQL query is a classic SQL injection vulnerability.\nFix: Use a parameterized query: `cursor.execute(\"SELECT * FROM users WHERE name = %s\", (user_input,))` (use the placeholder style required by your DB driver, e.g. `?` for sqlite3)."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c4_file_leak",
+      "output_tokens_tiktoken": 54,
+      "text": "Issue (line 2): File handle is never closed — leaks a descriptor; also no encoding specified, so behavior depends on the locale.\nFix: Use a context manager: `with open(path, encoding=\"utf-8\") as f: return f.read()`."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c5_n_plus_1",
+      "output_tokens_tiktoken": 123,
+      "text": "Issue (line 3): Classic N+1 query (one SELECT per user) and SQL-injection via f-string interpolation of `u.id`.\nFix: Single parameterized query plus in-memory grouping, e.g.:\n```python\nids = [u.id for u in users]\nrows = db.query(\"SELECT * FROM posts WHERE user_id IN %s\", (tuple(ids),))\nby_user = {}\nfor r in rows:\n    by_user.setdefault(r.user_id, []).append(r)\nreturn [{'user': u, 'posts': by_user.get(u.id, [])} for u in users]\n```"
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c6_ordered_check",
+      "output_tokens_tiktoken": 166,
+      "text": "Issue (line 2): Uses `assert` for request validation — assertions are stripped under `python -O`, so validation silently disappears in production; also `order['total']` and `order['items']` raise `KeyError` (not a clean validation error) before `'customer_id' in order` is checked, and the check ordering is inconsistent.\nFix: Raise explicit exceptions and check keys first:\n```python\ndef validate_order(order: dict) -> None:\n    for key in (\"customer_id\", \"total\", \"items\"):\n        if key not in order:\n            raise ValueError(f\"missing field: {key}\")\n    if order[\"total\"] <= 0:\n        raise ValueError(\"total must be positive\")\n    if not order[\"items\"]:\n        raise ValueError(\"items must not be empty\")\n```"
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c7_concat_loop",
+      "output_tokens_tiktoken": 90,
+      "text": "Issue (line 3): Repeated `result += line + '\\n'` is O(n^2) in CPython for large inputs and appends a trailing newline even when the input is empty or callers don't want one.\nFix: Use `str.join`: `return '\\n'.join(lines) + ('\\n' if lines else '')` (or just `'\\n'.join(lines)` if a trailing newline isn't desired)."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c8_mutable_default",
+      "output_tokens_tiktoken": 71,
+      "text": "Issue (line 1): Mutable default `log: list = []` is shared across all calls — events accumulate in the same list across unrelated invocations.\nFix: `def add_event(event: str, log: list | None = None) -> list:` and `if log is None: log = []` at the top of the body."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c9_late_binding",
+      "output_tokens_tiktoken": 69,
+      "text": "Issue (line 4): Late binding of `v` — every lambda captures the same variable, so all callbacks print the final value (`3, 3, 3`) instead of `1, 2, 3`.\nFix: Bind per-iteration via a default argument: `callbacks.append(lambda v=v: print(v))`."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c10_clean_code",
+      "output_tokens_tiktoken": 38,
+      "text": "Issue (line 1): No correctness or security issues; `sum(data) % 256` is equivalent and clearer/faster.\nFix: `return sum(data) % 256`."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_tiktoken": 83,
+      "text": "Issue (line 2): `len(items) - n - 1` returns `n + 1` items, not `n` (off-by-one).\nFix: `return items[len(items) - n:]` or simply `return items[-n:]` (note: `items[-n:]` behaves differently when `n == 0`, returning the full list rather than an empty one)."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_tiktoken": 53,
+      "text": "Issue (line 1): Mutable default argument `history={}` is shared across all calls, so the dict persists between invocations and accumulates state globally.\nFix: Use `history=None` and initialize inside: `if history is None: history = {}`."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t3_command_injection",
+      "output_tokens_tiktoken": 92,
+      "text": "Issue (line 3): Shell command injection — `directory` is interpolated into a `shell=True` command, so input like `; rm -rf /` executes arbitrary commands.\nFix: Drop `shell=True` and pass arguments as a list: `subprocess.run([\"ls\", directory], capture_output=True, text=True)`. Better, avoid shelling out entirely and use `os.listdir(directory)` after validating the path is within an allowed root."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t4_forgotten_await",
+      "output_tokens_tiktoken": 95,
+      "text": "Issue (line 3): `httpx.AsyncClient().get(...)` returns a coroutine that is never awaited, so `response` is a coroutine object and `.json()` will fail. Also, the client is never closed (resource leak).\nFix: Await the call and manage the client lifecycle, e.g.:\n```\nasync with httpx.AsyncClient() as client:\n    response = await client.get(f\"/users/{user_id}\")\n    return response.json()\n```"
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_tiktoken": 77,
+      "text": "Issue (line 2): Mutating a dict (`del d[key]`) while iterating over it raises `RuntimeError: dictionary changed size during iteration`.\nFix: Iterate over a snapshot of the keys: `for key in list(d): ...`, or build a new dict: `return {k: v for k, v in d.items() if v >= 0}`."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t6_clean_code",
+      "output_tokens_tiktoken": 77,
+      "text": "Issue (line N/A): No defects found. Bounds are validated, `max(lo, min(value, hi))` correctly clamps, and types are annotated. NaN `value` will propagate as NaN through `min`/`max` (uncertain whether that is the desired behavior — worth documenting if NaN inputs are possible).\nFix: None required; optionally document NaN handling."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c1_factorial",
+      "output_tokens_tiktoken": 78,
+      "text": "Issue (line 3): `range(n)` starts at 0, so `result *= 0` on the first iteration makes the result always 0. Should iterate `1..n` inclusive.\nFix: `for i in range(1, n + 1): result *= i`. Also consider rejecting negative `n` and/or using `math.factorial(n)`."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c2_counter_race",
+      "output_tokens_tiktoken": 150,
+      "text": "Issue (line 7): `self.count += 1` is not atomic — it is a read-modify-write (LOAD, ADD, STORE) and threads can interleave, losing increments. The GIL does not protect this compound operation (uncertain in free-threaded/no-GIL builds, but the race exists in standard CPython too).\nFix: Guard with a lock:\n```\ndef __init__(self):\n    self.count = 0\n    self._lock = threading.Lock()\n\ndef increment(self):\n    with self._lock:\n        self.count += 1\n```\nAlternatively use `itertools.count()` whose `__next__` is atomic under the GIL, or `threading.Lock`-protected access."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c3_sql_injection",
+      "output_tokens_tiktoken": 102,
+      "text": "Issue (line 1): SQL injection — `user_input` is concatenated directly into the query, so input like `' OR '1'='1` (or worse, `'; DROP TABLE users; --`) alters the query.\nFix: Use a parameterized query: `cursor.execute(\"SELECT * FROM users WHERE name = %s\", (user_input,))` (placeholder style depends on the DB-API driver: `?` for sqlite3, `%s` for psycopg2/MySQLdb)."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c4_file_leak",
+      "output_tokens_tiktoken": 96,
+      "text": "Issue (line 2): File handle is never closed — leaks the descriptor (closure timing depends on GC, not guaranteed on non-CPython). Also opens in text mode with platform-default encoding, which can cause `UnicodeDecodeError` on non-UTF-8 files on some platforms.\nFix: Use a context manager and specify encoding:\n```\ndef process_file(path):\n    with open(path, encoding=\"utf-8\") as f:\n        return f.read()\n```"
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c5_n_plus_1",
+      "output_tokens_tiktoken": 153,
+      "text": "Issue (line 4): N+1 query problem — one SELECT per user. Also SQL injection via f-string interpolation of `u.id` (less severe if `id` is trusted, but still bad practice).\nFix: Issue a single query with `IN` (parameterized) and group in Python:\n```\nids = [u.id for u in users]\nposts = db.query(\"SELECT * FROM posts WHERE user_id IN %s\", (tuple(ids),))\nby_user = {}\nfor p in posts:\n    by_user.setdefault(p.user_id, []).append(p)\nreturn [{'user': u, 'posts': by_user.get(u.id, [])} for u in users]\n```\nExact placeholder syntax depends on the DB driver (uncertain)."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c6_ordered_check",
+      "output_tokens_tiktoken": 205,
+      "text": "Issue (line 2): `assert order['total']` is evaluated before `'customer_id' in order` and before `order['items']` is checked — so a missing `'total'` key raises `KeyError` instead of a clean validation error, and the existence checks happen in the wrong order (check membership before subscripting).\nIssue (line 1-4): Using `assert` for request validation is unsafe — assertions are stripped when Python runs with `-O`, disabling all validation in production.\nFix: Replace asserts with explicit checks that raise a domain-specific exception, and check membership before access:\n```\ndef validate_order(order: dict) -> None:\n    for key in (\"total\", \"customer_id\", \"items\"):\n        if key not in order:\n            raise ValueError(f\"missing field: {key}\")\n    if order[\"total\"] <= 0:\n        raise ValueError(\"total must be positive\")\n    if not order[\"items\"]:\n        raise ValueError(\"items must be non-empty\")\n```"
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c7_concat_loop",
+      "output_tokens_tiktoken": 135,
+      "text": "Issue (line 4): Repeated string concatenation in a loop is O(n^2) in the general case because strings are immutable (CPython has an in-place optimization for `+=` on strings with refcount 1, but this is implementation-specific and not guaranteed — uncertain on PyPy/other interpreters).\nIssue (line 5): Adds a trailing `'\\n'` after the last line, which may or may not be intended — `'\\n'.join(lines)` does not.\nFix: `return '\\n'.join(lines) + '\\n'` if the trailing newline is intentional, else `return '\\n'.join(lines)`."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c8_mutable_default",
+      "output_tokens_tiktoken": 87,
+      "text": "Issue (line 1): Mutable default argument `log: list = []` is shared across all calls that omit `log`, so the same list accumulates entries across invocations.\nFix: Use `None` as the sentinel:\n```\ndef add_event(event: str, log: list | None = None) -> list:\n    if log is None:\n        log = []\n    log.append(event)\n    return log\n```"
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c9_late_binding",
+      "output_tokens_tiktoken": 84,
+      "text": "Issue (line 4): Late binding of `v` — the lambda captures the variable, not its value, so all callbacks print the final value of `v` (`3 3 3`), not `1 2 3`.\nFix: Bind `v` as a default argument: `callbacks.append(lambda v=v: print(v))`. Or use `functools.partial(print, v)`."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c10_clean_code",
+      "output_tokens_tiktoken": 67,
+      "text": "Issue (line N/A): No correctness defects — sums bytes mod 256, returns int. Minor: equivalent to `sum(data) % 256`, which is clearer and faster (uncertain on micro-perf, but it avoids the Python-level loop).\nFix: Optional simplification: `return sum(data) % 256`."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_tiktoken": 83,
+      "text": "Issue (line 2): `items[len(items) - n - 1:]` returns the last `n + 1` items, not the last `n` (off-by-one). Also fails for `n == 0` (returns last 1 item) and behaves oddly for `n >= len(items)`.\nFix: `return items[-n:] if n > 0 else []`"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_tiktoken": 64,
+      "text": "Issue (line 1): Mutable default argument — `history={}` is created once at function definition and shared across all calls, so the visit count persists across unrelated callers.\nFix: `def greet(name, history=None):` then `if history is None: history = {}` at the top of the body."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t3_command_injection",
+      "output_tokens_tiktoken": 89,
+      "text": "Issue (line 4): Command injection — `directory` is interpolated into a shell string with `shell=True`, so input like `; rm -rf /` or `$(...)` executes arbitrary commands.\nFix: Drop the shell and pass an argv list: `subprocess.run([\"ls\", directory], capture_output=True, text=True)`. Better, validate `directory` against an allowlist or use `os.listdir(directory)` instead."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t4_forgotten_await",
+      "output_tokens_tiktoken": 86,
+      "text": "Issue (line 3): The `.get(...)` call returns a coroutine that is never awaited, so `response` is a coroutine object and `response.json()` will fail (AttributeError). The `AsyncClient` is also never closed, leaking the connection.\nFix:\n```\nasync with httpx.AsyncClient() as client:\n    response = await client.get(f\"/users/{user_id}\")\n    return response.json()\n```"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_tiktoken": 74,
+      "text": "Issue (line 2): Mutating a dict (`del d[key]`) while iterating over it raises `RuntimeError: dictionary changed size during iteration`.\nFix: Iterate over a snapshot of the keys: `for key in list(d): ...`, or rebuild: `return {k: v for k, v in d.items() if v >= 0}`."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t6_clean_code",
+      "output_tokens_tiktoken": 3,
+      "text": "NO_ISSUE"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c1_factorial",
+      "output_tokens_tiktoken": 105,
+      "text": "Issue (line 3): `range(n)` starts at 0, so `result *= 0` on the first iteration makes `factorial(n)` always return 0 (for `n >= 1`). It also returns 1 for `n == 0` only by accident (loop doesn't run) and gives wrong results for negative `n`.\nFix: Use `range(1, n + 1)`: `for i in range(1, n + 1): result *= i`."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c2_counter_race",
+      "output_tokens_tiktoken": 89,
+      "text": "Issue (line 6): `self.count += 1` is not atomic (load, add, store) so concurrent `increment()` calls from multiple threads will lose updates — a classic race condition.\nFix: Guard with a lock:\n```\ndef __init__(self):\n    self.count = 0\n    self._lock = threading.Lock()\n\ndef increment(self):\n    with self._lock:\n        self.count += 1\n```"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c3_sql_injection",
+      "output_tokens_tiktoken": 93,
+      "text": "Issue (line 1): SQL injection — `user_input` is concatenated directly into the query, so input like `' OR '1'='1` (or `'; DROP TABLE users; --`) alters the statement.\nFix: Use a parameterized query: `cursor.execute(\"SELECT * FROM users WHERE name = %s\", (user_input,))` (placeholder style depends on the DB-API driver, e.g., `?` for sqlite3)."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c4_file_leak",
+      "output_tokens_tiktoken": 61,
+      "text": "Issue (line 2): The file handle is never closed — leaks a file descriptor (and on CPython relies on GC timing; on PyPy/other implementations it may stay open indefinitely).\nFix: Use a context manager:\n```\nwith open(path) as f:\n    return f.read()\n```"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c5_n_plus_1",
+      "output_tokens_tiktoken": 152,
+      "text": "Issue (line 3): N+1 query problem — one SELECT per user. Also a SQL injection vector since `u.id` is interpolated into the query string (safe only if `u.id` is guaranteed to be an int, but still bad practice).\nFix: Issue a single query and group in Python:\n```\nids = [u.id for u in users]\nrows = db.query(\"SELECT * FROM posts WHERE user_id IN %s\", (tuple(ids),))\nby_user = {}\nfor r in rows:\n    by_user.setdefault(r.user_id, []).append(r)\nreturn [{'user': u, 'posts': by_user.get(u.id, [])} for u in users]\n```\n(Exact placeholder syntax depends on the DB driver.)"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c6_ordered_check",
+      "output_tokens_tiktoken": 194,
+      "text": "Issue (line 2): Two problems. (1) `assert order['total'] > 0` reads `'total'` before the function has checked the key exists, so a missing `'total'` raises `KeyError` instead of a validation error — and the `'customer_id'` and `'items'` checks are in the wrong order relative to that. (2) Using `assert` for request validation is unsafe: assertions are stripped when Python runs with `-O`, so all checks silently disappear in optimized mode.\nFix: Replace asserts with explicit checks that raise (e.g., `ValueError`), and check key presence before indexing:\n```\nif 'customer_id' not in order:\n    raise ValueError(\"customer_id required\")\nif 'total' not in order or order['total'] <= 0:\n    raise ValueError(\"total must be > 0\")\nif not order.get('items'):\n    raise ValueError(\"items required\")\n```"
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c7_concat_loop",
+      "output_tokens_tiktoken": 109,
+      "text": "Issue (line 4): Repeated `result += line + '\\n'` builds the string in O(n^2) in the general case (CPython has an optimization for this specific pattern but it's fragile and not guaranteed by the language). It also appends a trailing `'\\n'` after the last line, which may or may not be intended.\nFix: `return '\\n'.join(lines) + '\\n'` (or drop the trailing newline if not wanted: `return '\\n'.join(lines)`)."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c8_mutable_default",
+      "output_tokens_tiktoken": 84,
+      "text": "Issue (line 1): Mutable default argument — `log=[]` is evaluated once at function definition, so the same list is shared across all calls that don't pass `log` explicitly, accumulating events across unrelated callers.\nFix: `def add_event(event: str, log: list | None = None) -> list:` then `if log is None: log = []` at the top of the body."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c9_late_binding",
+      "output_tokens_tiktoken": 82,
+      "text": "Issue (line 4): Late-binding closure — every lambda captures the variable `v`, not its current value, so by the time the callbacks run they all print the final value of `v` (3, 3, 3) instead of 1, 2, 3.\nFix: Bind `v` as a default argument: `callbacks.append(lambda v=v: print(v))`."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c10_clean_code",
+      "output_tokens_tiktoken": 3,
+      "text": "NO_ISSUE"
+    }
+  ]
+}

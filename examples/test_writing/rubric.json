@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "coverage",
+      "description": "Do the tests cover the main behaviors of the function (happy path + edge cases + documented errors)? High = key paths exercised, edge cases (empty, boundary, error) included where the function actually handles them. Low = tests only the obvious case, misses error paths the function declares.",
+      "weight": 0.4,
+      "scale": [1, 5]
+    },
+    {
+      "name": "test_correctness",
+      "description": "Are the tests themselves correct — do they pass when the implementation is correct, and would they catch real bugs? High = assertions check the right thing. Low = tests pass trivially, assertions don't actually test the claim, wrong expected values.",
+      "weight": 0.4,
+      "scale": [1, 5]
+    },
+    {
+      "name": "minimality",
+      "description": "Are the tests appropriately minimal — no unnecessary setup, no fabricated edge cases, parametrize used when it cuts duplication? High = compact and well-organized. Low = bloated with setUp/tearDown for trivial functions, 4 separate tests where 1 parametrized would do.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must produce test code. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "syntactically_valid",
+      "description": "The test code must parse without SyntaxError and use real pytest API (not invented decorators or fixtures).",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_fabricated_edge_cases",
+      "description": "Tests must not assert behavior the function doesn't actually implement. E.g., asserting that a function raises a specific exception when the function has no such handling fails this gate.",
+      "evaluator": "judge"
+    }
+  ]
+}

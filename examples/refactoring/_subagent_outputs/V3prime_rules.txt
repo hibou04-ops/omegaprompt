@@ -1,0 +1,67 @@
+rf1_nested_if_BEGIN
+```python
+if user is None or not user.is_active or not user.has_permission('read'):
+    return None
+return data
+```
+What changed: Inverted guard clauses to flatten nesting; behavior preserved.
+rf1_nested_if_END
+rf2_loop_to_comprehension_BEGIN
+```python
+return [n * n for n in numbers]
+```
+What changed: Replaced explicit append loop with a list comprehension.
+rf2_loop_to_comprehension_END
+rf3_string_concat_loop_BEGIN
+```python
+return '\n'.join(lines) + '\n'
+```
+What changed: Replaced O(n^2) string concatenation with str.join, preserving the trailing newline.
+rf3_string_concat_loop_END
+rf4_dict_setdefault_BEGIN
+```python
+d.setdefault(key, []).append(value)
+```
+What changed: Replaced if/else with dict.setdefault.
+rf4_dict_setdefault_END
+rf5_multiple_returns_BEGIN
+```python
+def grade(score):
+    for threshold, letter in ((90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')):
+        if score >= threshold:
+            return letter
+    return 'F'
+```
+What changed: Collapsed repeated returns into a threshold table iteration.
+rf5_multiple_returns_END
+rf6_long_function_extract_BEGIN
+```python
+def _validate_order(order):
+    assert 'customer_id' in order, 'missing customer_id'
+    assert order['total'] > 0, 'invalid total'
+    assert order['items'], 'empty items'
+
+def process_order(order):
+    _validate_order(order)
+    # ... 20 lines of business logic ...
+```
+What changed: Extracted the three assertion checks into a private `_validate_order` helper.
+rf6_long_function_extract_END
+rf7_already_clean_BEGIN
+```python
+def clamp(value: float, lo: float, hi: float) -> float:
+    if lo > hi:
+        raise ValueError(f'lo ({lo}) must not exceed hi ({hi})')
+    return max(lo, min(value, hi))
+```
+What changed: Nothing — function is already clean and idiomatic; no refactor warranted.
+rf7_already_clean_END
+rf8_replace_lambda_with_def_BEGIN
+```python
+def _sort_key(x):
+    return (x.priority, x.created_at, x.id)
+
+validators = sorted(items, key=_sort_key)
+```
+What changed: Promoted the key lambda to a named function for readability.
+rf8_replace_lambda_with_def_END

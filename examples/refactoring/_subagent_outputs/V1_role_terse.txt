@@ -1,0 +1,75 @@
+rf1_nested_if_BEGIN
+```python
+if user is None or not user.is_active or not user.has_permission('read'):
+    return None
+return data
+```
+
+Combined the three nested checks into a single guard clause using `or`, returning `None` early. Behavior is preserved (short-circuit evaluation handles the `None` case before attribute access), and the happy path is no longer indented three levels deep.
+rf1_nested_if_END
+
+rf2_loop_to_comprehension_BEGIN
+```python
+return [n * n for n in numbers]
+```
+
+Replaced the explicit accumulator loop with a list comprehension. Same output, but more concise and slightly faster.
+rf2_loop_to_comprehension_END
+
+rf3_string_concat_loop_BEGIN
+```python
+return '\n'.join(lines) + '\n'
+```
+
+Replaced the `+=` loop (O(n^2)) with `str.join` which preallocates the result in O(n). The trailing `+ '\n'` preserves the original behavior of appending a newline after every line.
+rf3_string_concat_loop_END
+
+rf4_dict_setdefault_BEGIN
+```python
+d.setdefault(key, []).append(value)
+```
+
+Replaced the explicit membership check with `dict.setdefault`, which returns the existing list or inserts a new empty list in one call. Identical behavior, one line, avoids the double key lookup.
+rf4_dict_setdefault_END
+
+rf5_multiple_returns_BEGIN
+```python
+def grade(score):
+    for threshold, letter in ((90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')):
+        if score >= threshold:
+            return letter
+    return 'F'
+```
+
+Replaced the chain of early returns with a single loop over a (threshold, letter) table. Behavior preserved, and adding/adjusting a grade band is now a one-line data change.
+rf5_multiple_returns_END
+
+rf6_long_function_extract_BEGIN
+```python
+def _validate_order(order):
+    assert 'customer_id' in order, 'missing customer_id'
+    assert order['total'] > 0, 'invalid total'
+    assert order['items'], 'empty items'
+
+def process_order(order):
+    _validate_order(order)
+    # ... 20 lines of business logic ...
+```
+
+Extracted the three precondition asserts into a private `_validate_order` helper. `process_order` now reads as "validate, then do the work," and the validation rules can be unit-tested or reused independently. Behavior unchanged.
+rf6_long_function_extract_END
+
+rf7_already_clean_BEGIN
+This function is already clean: clear signature with type hints, validates its precondition with an informative error, and the one-line body is a well-known idiomatic clamp. I would leave it as is — any further "refactor" would add lines or reduce clarity without changing behavior.
+
+If a change is required, the only minor tweak I would consider is making the bound inclusivity explicit in the docstring.
+rf7_already_clean_END
+
+rf8_replace_lambda_with_def_BEGIN
+```python
+from operator import attrgetter
+validators = sorted(items, key=attrgetter('priority', 'created_at', 'id'))
+```
+
+Replaced the lambda with `operator.attrgetter`, which directly returns the same `(priority, created_at, id)` tuple. Touch faster (implemented in C, no Python-level call per element) and reads as "sort by these three attributes" without lambda boilerplate. Behavior — including tie-breaking and stability — identical.
+rf8_replace_lambda_with_def_END

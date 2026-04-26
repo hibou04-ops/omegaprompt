@@ -1,0 +1,118 @@
+ex1_what_is_async_BEGIN
+What: `async def` defines a coroutine function — calling it returns a coroutine object instead of executing the body.
+Why/how: Coroutines run on an event loop and can `await` other awaitables, suspending execution so the loop can run other tasks during I/O waits; this enables concurrency in a single thread without blocking.
+Example:
+```python
+import asyncio
+
+async def fetch():
+    await asyncio.sleep(1)
+    return "done"
+
+asyncio.run(fetch())  # "done"
+```
+ex1_what_is_async_END
+
+ex2_difference_is_vs_eq_BEGIN
+What: `==` compares values for equality, while `is` compares object identity (whether two references point to the exact same object in memory).
+Why/how: `==` calls `__eq__` and asks "are these equivalent?"; `is` is a pointer comparison and asks "are these the same object?" Use `is` only for singletons like `None`, `True`, `False`.
+Example:
+```python
+a = [1, 2]
+b = [1, 2]
+a == b   # True  (same contents)
+a is b   # False (different objects)
+a is None  # correct idiom
+```
+ex2_difference_is_vs_eq_END
+
+ex3_what_is_gil_BEGIN
+What: The Global Interpreter Lock (GIL) is a mutex in CPython that allows only one thread to execute Python bytecode at a time.
+Why/how: It simplifies memory management (reference counting) and C-extension safety, but it means CPU-bound multithreaded code doesn't actually run in parallel — it matters for CPU-bound workloads, but not for I/O-bound code.
+Example:
+```python
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+def crunch(n): return sum(i*i for i in range(n))
+
+ThreadPoolExecutor().map(crunch, [10**7]*4)   # Slow (GIL-bound)
+ProcessPoolExecutor().map(crunch, [10**7]*4)  # Fast (bypasses GIL)
+```
+ex3_what_is_gil_END
+
+ex4_explain_for_loop_BEGIN
+What: A `for` loop iterates over the elements of an iterable, executing its body once per element.
+Why/how: It calls `iter()` on the iterable to get an iterator, then repeatedly calls `next()` until `StopIteration` is raised — this works uniformly for lists, strings, files, generators, and any custom `__iter__` object.
+Example:
+```python
+for ch in "abc":
+    print(ch)
+```
+ex4_explain_for_loop_END
+
+ex5_explain_closure_BEGIN
+What: A closure is a nested function that captures and remembers variables from its enclosing lexical scope, even after that scope has finished executing.
+Why/how: Python keeps the referenced free variables alive via cell objects on the inner function, so the inner function can read (and with `nonlocal`, write) them later.
+Example:
+```python
+def make_counter():
+    count = 0
+    def inc():
+        nonlocal count
+        count += 1
+        return count
+    return inc
+
+c = make_counter()
+c(); c(); c()  # 3
+```
+ex5_explain_closure_END
+
+ex6_explain_dunder_init_vs_new_BEGIN
+What: `__new__` creates and returns a new instance of a class; `__init__` initializes that already-created instance.
+Why/how: `__new__` is a static method that runs first and is responsible for allocation, while `__init__` runs after on the returned instance to set its attributes — override `__new__` only when you need to control instance creation (immutable types, singletons, factory behavior).
+Example:
+```python
+class Singleton:
+    _inst = None
+    def __new__(cls):
+        if cls._inst is None:
+            cls._inst = super().__new__(cls)
+        return cls._inst
+    def __init__(self):
+        self.x = 1
+
+a = Singleton(); b = Singleton()
+a is b  # True
+```
+ex6_explain_dunder_init_vs_new_END
+
+ex7_explain_slots_BEGIN
+What: `__slots__` declares a fixed set of allowed attributes on a class, replacing the per-instance `__dict__` with a compact array-like layout.
+Why/how: It cuts memory per instance and slightly speeds attribute access, while preventing accidental creation of new attributes — use it for classes you instantiate in large numbers.
+Example:
+```python
+class Point:
+    __slots__ = ("x", "y")
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+p = Point(1, 2)
+p.z = 3  # AttributeError: 'Point' object has no attribute 'z'
+```
+ex7_explain_slots_END
+
+ex8_explain_yield_BEGIN
+What: `yield` turns a function into a generator: each `yield` produces a value to the caller and pauses the function, resuming where it left off on the next `next()` call.
+Why/how: It enables lazy, streaming iteration — values are produced on demand instead of building a full list in memory — and preserves local state across resumes.
+Example:
+```python
+def count_up(n):
+    i = 0
+    while i < n:
+        yield i
+        i += 1
+
+list(count_up(3))  # [0, 1, 2]
+```
+ex8_explain_yield_END

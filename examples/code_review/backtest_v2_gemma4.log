@@ -1,0 +1,126 @@
+Variants file: examples\code_review\variants_v2.json
+Model: gemma4:e4b
+Output: examples\code_review\backtest_results_v2_gemma4.json
+Variants: N=5
+Items: 16 (6 test + 10 train)
+Total Ollama calls: 80
+
+=== Step 1: Input token counts (tiktoken cl100k_base, $0) ===
+V0: system_only= 12 tok | system+sample=  43 tok
+V1: system_only= 22 tok | system+sample=  53 tok
+V2: system_only= 31 tok | system+sample=  62 tok
+V3: system_only= 79 tok | system+sample= 110 tok
+V4: system_only= 79 tok | system+sample= 110 tok
+
+=== Step 2: Ollama generation backtest (gemma4:e4b) ===
+  V0 | t1_off_by_one_slice       | out_tt=  23 | out_oll=1024 |  30.3s
+  V0 | t2_mutable_default_dict   | out_tt= 344 | out_oll=1024 |  24.3s
+  V0 | t3_command_injection      | out_tt= 345 | out_oll=1024 |  24.2s
+  V0 | t4_forgotten_await        | out_tt= 213 | out_oll=1024 |  24.3s
+  V0 | t5_dict_iter_mutation     | out_tt= 296 | out_oll=1024 |  24.4s
+  V0 | t6_clean_code             | out_tt= 257 | out_oll=1024 |  24.2s
+  V0 | c1_factorial              | out_tt=   0 | out_oll=1024 |  23.9s
+  V0 | c2_counter_race           | out_tt= 368 | out_oll=1024 |  24.3s
+  V0 | c3_sql_injection          | out_tt= 416 | out_oll=1024 |  24.4s
+  V0 | c4_file_leak              | out_tt= 310 | out_oll=1024 |  24.4s
+  V0 | c5_n_plus_1               | out_tt= 271 | out_oll=1024 |  24.3s
+  V0 | c6_ordered_check          | out_tt= 227 | out_oll=1024 |  24.4s
+  V0 | c7_concat_loop            | out_tt= 315 | out_oll=1024 |  24.4s
+  V0 | c8_mutable_default        | out_tt= 306 | out_oll=1024 |  24.5s
+  V0 | c9_late_binding           | out_tt= 127 | out_oll=1024 |  24.3s
+  V0 | c10_clean_code            | out_tt= 359 | out_oll=1024 |  24.1s
+V0 subtotal (tiktoken): mean=261 sd=119 min=0 max=416
+
+  V1 | t1_off_by_one_slice       | out_tt= 158 | out_oll= 906 |  21.4s
+  V1 | t2_mutable_default_dict   | out_tt= 162 | out_oll= 818 |  19.4s
+  V1 | t3_command_injection      | out_tt= 373 | out_oll=1024 |  24.4s
+  V1 | t4_forgotten_await        | out_tt= 328 | out_oll=1024 |  24.6s
+  V1 | t5_dict_iter_mutation     | out_tt= 131 | out_oll= 655 |  15.7s
+  V1 | t6_clean_code             | out_tt= 128 | out_oll=1024 |  24.4s
+  V1 | c1_factorial              | out_tt= 167 | out_oll= 860 |  20.3s
+  V1 | c2_counter_race           | out_tt= 289 | out_oll= 840 |  19.7s
+  V1 | c3_sql_injection          | out_tt= 190 | out_oll= 670 |  16.0s
+  V1 | c4_file_leak              | out_tt= 261 | out_oll= 956 |  22.9s
+  V1 | c5_n_plus_1               | out_tt= 244 | out_oll= 940 |  22.7s
+  V1 | c6_ordered_check          | out_tt= 303 | out_oll=1024 |  24.3s
+  V1 | c7_concat_loop            | out_tt= 104 | out_oll=1024 |  24.0s
+  V1 | c8_mutable_default        | out_tt= 188 | out_oll= 794 |  18.8s
+  V1 | c9_late_binding           | out_tt= 229 | out_oll= 958 |  22.8s
+  V1 | c10_clean_code            | out_tt= 110 | out_oll= 848 |  20.4s
+V1 subtotal (tiktoken): mean=210 sd=82 min=104 max=373
+
+  V2 | t1_off_by_one_slice       | out_tt=  40 | out_oll= 954 |  22.9s
+  V2 | t2_mutable_default_dict   | out_tt= 105 | out_oll= 786 |  18.8s
+  V2 | t3_command_injection      | out_tt= 213 | out_oll=1024 |  24.3s
+  V2 | t4_forgotten_await        | out_tt=  63 | out_oll= 816 |  19.3s
+  V2 | t5_dict_iter_mutation     | out_tt= 129 | out_oll= 705 |  17.3s
+  V2 | t6_clean_code             | out_tt=  33 | out_oll= 687 |  16.9s
+  V2 | c1_factorial              | out_tt=  64 | out_oll= 520 |  12.9s
+  V2 | c2_counter_race           | out_tt= 132 | out_oll= 657 |  16.0s
+  V2 | c3_sql_injection          | out_tt= 103 | out_oll= 574 |  13.8s
+  V2 | c4_file_leak              | out_tt=  52 | out_oll= 557 |  13.2s
+  V2 | c5_n_plus_1               | out_tt=  42 | out_oll= 677 |  16.1s
+  V2 | c6_ordered_check          | out_tt= 166 | out_oll= 903 |  21.2s
+  V2 | c7_concat_loop            | out_tt=  67 | out_oll=1004 |  23.9s
+  V2 | c8_mutable_default        | out_tt=  96 | out_oll= 905 |  21.6s
+  V2 | c9_late_binding           | out_tt=  47 | out_oll= 381 |   9.2s
+  V2 | c10_clean_code            | out_tt=  34 | out_oll= 608 |  14.5s
+V2 subtotal (tiktoken): mean=87 sd=52 min=33 max=213
+
+  V3 | t1_off_by_one_slice       | out_tt=  42 | out_oll= 465 |  11.2s
+  V3 | t2_mutable_default_dict   | out_tt=  66 | out_oll= 481 |  11.6s
+  V3 | t3_command_injection      | out_tt=  59 | out_oll= 423 |  10.2s
+  V3 | t4_forgotten_await        | out_tt=  84 | out_oll= 686 |  16.1s
+  V3 | t5_dict_iter_mutation     | out_tt=  58 | out_oll= 414 |   9.8s
+  V3 | t6_clean_code             | out_tt=   0 | out_oll=1024 |  24.0s
+  V3 | c1_factorial              | out_tt=  47 | out_oll= 558 |  13.4s
+  V3 | c2_counter_race           | out_tt=  95 | out_oll= 410 |  10.0s
+  V3 | c3_sql_injection          | out_tt=  42 | out_oll= 232 |   5.8s
+  V3 | c4_file_leak              | out_tt=  76 | out_oll= 435 |  10.5s
+  V3 | c5_n_plus_1               | out_tt=  99 | out_oll= 470 |  11.4s
+  V3 | c6_ordered_check          | out_tt= 174 | out_oll= 779 |  18.5s
+  V3 | c7_concat_loop            | out_tt=  58 | out_oll= 642 |  15.3s
+  V3 | c8_mutable_default        | out_tt=  57 | out_oll= 873 |  20.5s
+  V3 | c9_late_binding           | out_tt=  45 | out_oll= 374 |   9.0s
+  V3 | c10_clean_code            | out_tt=  35 | out_oll= 522 |  12.4s
+V3 subtotal (tiktoken): mean=65 sd=38 min=0 max=174
+
+  V4 | t1_off_by_one_slice       | out_tt=  38 | out_oll= 625 |  14.9s
+  V4 | t2_mutable_default_dict   | out_tt=  82 | out_oll= 393 |   9.5s
+  V4 | t3_command_injection      | out_tt=  70 | out_oll= 479 |  11.6s
+  V4 | t4_forgotten_await        | out_tt=  58 | out_oll= 664 |  15.9s
+  V4 | t5_dict_iter_mutation     | out_tt=  43 | out_oll= 659 |  15.8s
+  V4 | t6_clean_code             | out_tt=   3 | out_oll= 406 |   9.8s
+  V4 | c1_factorial              | out_tt=  62 | out_oll= 785 |  18.5s
+  V4 | c2_counter_race           | out_tt=  83 | out_oll= 384 |   9.1s
+  V4 | c3_sql_injection          | out_tt=  36 | out_oll= 285 |   6.9s
+  V4 | c4_file_leak              | out_tt=  48 | out_oll= 298 |   7.2s
+  V4 | c5_n_plus_1               | out_tt= 112 | out_oll= 968 |  22.8s
+  V4 | c6_ordered_check          | out_tt=  78 | out_oll=1004 |  23.7s
+  V4 | c7_concat_loop            | out_tt=  41 | out_oll= 556 |  13.2s
+  V4 | c8_mutable_default        | out_tt=  82 | out_oll= 477 |  11.4s
+  V4 | c9_late_binding           | out_tt=  56 | out_oll= 698 |  16.5s
+  V4 | c10_clean_code            | out_tt=   3 | out_oll= 264 |   6.4s
+V4 subtotal (tiktoken): mean=56 sd=29 min=3 max=112
+
+==============================================================================
+=== Output token summary (tiktoken-counted, Claude-approx) ===
+V      mean     sd   min   max     sum      vs V0
+V0      261    119     0   416    4177      +0.0%
+V1      210     82   104   373    3365     -19.4%
+V2       87     52    33   213    1386     -66.8%
+V3       65     38     0   174    1037     -75.2%
+V4       56     29     3   112     895     -78.6%
+
+=== Cost projection (per 1000 review-style calls, Opus 4.7 rate) ===
+  Output rate assumed: $75.0/M tokens (Opus output)
+  Input rate assumed:  $15.0/M tokens (Opus input, ignored if cached)
+
+V    in_tok  out_mean   cost_1k_calls
+V0       12       261 $         19.76
+V1       22       210 $         16.10
+V2       31        87 $          6.96
+V3       79        65 $          6.05
+V4       79        56 $          5.38
+
+Full results saved: examples\code_review\backtest_results_v2_gemma4.json

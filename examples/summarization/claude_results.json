@@ -1,0 +1,286 @@
+{
+  "task": "summarization",
+  "config": {
+    "method": "opus_subagent",
+    "n_items": 8
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 91.875,
+      "sum": 735,
+      "min": 10,
+      "max": 130
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 89.75,
+      "sum": 718,
+      "min": 7,
+      "max": 129
+    },
+    {
+      "variant": "V2_format",
+      "mean": 93.25,
+      "sum": 746,
+      "min": 9,
+      "max": 131
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 96.375,
+      "sum": 771,
+      "min": 9,
+      "max": 139
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 92.625,
+      "sum": 741,
+      "min": 5,
+      "max": 132
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum1_pep703",
+      "tokens": 130,
+      "text": "PEP 703 proposes making CPython's Global Interpreter Lock (GIL) optional via a build-time flag (`--disable-gil`), enabling true multi-core threading in Python. Accepted in October 2023 and authored by Sam Gross (Meta), it ships as an experimental opt-in build in CPython 3.13 (October 2024). Broader adoption depends on C extension compatibility, with major libraries like NumPy, Cython, and pybind11 progressively adding free-threaded support. Early benchmarks show a 5-10% single-threaded performance penalty, which the project aims to eliminate by version 3.15."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum2_short_input",
+      "tokens": 10,
+      "text": "The meeting is scheduled for 3pm tomorrow."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum3_release_notes",
+      "tokens": 125,
+      "text": "PostgreSQL 17 (September 26, 2024) delivers major upgrades: vacuum uses 20x less memory, logical replication gains failover slot synchronization, and the new JSON_TABLE function provides standards-compliant JSON-to-relational conversion. MERGE now supports RETURNING, COPY ... FROM adds an ON_ERROR option to skip bad rows, and pg_basebackup supports incremental backups. Performance improvements include up to 30% faster queries on common workloads and smaller B-tree indexes. Breaking changes: the `adminpack` extension is removed, and SCRAM-SHA-256 replaces MD5 as the default password encryption."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum4_meeting_notes",
+      "tokens": 122,
+      "text": "The team reviewed Q1 launch readiness. Sarah warned that the current 100 req/sec API rate limit cannot handle the projected 500 req/sec at launch. Marcus will submit a PR by Wednesday raising the limit to 1000 req/sec via load balancer config. Priya noted the analytics dashboard still lacks the funnel visualization marketing requested in November and will loop in Jin to scope the work. Launch readiness will be revisited at the next standup.\n\nAction items:\n- Marcus: load balancer PR by Wednesday\n- Priya: escalate dashboard scope to Jin\n- Team: revisit launch readiness next standup"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum5_already_brief_definition",
+      "tokens": 12,
+      "text": "A coroutine is a function that can pause and resume execution."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum6_research_paper_abstract",
+      "tokens": 117,
+      "text": "DSPy is a programming model and compiler for self-improving language model pipelines that represents LM systems as text transformation graphs of composable, parameterized modules. Instead of hard-coded prompts, DSPy jointly optimizes prompts and weights using traces from a small training set. Across three tasks (multi-hop QA, math word problems, agent QA), DSPy-compiled prompts outperform expert-written prompts by 5-46% while using 50-80% fewer LM calls than equivalent few-shot programs. Code and pretrained pipelines are available at github.com/stanfordnlp/dspy."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum7_news_event",
+      "tokens": 124,
+      "text": "On April 15, 2025, OpenAI launched GPT-5, the first model in the series with native 1M-token long-context reasoning and a hybrid MoE plus selective-attention architecture. Sparser activation enabled a price drop to $5/M input and $20/M output tokens (down from $10/$30 for GPT-4 Turbo). Anthropic followed the next week with Claude Opus 4 at the same context length and competitive pricing. Observers noted the two companies converging on similar core capabilities, shifting differentiation toward agentic frameworks and tool integration rather than raw model performance."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum8_contract_clause",
+      "tokens": 95,
+      "text": "The Provider warrants that the Services will materially conform to the documentation in effect when the Agreement is signed. If this warranty is breached, the Customer's sole remedy — at the Provider's choice — is either re-performance of the non-conforming Services at no extra cost, or a refund of fees paid for those Services during the three months before the Customer gave written notice of the non-conformity. All other warranties are disclaimed: the Services are otherwise provided \"as is.\""
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum1_pep703",
+      "tokens": 129,
+      "text": "PEP 703, accepted in October 2023, proposes a build-time option to disable CPython's GIL, enabling true multi-core threading. It ships in CPython 3.13 (October 2024) as an experimental opt-in build (`--disable-gil`). Broad adoption depends on third-party C extension compatibility; major libraries like NumPy, Cython, and pybind11 are progressively adding free-threaded support. Early benchmarks show a 5-10% single-threaded slowdown, with the goal of eliminating it by 3.15. Sam Gross (Meta) authored both the PEP and reference implementation."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum2_short_input",
+      "tokens": 7,
+      "text": "Meeting tomorrow at 3pm."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum3_release_notes",
+      "tokens": 129,
+      "text": "PostgreSQL 17 (released September 26, 2024) delivers major improvements: vacuum uses 20x less memory; logical replication supports failover slot synchronization; JSON_TABLE enables standards-compliant JSON-to-relational conversion; MERGE gains a RETURNING clause; COPY ... FROM adds an ON_ERROR option to skip bad rows; and pg_basebackup supports incremental backups. Query planner improvements yield up to 30% gains on common workloads, and B-tree indexes use less storage. Breaking changes: the deprecated `adminpack` extension is removed, and default password encryption is now SCRAM-SHA-256 (previously MD5)."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum4_meeting_notes",
+      "tokens": 110,
+      "text": "The team reviewed Q1 launch readiness. Sarah warned that the current 100 req/sec API rate limit can't support the projected 500 req/sec at launch. Marcus agreed and will submit a PR by Wednesday raising the limit to 1000 req/sec via load balancer config. Priya noted the analytics dashboard still lacks the funnel visualization marketing requested in November and will loop in Jin to scope it. Action items: Marcus — load balancer PR by Wed; Priya — escalate dashboard scope to Jin; team — revisit launch readiness next standup."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum5_already_brief_definition",
+      "tokens": 12,
+      "text": "A coroutine is a function that can pause and resume execution."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum6_research_paper_abstract",
+      "tokens": 112,
+      "text": "DSPy is a programming model and compiler for self-improving LM pipelines, representing LM-using systems as text transformation graphs of composable, parameterized modules whose prompts and weights are jointly optimized using traces from a small training set. Evaluated on multi-hop QA, math word problems, and agent question answering, DSPy compilers automatically produce prompts that beat expert-written ones by 5-46% on complex tasks while using 50-80% fewer LM calls than equivalent few-shot programs. Code and pretrained pipelines: github.com/stanfordnlp/dspy."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum7_news_event",
+      "tokens": 125,
+      "text": "On April 15, 2025, OpenAI released GPT-5, the first in the series with native long-context reasoning across 1M tokens and a hybrid MoE-plus-selective-attention architecture. Sparser activation enabled a price drop to $5/M input and $20/M output (down from $10/$30 for GPT-4 Turbo). The following week, Anthropic responded with Claude Opus 4 at the same context length and competitive pricing. Observers noted the two companies converging on similar capabilities, with differentiation shifting toward agentic frameworks and tool integration rather than raw model performance."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum8_contract_clause",
+      "tokens": 94,
+      "text": "The Provider warrants that the Services will materially conform to the documentation in effect at signing. The sole remedy for breach is, at the Provider's option, either (i) re-performance of the non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three months preceding Customer's written notice of non-conformity. Otherwise, the Services are provided \"AS IS\" with no other warranties of any kind."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum1_pep703",
+      "tokens": 131,
+      "text": "- PEP 703 proposes a build-time option to disable CPython's GIL, enabling true multi-core threading; accepted October 2023.\n- Ships in CPython 3.13 (October 2024) as experimental opt-in via `--disable-gil` at compile time.\n- Adoption depends on third-party C extension compatibility; NumPy, Cython, and pybind11 are gradually adding free-threaded support.\n- Single-threaded slowdown estimated at 5-10% in early benchmarks, targeted to ~0% by 3.15.\n- Authored by Sam Gross (Meta), who also wrote the reference implementation."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum2_short_input",
+      "tokens": 9,
+      "text": "The meeting is at 3pm tomorrow."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum3_release_notes",
+      "tokens": 125,
+      "text": "- PostgreSQL 17 (released September 26, 2024) cuts vacuum memory use by 20x and adds logical replication failover slot synchronization.\n- New SQL features: JSON_TABLE for standards-compliant JSON-to-relational conversion, MERGE ... RETURNING, and COPY ... FROM ON_ERROR for skipping bad rows.\n- pg_basebackup gains incremental backup support.\n- Query planner improvements yield up to 30% gains on common workloads; B-tree indexes use less storage.\n- Breaking changes: deprecated `adminpack` extension removed; default password encryption is now SCRAM-SHA-256 (was MD5)."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum4_meeting_notes",
+      "tokens": 112,
+      "text": "- Team discussed the Q1 launch; Sarah warned the current 100 req/sec API rate limit can't handle the projected 500 req/sec.\n- Marcus proposed raising the limit to 1000 req/sec via load balancer config and will submit a PR by Wednesday.\n- Priya flagged that the analytics dashboard still lacks the funnel visualization marketing requested in November; she will loop in Jin to scope it.\n- Action items: Marcus → load balancer PR by Wed; Priya → escalate dashboard scope to Jin; team → revisit launch readiness next standup."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum5_already_brief_definition",
+      "tokens": 13,
+      "text": "A coroutine is a function that can pause and resume its execution."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum6_research_paper_abstract",
+      "tokens": 128,
+      "text": "- DSPy is a programming model and compiler for self-improving language model pipelines, framing LM systems as text transformation graphs of composable modules.\n- It replaces hard-coded prompts with parameterized modules whose prompts and weights are jointly optimized via traces from a small training set.\n- Evaluated on three tasks: multi-hop QA, math word problems, and agent question answering.\n- DSPy compilers generate prompts that exceed expert-written prompts by 5-46% on complex tasks, while using 50-80% fewer LM calls than equivalent few-shot programs.\n- Code and pretrained pipelines available at github.com/stanfordnlp/dspy."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum7_news_event",
+      "tokens": 129,
+      "text": "- On April 15, 2025, OpenAI released GPT-5, the first in the series with native long-context reasoning across 1M tokens and a hybrid MoE + selective attention architecture.\n- Pricing dropped to $5/M input and $20/M output, down from $10/$30 for GPT-4 Turbo, enabled by sparser activation.\n- Anthropic responded the following week with Claude Opus 4 at the same 1M context length and competitive pricing.\n- Observers noted both companies converging on similar capabilities, with differentiation shifting toward agentic frameworks and tool integration rather than raw model performance."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum8_contract_clause",
+      "tokens": 99,
+      "text": "- Provider warrants the Services will materially conform to the documentation in effect at execution of the Agreement.\n- Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.\n- Except as expressly stated, the Services are provided \"AS IS\" without warranty of any kind."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum1_pep703",
+      "tokens": 139,
+      "text": "- PEP 703 proposes a build-time configuration to disable CPython's GIL, enabling true multi-core parallelism for Python threads.\n- Accepted October 2023; ships in CPython 3.13 (October 2024) as an experimental opt-in build (--disable-gil at compile time).\n- Adoption gated on third-party C extension compatibility; NumPy, Cython, and pybind11 are gradually adding free-threaded support.\n- Single-threaded slowdown estimated at 5-10% in early benchmarks, with the goal of bringing this to ~0% by 3.15.\n- Sam Gross (Meta) authored both the PEP and the reference implementation."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum2_short_input",
+      "tokens": 9,
+      "text": "The meeting is at 3pm tomorrow."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum3_release_notes",
+      "tokens": 120,
+      "text": "- PostgreSQL 17 released September 26, 2024.\n- Vacuum uses 20x less memory; logical replication supports failover slot synchronization; JSON_TABLE adds standards-compliant JSON-to-relational conversion; MERGE gains RETURNING clause; COPY ... FROM gains ON_ERROR option for skipping bad rows; pg_basebackup adds incremental backup support.\n- Query planner improvements deliver up to 30% gains on common workloads; B-tree indexes use less storage.\n- Breaking changes: removed deprecated `adminpack` extension; default password encryption is now SCRAM-SHA-256 (was MD5)."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum4_meeting_notes",
+      "tokens": 107,
+      "text": "- Team discussed Q1 launch; Sarah flagged that the current 100 req/sec API rate limit won't handle projected 500 req/sec at launch.\n- Marcus proposed bumping to 1000 req/sec via load balancer config; PR by Wednesday.\n- Priya noted the analytics dashboard still lacks the funnel visualization marketing requested in November; she'll loop in Jin to scope.\n- Action items: Marcus → load balancer PR by Wed; Priya → escalate dashboard scope to Jin; team → revisit launch readiness next standup."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum5_already_brief_definition",
+      "tokens": 13,
+      "text": "A coroutine is a function that can pause and resume its execution."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum6_research_paper_abstract",
+      "tokens": 131,
+      "text": "- DSPy is a programming model and compiler for self-improving language model pipelines, abstracting LM-using systems as text transformation graphs (modules).\n- Replaces hard-coded prompts with parameterized, composable modules whose prompts and weights are jointly optimized via traces from a small training set.\n- Evaluated on three tasks: multi-hop QA, math word problems, and agent question answering.\n- DSPy compilers automatically generate prompts that exceed expert-written prompts by 5-46% on complex tasks, while requiring 50-80% fewer LM calls than equivalent few-shot programs.\n- Code and pretrained pipelines at github.com/stanfordnlp/dspy."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum7_news_event",
+      "tokens": 134,
+      "text": "- On April 15, 2025, OpenAI released GPT-5, the first model in the series with native long-context reasoning across 1M tokens and a hybrid architecture combining MoE (mixture of experts) with selective attention.\n- Pricing dropped to $5/M input and $20/M output (previously $10/$30 for GPT-4 Turbo), driven by sparser activation.\n- Anthropic responded the following week with Claude Opus 4 at the same context length and competitive pricing.\n- Industry observers noted both companies converging on similar capabilities, with differentiation moving toward agentic frameworks and tool integration rather than raw model performance."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum8_contract_clause",
+      "tokens": 118,
+      "text": "- Provider warrants Services will materially conform to the documentation in effect at the time of execution of this Agreement.\n- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of the non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding the date Customer notified Provider in writing of the non-conformity.\n- EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum1_pep703",
+      "tokens": 132,
+      "text": "- PEP 703 proposes a build-time configuration to disable CPython's GIL, enabling true multi-core parallelism for Python threads.\n- Accepted in October 2023; ships in CPython 3.13 (October 2024) as an experimental opt-in build (--disable-gil).\n- Adoption gated on third-party C extension compatibility; NumPy, Cython, pybind11 are gradually adding free-threaded support.\n- Single-threaded slowdown estimated at 5-10% in early benchmarks, with goal of ~0% by 3.15.\n- Sam Gross (Meta) authored both the PEP and the reference implementation."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum2_short_input",
+      "tokens": 5,
+      "text": "ALREADY_BRIEF"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum3_release_notes",
+      "tokens": 125,
+      "text": "- PostgreSQL 17 (released September 26, 2024) cuts vacuum memory use 20x; logical replication adds failover slot synchronization.\n- New JSON_TABLE function provides standards-compliant JSON-to-relational conversion; MERGE gains a RETURNING clause.\n- COPY ... FROM gains ON_ERROR option to skip bad rows; pg_basebackup adds incremental backup support.\n- Query planner improvements deliver up to 30% gains on common workloads; B-tree indexes use less storage.\n- Breaking changes: deprecated `adminpack` extension removed; default password encryption is now SCRAM-SHA-256 (was MD5)."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum4_meeting_notes",
+      "tokens": 112,
+      "text": "- Team discussed the Q1 launch; Sarah flagged that the current 100 req/sec API rate limit won't handle the projected 500 req/sec.\n- Marcus proposed bumping the limit to 1000 req/sec via load balancer config and will have a PR by Wednesday.\n- Priya noted the analytics dashboard still lacks the funnel visualization marketing requested in November; she'll loop in Jin to scope.\n- Action items: Marcus → load balancer PR by Wed; Priya → escalate dashboard scope to Jin; team → revisit launch readiness next standup."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum5_already_brief_definition",
+      "tokens": 5,
+      "text": "ALREADY_BRIEF"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum6_research_paper_abstract",
+      "tokens": 125,
+      "text": "- DSPy is a programming model and compiler for self-improving LM pipelines, modeling LM systems as text transformation graphs.\n- Replaces hard-coded prompts with parameterized, composable modules whose prompts and weights are jointly optimized via traces from a small training set.\n- Evaluated on three tasks: multi-hop QA, math word problems, and agent question answering.\n- DSPy compilers automatically generate prompts that exceed expert-written prompts by 5-46% on complex tasks.\n- Requires 50-80% fewer LM calls than equivalent few-shot programs; code and pretrained pipelines at github.com/stanfordnlp/dspy."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum7_news_event",
+      "tokens": 130,
+      "text": "- On April 15, 2025, OpenAI released GPT-5, the first in the series with native long-context reasoning across 1M tokens.\n- Hybrid architecture combines MoE (mixture of experts) with selective attention.\n- Pricing dropped to $5/M input and $20/M output (previously $10/$30 for GPT-4 Turbo), driven by sparser activation.\n- Anthropic responded the following week with Claude Opus 4 at the same context length and competitive pricing.\n- Industry observers noted convergence on similar capabilities, with differentiation moving toward agentic frameworks and tool integration rather than raw model performance."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum8_contract_clause",
+      "tokens": 107,
+      "text": "- Provider warrants Services will materially conform to the documentation in effect at execution of the Agreement.\n- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option: (i) re-performance of non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.\n- EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND."
+    }
+  ]
+}

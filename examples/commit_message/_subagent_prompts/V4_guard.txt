@@ -1,0 +1,175 @@
+You are simulating fresh Claude API calls. The SYSTEM PROMPT below is the ONLY instruction Claude would have for each call — no Claude Code wrapper, no other context. Respond EXACTLY as Claude would respond to each user message under that system prompt.
+
+## Critical rules
+
+- No meta-commentary, no preamble, no acknowledgement of the simulation
+- Each ITEM is an INDEPENDENT API call — Claude has NO memory of previous items
+- You must NOT let your response on item N be influenced by items 1..N-1
+- Just produce what Claude would output if that ITEM were the only user message
+
+## SYSTEM PROMPT (the ONLY instruction Claude has)
+
+You are a senior engineer writing commit messages.
+
+If the diff is purely whitespace, formatting, or a single typo fix, respond with exactly:
+style: <one-line description>
+
+(no body, no scope, type=style for whitespace/format, type=fix for typo)
+
+Otherwise:
+
+<output_format>
+<type>(<scope>): <subject in imperative mood, ≤70 chars>
+
+<optional body: why, not what — only if non-obvious from diff>
+</output_format>
+
+Valid types: feat, fix, refactor, docs, test, chore, perf, style.
+
+- Imperative mood subject.
+- Body explains WHY, not what.
+- No body for trivial changes.
+
+## ITEMS — 8 independent calls
+
+
+### ITEM: cm1_typo_fix
+```
+Write commit message for this diff:
+```
+--- a/README.md
++++ b/README.md
+@@ -23,1 +23,1 @@
+-Run `npm isntall` to install dependencies.
++Run `npm install` to install dependencies.
+```
+```
+
+### ITEM: cm2_feature_add
+```
+Write commit message for this diff:
+```
+--- a/api/users.py
++++ b/api/users.py
+@@ -50,0 +51,15 @@
++@router.get('/users/{user_id}/posts')
++async def get_user_posts(user_id: int, limit: int = 20):
++    posts = await db.fetch_all(
++        'SELECT * FROM posts WHERE user_id = $1 LIMIT $2',
++        user_id, limit
++    )
++    return [PostOut.from_row(p) for p in posts]
+```
+```
+
+### ITEM: cm3_refactor
+```
+Write commit message for this diff:
+```
+--- a/utils.py
++++ b/utils.py
+@@ -10,12 +10,4 @@
+-def parse_date(s):
+-    parts = s.split('-')
+-    if len(parts) != 3:
+-        raise ValueError('invalid date')
+-    year = int(parts[0])
+-    month = int(parts[1])
+-    day = int(parts[2])
+-    return datetime(year, month, day)
++def parse_date(s):
++    return datetime.strptime(s, '%Y-%m-%d')
+```
+```
+
+### ITEM: cm4_perf_fix
+```
+Write commit message for this diff:
+```
+--- a/posts.py
++++ b/posts.py
+@@ -25,5 +25,9 @@
+-def get_posts_with_authors(post_ids):
+-    return [
+-        {'post': p, 'author': db.fetch_one('SELECT * FROM users WHERE id=$1', p.author_id)}
+-        for p in db.fetch_all('SELECT * FROM posts WHERE id = ANY($1)', post_ids)
+-    ]
++def get_posts_with_authors(post_ids):
++    posts = db.fetch_all('SELECT * FROM posts WHERE id = ANY($1)', post_ids)
++    author_ids = {p.author_id for p in posts}
++    authors = {a.id: a for a in db.fetch_all('SELECT * FROM users WHERE id = ANY($1)', list(author_ids))}
++    return [{'post': p, 'author': authors[p.author_id]} for p in posts]
+```
+```
+
+### ITEM: cm5_whitespace
+```
+Write commit message for this diff:
+```
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -15,3 +15,3 @@
+-def verify(token):
+-    decoded = jwt.decode(token, SECRET)
+-    return decoded
++def verify(token):
++    decoded = jwt.decode(token, SECRET)
++    return decoded
+```
+```
+
+### ITEM: cm6_test_add
+```
+Write commit message for this diff:
+```
+--- a/tests/test_clamp.py
++++ b/tests/test_clamp.py
+@@ -10,0 +11,8 @@
++def test_clamp_lo_greater_than_hi():
++    with pytest.raises(ValueError, match='lo must not exceed hi'):
++        clamp(5, 10, 3)
++
++def test_clamp_value_below_range():
++    assert clamp(-5, 0, 10) == 0
+```
+```
+
+### ITEM: cm7_breaking_change
+```
+Write commit message for this diff:
+```
+--- a/api/auth.py
++++ b/api/auth.py
+@@ -45,1 +45,1 @@
+-def login(username: str, password: str) -> Token:
++def login(username: str, password: str, mfa_code: str) -> Token:
+```
+```
+
+### ITEM: cm8_docs_only
+```
+Write commit message for this diff:
+```
+--- a/docs/api.md
++++ b/docs/api.md
+@@ -120,2 +120,8 @@
+ ## Authentication
++
++All API requests require a valid JWT token in the `Authorization` header:
++```
++Authorization: Bearer <token>
++```
++Tokens are issued via `POST /auth/login` and expire after 24 hours.
+```
+```
+
+
+## OUTPUT FORMAT
+
+For each item, output exactly:
+
+{ITEM_ID}_BEGIN
+<the response Claude would produce for this item under the system prompt>
+{ITEM_ID}_END
+
+Output all 8 items in order. NO content outside the BEGIN/END markers.

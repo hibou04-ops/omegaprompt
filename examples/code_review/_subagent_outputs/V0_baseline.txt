@@ -1,0 +1,432 @@
+t1_off_by_one_slice_BEGIN
+**Issue: Off-by-one error**
+
+The slice is incorrect. `items[len(items) - n - 1:]` returns the last `n + 1` items, not the last `n`.
+
+For example, with `items = [1, 2, 3, 4, 5]` and `n = 2`:
+- `len(items) - n - 1` = `5 - 2 - 1` = `2`
+- `items[2:]` returns `[3, 4, 5]` — three items instead of two.
+
+**Fix:**
+
+```python
+def last_n(items, n):
+    return items[len(items) - n:]
+```
+
+Or, more idiomatically:
+
+```python
+def last_n(items, n):
+    return items[-n:] if n > 0 else []
+```
+
+**Additional concerns:**
+
+1. **Edge case `n = 0`:** With the idiomatic `items[-n:]` form, `items[-0:]` is `items[0:]` (the whole list), so `n = 0` must be guarded.
+2. **Edge case `n > len(items)`:** Both the original and `items[-n:]` form behave inconsistently. `items[-n:]` with `n > len(items)` returns the whole list, which is usually the desired behavior — but the original returns a slice from a negative index, which also returns the whole list (silently masking the bug). Document the intended behavior.
+3. **Negative `n`:** Should be rejected explicitly with a `ValueError` rather than producing surprising slice behavior.
+4. **No type hints or docstring.**
+t1_off_by_one_slice_END
+
+t2_mutable_default_dict_BEGIN
+**Issue: Mutable default argument**
+
+The default value `history={}` is evaluated **once** at function definition time, not on each call. All calls that don't pass `history` explicitly share the same dictionary, which causes state to leak across calls and is almost never the intended behavior.
+
+**Demonstration:**
+
+```python
+greet("Alice")  # "Hello Alice, visit #1"
+greet("Alice")  # "Hello Alice, visit #2"  -- shared state!
+greet("Bob")    # "Hello Bob, visit #1"
+greet("Alice")  # "Hello Alice, visit #3"
+```
+
+If this *is* intended (a persistent visit counter), it should be made explicit rather than hidden in a default argument.
+
+**Recommended fix — use `None` sentinel:**
+
+```python
+def greet(name, history=None):
+    if history is None:
+        history = {}
+    history[name] = history.get(name, 0) + 1
+    return f"Hello {name}, visit #{history[name]}"
+```
+
+**If a persistent counter is actually intended,** make it explicit:
+
+```python
+from collections import defaultdict
+
+_visit_count: dict[str, int] = defaultdict(int)
+
+def greet(name: str) -> str:
+    _visit_count[name] += 1
+    return f"Hello {name}, visit #{_visit_count[name]}"
+```
+
+Or wrap state in a class to avoid module-level mutable globals.
+
+**Additional concerns:**
+
+- No type hints.
+- Not thread-safe if used concurrently.
+- No input validation.
+t2_mutable_default_dict_END
+
+t3_command_injection_BEGIN
+**Critical security issue: Shell command injection**
+
+Because `directory` comes from a web form and is interpolated directly into a shell command with `shell=True`, this is a textbook **command injection vulnerability**. An attacker can submit input like `; rm -rf / #` and the shell will execute it. This must be fixed before deployment.
+
+**Recommended fix — avoid the shell entirely:**
+
+```python
+import os
+def list_files(directory: str) -> list[str]:
+    base = "/var/app/userfiles"
+    full = os.path.realpath(os.path.join(base, directory))
+    if not full.startswith(base + os.sep):
+        raise ValueError("Invalid directory")
+    return os.listdir(full)
+```
+
+Note that even with `shell=False`, you still need to **validate `directory`** to prevent path traversal.
+
+**Other issues:** path traversal protection, no error handling, stderr discarded, returns raw shell output, cross-platform (`ls` not on Windows).
+t3_command_injection_END
+
+t4_forgotten_await_BEGIN
+**Issue 1: Missing `await` on the coroutine**
+
+`AsyncClient().get(...)` returns a **coroutine**, not a `Response`. Calling `.json()` on a coroutine will raise `AttributeError`.
+
+**Issue 2: `AsyncClient` is never closed (resource leak)**
+
+A new `AsyncClient` is created on every call and never `.aclose()`-ed.
+
+**Recommended fix:**
+
+```python
+import httpx
+
+async def fetch_user(user_id: int, client: httpx.AsyncClient) -> dict:
+    response = await client.get(f"/users/{user_id}")
+    response.raise_for_status()
+    return response.json()
+```
+
+**Other concerns:** relative URL needs base_url, no timeout, no type hints, user_id not validated.
+t4_forgotten_await_END
+
+t5_dict_iter_mutation_BEGIN
+**Critical issue: Mutating a dict while iterating over it**
+
+Deleting keys from a dict during iteration raises `RuntimeError: dictionary changed size during iteration` in CPython.
+
+**Recommended fix — iterate over a snapshot of the keys:**
+
+```python
+def remove_negatives(d: dict) -> dict:
+    for key in list(d):
+        if d[key] < 0:
+            del d[key]
+    return d
+```
+
+**Or, build a new dict:**
+
+```python
+def remove_negatives(d: dict) -> dict:
+    return {k: v for k, v in d.items() if v >= 0}
+```
+
+**Additional concerns:** zero handling intent, mutation+return confusion, type assumption, no type hints.
+t5_dict_iter_mutation_END
+
+t6_clean_code_BEGIN
+This function is well-written.
+
+**Strengths:** Type hints correct. Input validation. Idiomatic clamp. Single responsibility.
+
+**Minor suggestions:**
+
+1. **Docstring:** would help, especially for `lo > hi` behavior.
+2. **NaN handling:** `min`/`max` propagate NaN unpredictably. If NaN inputs possible, decide a policy.
+3. **Type strictness:** signature accepts `int` due to numeric coercion. If strict, use `numbers.Real`.
+4. **Generic version:** if you ever want non-float comparables, a `TypeVar` could be more reusable.
+
+Overall: clean, correct, ready to ship.
+t6_clean_code_END
+
+c1_factorial_BEGIN
+**Critical bug: Multiplies by zero on the first iteration**
+
+`range(n)` produces `0, 1, 2, ..., n-1`. The first value is `0`, so `result *= 0` makes the result `0` for **every** input `n >= 1`.
+
+**Fix:**
+
+```python
+def factorial(n: int) -> int:
+    if n < 0:
+        raise ValueError("factorial is undefined for negative integers")
+    result = 1
+    for i in range(1, n + 1):
+        result *= i
+    return result
+```
+
+**Or, just use the standard library:**
+
+```python
+import math
+math.factorial(n)
+```
+
+**Additional issues:** no negative `n` handling, no non-integer handling, no type hints/docstring.
+c1_factorial_END
+
+c2_counter_race_BEGIN
+**Critical issue: Race condition — `self.count += 1` is not atomic**
+
+`self.count += 1` compiles to **multiple** bytecodes (LOAD_ATTR, LOAD_CONST, BINARY_ADD, STORE_ATTR). A thread switch can occur between any of these. With many threads incrementing concurrently, updates are **lost**.
+
+**Recommended fix — guard with a lock:**
+
+```python
+import threading
+
+class Counter:
+    def __init__(self):
+        self._count = 0
+        self._lock = threading.Lock()
+
+    def increment(self) -> None:
+        with self._lock:
+            self._count += 1
+
+    @property
+    def count(self) -> int:
+        with self._lock:
+            return self._count
+```
+
+**Alternatives:** `itertools.count`, `multiprocessing.Value`.
+
+**Other concerns:** direct attribute access, no reset/decrement, no type hints.
+c2_counter_race_END
+
+c3_sql_injection_BEGIN
+**Critical security issue: SQL injection**
+
+This is a textbook SQL injection vulnerability. Concatenating `user_input` directly into the SQL string lets an attacker inject arbitrary SQL.
+
+**Recommended fix — use parameterized queries:**
+
+```python
+cursor.execute("SELECT * FROM users WHERE name = ?", (user_input,))
+```
+
+**Important: never use `.format()`, f-strings, or `%` to build SQL with user input.**
+
+**Additional concerns:**
+1. **`SELECT *`** — returns all columns.
+2. **No `LIMIT`** — may return many rows unexpectedly.
+3. **Identifier injection:** parameterization protects values, not identifiers.
+4. **Logging** sensitive data.
+c3_sql_injection_END
+
+c4_file_leak_BEGIN
+**Issue 1: File handle leak — file is never closed**
+
+`open(path)` is called but `f.close()` is never called.
+
+**Recommended fix — use a `with` statement:**
+
+```python
+def process_file(path: str) -> str:
+    with open(path) as f:
+        return f.read()
+```
+
+**Issue 2: No encoding specified**
+
+Use `encoding="utf-8"`.
+
+**Issue 3:** No error handling.
+**Issue 4:** Reads entire file into memory.
+**Issue 5:** Misleading name — `process_file` doesn't process anything.
+
+**Cleaned up:**
+
+```python
+def read_file(path: str, encoding: str = "utf-8") -> str:
+    with open(path, encoding=encoding) as f:
+        return f.read()
+```
+c4_file_leak_END
+
+c5_n_plus_1_BEGIN
+**Issue 1: N+1 query problem (performance)**
+
+For N users, this issues N separate database queries. For 1,000 users, that's 1,000 round trips.
+
+**Recommended fix — single query with IN clause:**
+
+```python
+def get_users_with_posts(users):
+    user_ids = [u.id for u in users]
+    posts_by_user = {}
+    for post in db.query(
+        "SELECT * FROM posts WHERE user_id IN %s",
+        (tuple(user_ids),),
+    ):
+        posts_by_user.setdefault(post.user_id, []).append(post)
+    return [{'user': u, 'posts': posts_by_user.get(u.id, [])} for u in users]
+```
+
+**Issue 2: SQL injection vulnerability** — `f"... {u.id}"` interpolates directly. Always parameterize.
+
+**Issue 3:** `SELECT *` returns all columns.
+**Issue 4:** No handling of empty `users`.
+**Issue 5:** Returns raw rows mixed with ORM objects.
+
+**Other concerns:** no type hints, no pagination, no ORDER BY.
+c5_n_plus_1_END
+
+c6_ordered_check_BEGIN
+**Issue 1: `assert` should not be used for runtime input validation**
+
+`assert` statements are **stripped when Python runs with `-O`**. Validation silently disappears in production.
+
+**Use explicit checks:**
+
+```python
+def validate_order(order: dict) -> None:
+    if 'customer_id' not in order:
+        raise ValueError("order is missing 'customer_id'")
+    if 'items' not in order or not order['items']:
+        raise ValueError("order must contain at least one item")
+    if 'total' not in order:
+        raise ValueError("order is missing 'total'")
+    if order['total'] <= 0:
+        raise ValueError(f"order total must be positive, got {order['total']}")
+```
+
+**Issue 2: Order of checks creates `KeyError` instead of clear error**
+
+The current code checks `order['total'] > 0` before checking that `'customer_id'` exists.
+
+**Issue 3: Empty error messages** — `assert order['total'] > 0` raises with no message.
+
+**Issue 4: Weak typing** — use `TypedDict` or `pydantic`.
+
+**Issue 5:** Returns `None` — consider returning a parsed/validated `Order` object.
+c6_ordered_check_END
+
+c7_concat_loop_BEGIN
+**Issue 1: Quadratic-time string concatenation**
+
+In Python, strings are immutable, so `result += line + '\n'` creates a new string each iteration. This is O(n^2) in total length.
+
+(Note: CPython has an optimization that may make this amortized O(n), but it's not guaranteed.)
+
+**Recommended fix — use `str.join`:**
+
+```python
+def join_lines(lines):
+    return '\n'.join(lines) + '\n'
+```
+
+**Issue 2: Trailing newline behavior is ambiguous** — original always appends, `join` doesn't. Pick one and document.
+
+**Issue 3: Edge case — empty `lines`** — guard:
+
+```python
+return '\n'.join(lines) + '\n' if lines else ''
+```
+
+**Issue 4:** No validation of `lines` contents.
+**Issue 5:** Naming.
+
+**Final recommendation:**
+
+```python
+def join_lines(lines: list[str]) -> str:
+    """Join lines with '\\n' separator and a trailing newline."""
+    if not lines:
+        return ''
+    return '\n'.join(lines) + '\n'
+```
+c7_concat_loop_END
+
+c8_mutable_default_BEGIN
+**Critical issue: Mutable default argument**
+
+`log: list = []` is evaluated **once** when the function is defined. Every call that omits `log` shares the **same list**, so events leak across calls.
+
+**Recommended fix — use `None` sentinel:**
+
+```python
+def add_event(event: str, log: list[str] | None = None) -> list[str]:
+    if log is None:
+        log = []
+    log.append(event)
+    return log
+```
+
+**Additional concerns:**
+1. **Mutates and returns the same list** — confusing.
+2. **Type hint imprecision:** `list` should be `list[str]`.
+3. **No docstring.**
+4. **Thread safety.**
+5. **`event` validation.**
+c8_mutable_default_END
+
+c9_late_binding_BEGIN
+**Issue: Late binding of closure variable `v`**
+
+In Python, closures capture variables by **reference**, not by value. Every lambda captures the **same** variable `v`. By the time callbacks run, `v` is whatever value it had at the **end** of the loop.
+
+**Demonstration:** prints `3, 3, 3`, not `1, 2, 3`.
+
+**Recommended fix — bind `v` as a default argument:**
+
+```python
+def make_callbacks(values):
+    callbacks = []
+    for v in values:
+        callbacks.append(lambda v=v: print(v))
+    return callbacks
+```
+
+**Or, use `functools.partial`:**
+
+```python
+from functools import partial
+def make_callbacks(values):
+    return [partial(print, v) for v in values]
+```
+
+**Or, factory function** (most explicit).
+
+**Additional concerns:** no type hints, `print` side effect, linters catch this, naming.
+c9_late_binding_END
+
+c10_clean_code_BEGIN
+This function is correct and reasonably clean.
+
+**Strengths:** Type hints correct. Algorithm clear. Single responsibility.
+
+**Minor observations:**
+
+1. **`% 256` inside the loop is redundant** — can use `sum(data) % 256`.
+2. **Docstring** would clarify which checksum.
+3. **Naming:** `checksum` is generic — name the specific algorithm.
+4. **Empty input:** consistent with original.
+5. **Performance for large inputs:** `sum()` is fast.
+
+Overall: small, correct, readable. Main suggestion is to simplify to `return sum(data) % 256`.
+c10_clean_code_END

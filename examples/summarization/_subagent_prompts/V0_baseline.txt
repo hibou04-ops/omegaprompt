@@ -1,0 +1,66 @@
+You are simulating fresh Claude API calls. The SYSTEM PROMPT below is the ONLY instruction Claude would have for each call — no Claude Code wrapper, no other context. Respond EXACTLY as Claude would respond to each user message under that system prompt.
+
+## Critical rules
+
+- No meta-commentary, no preamble, no acknowledgement of the simulation
+- Each ITEM is an INDEPENDENT API call — Claude has NO memory of previous items
+- You must NOT let your response on item N be influenced by items 1..N-1
+- Just produce what Claude would output if that ITEM were the only user message
+
+## SYSTEM PROMPT (the ONLY instruction Claude has)
+
+Summarize this.
+
+## ITEMS — 8 independent calls
+
+
+### ITEM: sum1_pep703
+```
+Summarize: PEP 703 (Making the Global Interpreter Lock Optional in CPython) proposes a build-time configuration to disable CPython's GIL, enabling true multi-core parallelism for Python threads. Accepted in October 2023, it ships in CPython 3.13 (October 2024) as an experimental opt-in build (--disable-gil at compile time). Adoption is gated on third-party C extension compatibility; major projects (NumPy, Cython, pybind11) are gradually adding free-threaded support. Performance trade-offs include single-threaded slowdown estimated at 5-10% in early benchmarks, with the goal of bringing this to ~0% by 3.15. Sam Gross (Meta) authored both the PEP and the reference implementation.
+```
+
+### ITEM: sum2_short_input
+```
+Summarize: The meeting is at 3pm tomorrow.
+```
+
+### ITEM: sum3_release_notes
+```
+Summarize: PostgreSQL 17 (released September 26, 2024) introduces several major improvements: vacuum process now uses 20x less memory, logical replication supports failover slot synchronization, JSON_TABLE function adds standards-compliant JSON-to-relational conversion, MERGE command gains RETURNING clause, COPY ... FROM gains ON_ERROR option for skipping bad rows, and pg_basebackup adds incremental backup support. Performance: query planner improvements deliver up to 30% gains on common workloads; B-tree indexes use less storage. Breaking changes: removed deprecated `adminpack` extension; default password encryption is now SCRAM-SHA-256 (was MD5).
+```
+
+### ITEM: sum4_meeting_notes
+```
+Summarize this meeting recap: The team discussed the upcoming Q1 launch. Sarah raised concerns about the API rate limits — current 100 req/sec ceiling won't handle the projected 500 req/sec at launch. Marcus agreed and proposed bumping to 1000 req/sec via load balancer config; he'll have a PR by Wednesday. Priya flagged that the analytics dashboard is still missing the funnel visualization the marketing team requested in November; she'll loop in Jin to scope. Action items: Marcus → load balancer PR by Wed; Priya → escalate dashboard scope to Jin; team → revisit launch readiness next standup.
+```
+
+### ITEM: sum5_already_brief_definition
+```
+Summarize: A coroutine is a function that can pause and resume its execution.
+```
+
+### ITEM: sum6_research_paper_abstract
+```
+Summarize this abstract: We introduce DSPy, a programming model and compiler for self-improving language model pipelines. DSPy abstracts LM-using systems as text transformation graphs (modules) and replaces hard-coded prompts with parameterized, composable modules whose prompts and weights are jointly optimized via traces collected from a small training set. We evaluate on three tasks (multi-hop QA, math word problems, agent question answering). DSPy compilers automatically generate prompts that exceed expert-written prompts by 5-46% on complex tasks, while requiring 50-80% fewer LM calls than equivalent few-shot programs. Code and pretrained pipelines are at github.com/stanfordnlp/dspy.
+```
+
+### ITEM: sum7_news_event
+```
+Summarize: On April 15, 2025, OpenAI released GPT-5, marking the first model in the series with native long-context reasoning across 1M tokens and a hybrid architecture combining MoE (mixture of experts) with selective attention. Pricing dropped to $5/M input and $20/M output (previously $10/$30 for GPT-4 Turbo), driven by sparser activation. Anthropic responded the following week with Claude Opus 4 at the same context length and competitive pricing. Industry observers noted both companies converging on similar capabilities, with differentiation moving toward agentic frameworks and tool integration rather than raw model performance.
+```
+
+### ITEM: sum8_contract_clause
+```
+Summarize this contract clause: The Provider warrants that the Services will materially conform to the documentation in effect at the time of execution of this Agreement. The Provider's sole liability and Customer's exclusive remedy for breach of this warranty shall be, at the Provider's option, either (i) re-performance of the non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding the date Customer notified Provider in writing of the non-conformity. EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND.
+```
+
+
+## OUTPUT FORMAT
+
+For each item, output exactly:
+
+{ITEM_ID}_BEGIN
+<the response Claude would produce for this item under the system prompt>
+{ITEM_ID}_END
+
+Output all 8 items in order. NO content outside the BEGIN/END markers.

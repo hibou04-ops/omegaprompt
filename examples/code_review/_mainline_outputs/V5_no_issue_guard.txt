@@ -1,0 +1,75 @@
+t1_off_by_one_slice_BEGIN
+Issue (line 2): `items[len(items) - n - 1:]` returns the last `n + 1` items, not `n` (off-by-one).
+Fix: `return items[-n:] if n > 0 else []` — the `n > 0` guard handles `items[-0:]` returning the full list.
+t1_off_by_one_slice_END
+t2_mutable_default_dict_BEGIN
+Issue (line 1): Mutable default `history={}` is created once at definition time and shared across all calls that omit `history`.
+Fix: `def greet(name, history=None):` with `if history is None: history = {}` at the top.
+t2_mutable_default_dict_END
+t3_command_injection_BEGIN
+Issue (line 4): Shell command injection — `directory` from a web form interpolated into a `shell=True` string allows arbitrary command execution.
+Fix: Drop `shell=True` and pass argv as a list: `subprocess.run(["ls", directory], capture_output=True, text=True)`.
+t3_command_injection_END
+t4_forgotten_await_BEGIN
+Issue (line 3): `httpx.AsyncClient().get(...)` returns a coroutine that is never awaited; the client is also never closed.
+Fix:
+```
+async with httpx.AsyncClient() as client:
+    response = await client.get(f"/users/{user_id}")
+    return response.json()
+```
+t4_forgotten_await_END
+t5_dict_iter_mutation_BEGIN
+Issue (line 2): Mutating `d` while iterating raises `RuntimeError: dictionary changed size during iteration`.
+Fix: `return {k: v for k, v in d.items() if v >= 0}` (or iterate `list(d)` if in-place mutation is required).
+t5_dict_iter_mutation_END
+t6_clean_code_BEGIN
+NO_ISSUE
+t6_clean_code_END
+c1_factorial_BEGIN
+Issue (line 3): `range(n)` starts at 0, so `result *= 0` on the first iteration makes `factorial(n)` always return 0 for `n >= 1`.
+Fix: `for i in range(1, n + 1): result *= i`.
+c1_factorial_END
+c2_counter_race_BEGIN
+Issue (line 6): `self.count += 1` is not atomic — concurrent threads can interleave the read-modify-write and lose increments.
+Fix: Guard with a `threading.Lock`: `with self._lock: self.count += 1`.
+c2_counter_race_END
+c3_sql_injection_BEGIN
+Issue (line 1): SQL injection — `user_input` concatenated directly into the query allows arbitrary SQL.
+Fix: `cursor.execute("SELECT * FROM users WHERE name = ?", (user_input,))` (parameterized; `%s` for psycopg2/MySQLdb).
+c3_sql_injection_END
+c4_file_leak_BEGIN
+Issue (line 2): File handle is never closed — leaks the descriptor, with closure timing dependent on GC.
+Fix: `with open(path, encoding="utf-8") as f: return f.read()`.
+c4_file_leak_END
+c5_n_plus_1_BEGIN
+Issue (line 3): N+1 query (one SELECT per user) plus SQL injection via f-string interpolation of `u.id`.
+Fix: Single parameterized query plus in-memory grouping:
+```
+ids = [u.id for u in users]
+rows = db.query("SELECT * FROM posts WHERE user_id IN %s", (tuple(ids),))
+by_user = {}
+for r in rows:
+    by_user.setdefault(r.user_id, []).append(r)
+return [{"user": u, "posts": by_user.get(u.id, [])} for u in users]
+```
+c5_n_plus_1_END
+c6_ordered_check_BEGIN
+Issue (line 2): `assert` is stripped under `python -O` (validation disappears in production), and `order['total']` is read before key existence is checked, raising `KeyError` instead of a clean validation error.
+Fix: Replace `assert` with `raise ValueError(...)` and check key presence before subscripting.
+c6_ordered_check_END
+c7_concat_loop_BEGIN
+Issue (line 3): Repeated `+=` on a string is O(n²) in the general case (CPython has a fragile in-place optimization, but PyPy/Jython do not).
+Fix: `return '\n'.join(lines) + '\n'` (preserves the trailing newline).
+c7_concat_loop_END
+c8_mutable_default_BEGIN
+Issue (line 1): Mutable default `log: list = []` is shared across calls that omit `log`, accumulating events across unrelated callers.
+Fix: `def add_event(event: str, log: list | None = None) -> list:` with `if log is None: log = []`.
+c8_mutable_default_END
+c9_late_binding_BEGIN
+Issue (line 4): Late-binding closure — every lambda captures the same `v`, which holds the loop's final value when callbacks run. All three print `3`.
+Fix: `callbacks.append(lambda v=v: print(v))` — default arguments are evaluated at lambda-definition time.
+c9_late_binding_END
+c10_clean_code_BEGIN
+NO_ISSUE
+c10_clean_code_END

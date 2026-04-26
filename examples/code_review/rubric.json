@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "bug_identification",
+      "description": "Did the reviewer correctly identify the bugs / correctness issues in the code? High score = every real bug flagged with a clear explanation of why it's wrong. Low score = misses obvious bugs, or fabricates bugs that aren't there. When a reference solution exists, compare against it; when it doesn't, judge by the code's semantics. If the code has no real issue, a response that correctly says so (e.g., 'NO_ISSUE', 'this looks correct') scores high; a response that fabricates a non-existent bug scores low.",
+      "weight": 0.45,
+      "scale": [1, 5]
+    },
+    {
+      "name": "specificity",
+      "description": "Does the review cite specific lines, functions, or symbols — not vague handwaves? High = 'line 7: `lo = mid` never shrinks the search space when the target is in the upper half — infinite loop'. Low = 'there might be an issue somewhere in the loop'. For correct code, a clean 'NO_ISSUE' counts as specific; vague reassurance like 'looks fine maybe' does not.",
+      "weight": 0.30,
+      "scale": [1, 5]
+    },
+    {
+      "name": "actionability",
+      "description": "Does the review propose a concrete fix? High = a corrected snippet, or an explicit change instruction ('change `lo = mid` to `lo = mid + 1`'). Low = 'consider rewriting' with no direction. For correct code, no fix is needed and this dimension should score high if the reviewer correctly identifies that no change is needed.",
+      "weight": 0.25,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The reviewer must attempt the review. A response that refuses ('I can't help with code review'), deflects to a different topic, or returns empty content fails this gate.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "review_not_silent_rewrite",
+      "description": "The response must be a *review* (pointing at issues with explanation), not a silent replacement of the code with a corrected version. A response containing only revised code with no explanation fails — it defeats the purpose of a review for the author.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_fabricated_claims",
+      "description": "The reviewer must not invent nonexistent features of the language / library to justify a claim. A review that says 'Python's `range(n)` starts at 1' to support a bug claim fails this gate even if the underlying bug is real — the reasoning is false.",
+      "evaluator": "judge"
+    }
+  ]
+}

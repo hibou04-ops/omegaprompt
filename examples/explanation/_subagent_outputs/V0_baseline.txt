@@ -1,0 +1,432 @@
+ex1_what_is_async_BEGIN
+`async def` defines a coroutine function in Python. Instead of a regular function, it creates a function that, when called, returns a coroutine object rather than executing immediately.
+
+Key points:
+
+1. **Returns a coroutine, doesn't run code immediately**
+   ```python
+   async def greet():
+       return "hello"
+
+   result = greet()  # This is a coroutine object, NOT "hello"
+   ```
+
+2. **Must be awaited or run by an event loop**
+   ```python
+   import asyncio
+
+   async def greet():
+       return "hello"
+
+   print(asyncio.run(greet()))  # "hello"
+   ```
+
+3. **Allows use of `await` inside the function**
+   ```python
+   async def fetch_data():
+       await asyncio.sleep(1)
+       return "data"
+   ```
+
+4. **Enables concurrent I/O without threads**
+   ```python
+   async def main():
+       results = await asyncio.gather(
+           fetch_data(),
+           fetch_data(),
+           fetch_data(),
+       )
+   ```
+
+**When to use it:** I/O-bound tasks like network requests, file operations, or database queries. It doesn't help with CPU-bound work.
+
+**Note:** `async def` functions are "infectious" — to await one, the calling function also needs to be `async`, or you need an event loop runner like `asyncio.run()`.
+ex1_what_is_async_END
+
+ex2_difference_is_vs_eq_BEGIN
+- **`==`** checks **value equality** — do the two objects have the same value?
+- **`is`** checks **identity** — are the two names referring to the *exact same object* in memory?
+
+### Examples
+
+```python
+a = [1, 2, 3]
+b = [1, 2, 3]
+c = a
+
+a == b   # True
+a is b   # False
+a is c   # True
+```
+
+### Why it matters
+
+`==` can be customized via `__eq__`; `is` cannot be overridden. So `is` is faster but only meaningful when you actually care about object identity.
+
+### Common correct uses of `is`
+
+Comparing to singletons:
+```python
+x is None
+x is True
+x is False
+```
+PEP 8 mandates `is None`, not `== None`.
+
+### The classic gotcha
+
+```python
+a = 256
+b = 256
+a is b   # True — CPython caches small ints
+
+a = 257
+b = 257
+a is b   # False (usually)
+```
+
+Implementation detail. **Never use `is` to compare numbers or strings** — use `==`.
+
+### Rule of thumb
+
+- Use `is` for `None`, `True`, `False`, and sentinel objects.
+- Use `==` for everything else.
+ex2_difference_is_vs_eq_END
+
+ex3_what_is_gil_BEGIN
+The **GIL (Global Interpreter Lock)** is a mutex in CPython that allows only **one thread to execute Python bytecode at a time**, even on multi-core machines.
+
+### Why it exists
+
+CPython's memory management isn't thread-safe. The GIL is a simple solution: serialize bytecode execution.
+
+### When it matters (hurts you)
+
+**CPU-bound, multi-threaded Python code.**
+
+```python
+import threading
+
+def crunch():
+    sum(i*i for i in range(10_000_000))
+
+t1 = threading.Thread(target=crunch)
+t2 = threading.Thread(target=crunch)
+t1.start(); t2.start()
+t1.join(); t2.join()
+```
+
+You get concurrency, not parallelism.
+
+### When it doesn't matter
+
+1. **I/O-bound work** — the GIL is released during blocking I/O.
+2. **C extensions that release the GIL** — NumPy, SciPy, etc.
+3. **Single-threaded code**.
+4. **Multiple processes** — each has its own GIL.
+
+### Workarounds
+
+- `multiprocessing`
+- C extensions / Cython / Rust (PyO3)
+- `asyncio`
+- Other Python implementations (Jython, IronPython)
+- PEP 703 (Python 3.13+ free-threaded build) — experimental
+
+### Bottom line
+
+CPU-bound → use processes. I/O-bound → threads or asyncio work fine.
+ex3_what_is_gil_END
+
+ex4_explain_for_loop_BEGIN
+A **for loop** is a control structure that repeats a block of code once for each item in a sequence.
+
+### Basic syntax (Python)
+
+```python
+for item in iterable:
+    # do something with item
+```
+
+### Examples
+
+```python
+for fruit in ["apple", "banana", "cherry"]:
+    print(fruit)
+
+for i in range(5):
+    print(i)
+
+for ch in "hi":
+    print(ch)
+
+for key, value in {"a": 1, "b": 2}.items():
+    print(key, value)
+```
+
+### How it works conceptually
+
+The loop:
+1. Asks the iterable for an iterator.
+2. Calls `next()` on that iterator until it's exhausted.
+3. On each call, binds the value to the loop variable and runs the body.
+
+### vs. other languages
+
+In C/Java/JavaScript, `for` is usually a counted loop. Python's `for` is a "for-each" — to get a counter, use `range()` or `enumerate()`:
+
+```python
+for i, item in enumerate(items):
+    print(i, item)
+```
+
+### When to use it
+
+Whenever you need to do something **for each element** of a collection.
+ex4_explain_for_loop_END
+
+ex5_explain_closure_BEGIN
+A **closure** is a function that "remembers" variables from the scope in which it was defined, even after that outer scope has finished executing.
+
+### Minimal example
+
+```python
+def make_counter():
+    count = 0
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+    return increment
+
+counter = make_counter()
+print(counter())  # 1
+print(counter())  # 2
+print(counter())  # 3
+```
+
+`increment` captured `count`. Even though `make_counter` has returned, `count` lives on.
+
+### Three ingredients
+
+1. A **nested function**.
+2. The inner function **references variables from the enclosing function's scope**.
+3. The outer function **returns the inner function**.
+
+### Why `nonlocal`?
+
+By default, assigning to a variable inside a function makes it a *new local*. To modify an enclosing-scope variable, use `nonlocal`. For *reading*, you don't need it.
+
+### Common uses
+
+**Function factories, decorators, callbacks** with state without classes.
+
+### Closure vs. class
+
+A closure with one method and some state is essentially a tiny one-method class. Use closures for small, simple cases; reach for a class when you have multiple methods or complex state.
+
+### Inspecting captured variables
+
+```python
+counter.__closure__       # tuple of cell objects
+counter.__closure__[0].cell_contents
+```
+ex5_explain_closure_END
+
+ex6_explain_dunder_init_vs_new_BEGIN
+Both are involved in creating instances of a class, but they do different things:
+
+| | `__new__` | `__init__` |
+|---|---|---|
+| Purpose | **Create** the instance | **Initialize** the instance |
+| Called | First | After `__new__` returns |
+| First arg | `cls` | `self` |
+| Returns | The new instance | `None` |
+| Type | Static method | Regular method |
+
+### The flow
+
+```python
+obj = MyClass.__new__(MyClass, x, y)
+if isinstance(obj, MyClass):
+    MyClass.__init__(obj, x, y)
+```
+
+If `__new__` doesn't return an instance of `cls`, `__init__` is *skipped*.
+
+### Default behavior
+
+You almost never need to override `__new__`:
+
+```python
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+```
+
+### When `__new__` actually matters
+
+**1. Subclassing immutable types** (`int`, `str`, `tuple`, `frozenset`)
+
+```python
+class PositiveInt(int):
+    def __new__(cls, value):
+        if value < 0:
+            raise ValueError("must be non-negative")
+        return super().__new__(cls, value)
+```
+
+**2. Singletons**
+
+```python
+class Singleton:
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+```
+
+**3. Returning a different class** (factory patterns, caching).
+
+**4. Metaclasses**.
+
+### Common gotchas
+
+- If `__new__` returns an instance of a *different* class, `__init__` won't be called.
+- If you override `__new__`, forward extra arguments correctly to `super().__new__(cls)`.
+
+### Rule of thumb
+
+Use `__init__` for setup. Only reach for `__new__` when subclassing an immutable, building a singleton, or controlling instance creation itself.
+ex6_explain_dunder_init_vs_new_END
+
+ex7_explain_slots_BEGIN
+`__slots__` is a class attribute that tells Python to allocate a **fixed set of attribute slots** for instances, instead of giving each instance a dynamic `__dict__`.
+
+### Basic usage
+
+```python
+class Point:
+    __slots__ = ("x", "y")
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+p = Point(1, 2)
+p.x = 10        # OK
+p.z = 30        # AttributeError
+p.__dict__      # AttributeError
+```
+
+### Why use it
+
+**1. Lower memory usage** — typically 40-50% smaller for small classes.
+
+**2. Faster attribute access** — small win per-access but adds up in tight loops.
+
+**3. Prevents typos** — `p.xx = 5` raises immediately.
+
+### When to use
+
+- Many instances of a small class
+- Strict attribute control
+- Optimizing memory in a hot path
+
+### Costs and gotchas
+
+- No new attributes
+- No `__dict__` and no `__weakref__` unless added
+- Inheritance is tricky — non-slot subclass loses the benefit
+- Default class-level values conflict
+- `dataclasses` support `@dataclass(slots=True)` (3.10+) — cleanest modern way
+
+### Bottom line
+
+Use for small, numerous, fixed-shape objects when memory or attribute-discipline matters.
+ex7_explain_slots_END
+
+ex8_explain_yield_BEGIN
+`yield` turns a function into a **generator**: instead of computing all results and returning them at once, the function produces values **one at a time, on demand**.
+
+### Basic example
+
+```python
+def count_up_to(n):
+    i = 1
+    while i <= n:
+        yield i
+        i += 1
+
+for x in count_up_to(3):
+    print(x)
+# 1, 2, 3
+```
+
+Calling `count_up_to(3)` doesn't run the function — it returns a **generator object**.
+
+### How it works
+
+Each `next()` call:
+1. Runs until it hits `yield`.
+2. The yielded value is handed back.
+3. State is **frozen**.
+4. On next `next()`, resumes after the `yield`.
+5. When function returns, `StopIteration` is raised.
+
+### Why it matters
+
+**1. Lazy evaluation — handle huge or infinite sequences**
+
+```python
+def naturals():
+    i = 1
+    while True:
+        yield i
+        i += 1
+```
+
+**2. Streaming data — avoid loading everything**
+
+```python
+def read_lines(path):
+    with open(path) as f:
+        for line in f:
+            yield line.rstrip()
+```
+
+**3. Cleaner pipelines than building lists**
+
+### `yield` vs. `return`
+
+| | `return` | `yield` |
+|---|---|---|
+| Exits the function | Yes | No — pauses it |
+| Multiple times per call | No | Yes |
+| Function type | Regular | Generator |
+
+### `yield from`
+
+```python
+def chain(a, b):
+    yield from a
+    yield from b
+```
+
+### `yield` as expression
+
+```python
+def echo():
+    while True:
+        received = yield
+        print("got", received)
+```
+
+Modern code uses `async`/`await` instead for that pattern.
+
+### Bottom line
+
+Use `yield` when you want to **produce a sequence lazily**.
+ex8_explain_yield_END

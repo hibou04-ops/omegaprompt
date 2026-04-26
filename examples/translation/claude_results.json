@@ -1,0 +1,286 @@
+{
+  "task": "translation",
+  "config": {
+    "method": "opus_subagent",
+    "n_items": 8
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 25.75,
+      "sum": 206,
+      "min": 8,
+      "max": 44
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 26.25,
+      "sum": 210,
+      "min": 8,
+      "max": 45
+    },
+    {
+      "variant": "V2_format",
+      "mean": 25.625,
+      "sum": 205,
+      "min": 8,
+      "max": 45
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 26.125,
+      "sum": 209,
+      "min": 8,
+      "max": 45
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 25,
+      "sum": 200,
+      "min": 5,
+      "max": 45
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr1_ko_en_simple",
+      "tokens": 12,
+      "text": "Could you help me prepare the materials for tomorrow's meeting?"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr2_en_ko_technical",
+      "tokens": 44,
+      "text": "데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포가 실패했습니다."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr3_already_in_target",
+      "tokens": 8,
+      "text": "The meeting is at 3pm."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr4_idiom",
+      "tokens": 15,
+      "text": "이건 식은 죽 먹기야."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr5_with_code",
+      "tokens": 42,
+      "text": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌이 발생합니다."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr6_proper_nouns",
+      "tokens": 41,
+      "text": "GitHub은 Copilot이 2024년 11월부터 VS Code와 기본적으로 통합될 것이라고 발표했습니다."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr7_ambiguous_term",
+      "tokens": 32,
+      "text": "이 모델은 어텐션을 사용하여 관련 컨텍스트에 가중치를 부여합니다."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tr8_code_only",
+      "tokens": 12,
+      "text": "```python\ndef hello():\n    print('hi')\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr1_ko_en_simple",
+      "tokens": 12,
+      "text": "Could you help me prepare the materials for tomorrow's meeting?"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr2_en_ko_technical",
+      "tokens": 44,
+      "text": "데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포에 실패했습니다."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr3_already_in_target",
+      "tokens": 8,
+      "text": "The meeting is at 3pm."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr4_idiom",
+      "tokens": 15,
+      "text": "이건 식은 죽 먹기야."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr5_with_code",
+      "tokens": 42,
+      "text": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌이 발생합니다."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr6_proper_nouns",
+      "tokens": 45,
+      "text": "GitHub은 Copilot이 2024년 11월부터 VS Code에 네이티브로 통합될 것이라고 발표했습니다."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr7_ambiguous_term",
+      "tokens": 32,
+      "text": "이 모델은 어텐션을 사용하여 관련 컨텍스트에 가중치를 부여합니다."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tr8_code_only",
+      "tokens": 12,
+      "text": "```python\ndef hello():\n    print('hi')\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr1_ko_en_simple",
+      "tokens": 12,
+      "text": "Could you help me prepare the materials for tomorrow's meeting?"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr2_en_ko_technical",
+      "tokens": 43,
+      "text": "데이터베이스 마이그레이션 스크립트가 30초 후 시간 초과되어 배포에 실패했습니다."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr3_already_in_target",
+      "tokens": 8,
+      "text": "The meeting is at 3pm."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr4_idiom",
+      "tokens": 15,
+      "text": "이건 식은 죽 먹기야."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr5_with_code",
+      "tokens": 38,
+      "text": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있으면 충돌합니다."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr6_proper_nouns",
+      "tokens": 45,
+      "text": "GitHub은 Copilot이 2024년 11월부터 VS Code와 네이티브로 통합될 것이라고 발표했습니다."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr7_ambiguous_term",
+      "tokens": 32,
+      "text": "이 모델은 어텐션을 사용하여 관련 컨텍스트에 가중치를 부여합니다."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tr8_code_only",
+      "tokens": 12,
+      "text": "```python\ndef hello():\n    print('hi')\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr1_ko_en_simple",
+      "tokens": 12,
+      "text": "Could you help me prepare the materials for tomorrow's meeting?"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr2_en_ko_technical",
+      "tokens": 43,
+      "text": "데이터베이스 마이그레이션 스크립트가 30초 후 시간 초과되어 배포가 실패했습니다."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr3_already_in_target",
+      "tokens": 8,
+      "text": "The meeting is at 3pm."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr4_idiom",
+      "tokens": 15,
+      "text": "이건 식은 죽 먹기야."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr5_with_code",
+      "tokens": 39,
+      "text": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌합니다."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr6_proper_nouns",
+      "tokens": 45,
+      "text": "GitHub은 2024년 11월부터 Copilot이 VS Code와 네이티브로 통합될 것이라고 발표했습니다."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr7_ambiguous_term",
+      "tokens": 35,
+      "text": "이 모델은 어텐션(attention)을 사용하여 관련 컨텍스트에 가중치를 부여합니다."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tr8_code_only",
+      "tokens": 12,
+      "text": "```python\ndef hello():\n    print('hi')\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr1_ko_en_simple",
+      "tokens": 12,
+      "text": "Could you help me prepare the materials for tomorrow's meeting?"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr2_en_ko_technical",
+      "tokens": 44,
+      "text": "데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포가 실패했습니다."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr3_already_in_target",
+      "tokens": 5,
+      "text": "NO_TRANSLATION_NEEDED"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr4_idiom",
+      "tokens": 15,
+      "text": "이건 식은 죽 먹기야."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr5_with_code",
+      "tokens": 39,
+      "text": "`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌합니다."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr6_proper_nouns",
+      "tokens": 45,
+      "text": "GitHub은 Copilot이 2024년 11월부터 VS Code와 네이티브로 통합될 것이라고 발표했습니다."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr7_ambiguous_term",
+      "tokens": 35,
+      "text": "이 모델은 어텐션(attention)을 사용하여 관련 컨텍스트에 가중치를 부여합니다."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tr8_code_only",
+      "tokens": 5,
+      "text": "NO_TRANSLATION_NEEDED"
+    }
+  ]
+}

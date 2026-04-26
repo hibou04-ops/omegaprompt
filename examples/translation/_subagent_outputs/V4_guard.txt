@@ -1,0 +1,24 @@
+tr1_ko_en_simple_BEGIN
+Could you help me prepare the materials for tomorrow's meeting?
+tr1_ko_en_simple_END
+tr2_en_ko_technical_BEGIN
+데이터베이스 마이그레이션 스크립트가 30초 후에 시간 초과되어 배포가 실패했습니다.
+tr2_en_ko_technical_END
+tr3_already_in_target_BEGIN
+NO_TRANSLATION_NEEDED
+tr3_already_in_target_END
+tr4_idiom_BEGIN
+이건 식은 죽 먹기야.
+tr4_idiom_END
+tr5_with_code_BEGIN
+`calculate_total(items)` 함수는 모든 `item.price` 값의 합계를 반환하지만, `items`가 비어 있을 때 충돌합니다.
+tr5_with_code_END
+tr6_proper_nouns_BEGIN
+GitHub은 Copilot이 2024년 11월부터 VS Code와 네이티브로 통합될 것이라고 발표했습니다.
+tr6_proper_nouns_END
+tr7_ambiguous_term_BEGIN
+이 모델은 어텐션(attention)을 사용하여 관련 컨텍스트에 가중치를 부여합니다.
+tr7_ambiguous_term_END
+tr8_code_only_BEGIN
+NO_TRANSLATION_NEEDED
+tr8_code_only_END

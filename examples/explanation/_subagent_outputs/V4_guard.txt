@@ -1,0 +1,123 @@
+ex1_what_is_async_BEGIN
+What: `async def` defines a coroutine function — calling it returns a coroutine object instead of executing the body immediately.
+Why/how: The coroutine must be driven by an event loop (e.g., `asyncio.run`, `await`, or `asyncio.create_task`); inside it, `await` suspends execution at I/O points so the loop can run other coroutines concurrently on a single thread.
+Example:
+```python
+import asyncio
+
+async def fetch(n):
+    await asyncio.sleep(1)
+    return n * 2
+
+async def main():
+    results = await asyncio.gather(fetch(1), fetch(2), fetch(3))
+    print(results)           # [2, 4, 6] in ~1s, not 3s
+
+asyncio.run(main())
+```
+ex1_what_is_async_END
+
+ex2_difference_is_vs_eq_BEGIN
+What: `==` compares values (calls `__eq__`); `is` compares identity.
+Why/how: Use `==` for value equality, `is` only for singletons like `None`, `True`, `False`. A common misconception is that `is` works for small ints/strings because CPython caches them — that's an implementation detail.
+Example:
+```python
+a = [1, 2, 3]
+b = [1, 2, 3]
+a == b        # True
+a is b        # False
+x = None
+x is None     # True (correct idiom)
+```
+ex2_difference_is_vs_eq_END
+
+ex3_what_is_gil_BEGIN
+What: The Global Interpreter Lock is a mutex in CPython that allows only one thread to execute Python bytecode at a time within a single interpreter process.
+Why/how: It exists to make CPython's reference-counting memory management thread-safe; matters for CPU-bound multithreaded code (use `multiprocessing` or `ProcessPoolExecutor`) but not for I/O-bound code or NumPy-style C extensions that release it. Python 3.13+ offers an experimental free-threaded build.
+Example:
+```python
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+
+def cpu_work(n):
+    s = 0
+    for i in range(n):
+        s += i*i
+    return s
+
+# threads ≈ same as sequential due to GIL; procs ≈ ~4x faster on 4 cores
+list(ProcessPoolExecutor(4).map(cpu_work, [10_000_000]*4))
+```
+ex3_what_is_gil_END
+
+ex4_explain_for_loop_BEGIN
+ALREADY_OBVIOUS
+ex4_explain_for_loop_END
+
+ex5_explain_closure_BEGIN
+What: A closure is a function that captures and remembers variables from the enclosing lexical scope, even after that outer scope has finished executing.
+Why/how: Python creates a closure when a nested function references a name from an enclosing function; the captured names live in the inner function's `__closure__` cells. Use `nonlocal` to rebind a captured variable.
+Example:
+```python
+def make_counter():
+    count = 0
+    def inc():
+        nonlocal count
+        count += 1
+        return count
+    return inc
+
+c = make_counter()
+c(); c(); c()        # 1, 2, 3
+```
+ex5_explain_closure_END
+
+ex6_explain_dunder_init_vs_new_BEGIN
+What: `__new__` creates and returns the instance; `__init__` initializes the already-created instance.
+Why/how: `__new__` is a static method that receives the class; `__init__` is an instance method that receives `self` and returns `None`. You almost never override `__new__` for normal classes — only when subclassing immutable types (`int`, `str`, `tuple`), implementing singletons, or returning a cached instance.
+Example:
+```python
+class UpperStr(str):
+    def __new__(cls, value):
+        return super().__new__(cls, value.upper())
+    def __init__(self, value):
+        self.original = value
+
+s = UpperStr("hello")
+print(s)            # HELLO
+print(s.original)   # hello
+```
+ex6_explain_dunder_init_vs_new_END
+
+ex7_explain_slots_BEGIN
+What: `__slots__` declares a fixed set of attribute names for a class, telling Python to store instance attributes in a compact array instead of a per-instance `__dict__`.
+Why/how: It saves memory and speeds up attribute access slightly; trade-off: can't add new attributes at runtime, and multiple inheritance with slotted classes is tricky. Useful when you create millions of small instances.
+Example:
+```python
+import sys
+
+class PointS:
+    __slots__ = ("x", "y")
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+ps = PointS(1, 2)
+sys.getsizeof(ps)    # ~48 bytes
+ps.z = 3             # AttributeError
+```
+ex7_explain_slots_END
+
+ex8_explain_yield_BEGIN
+What: `yield` turns a function into a generator: each `yield` pauses the function, returns a value to the caller, and resumes from the same point on the next `next()` call.
+Why/how: Generators produce values lazily — state (locals, instruction pointer) is preserved between calls. `yield` can also receive a value sent in via `gen.send(...)`, and `yield from` delegates to a sub-iterator.
+Example:
+```python
+def fib():
+    a, b = 0, 1
+    while True:
+        yield a
+        a, b = b, a + b
+
+g = fib()
+[next(g) for _ in range(7)]  # [0, 1, 1, 2, 3, 5, 8]
+```
+ex8_explain_yield_END

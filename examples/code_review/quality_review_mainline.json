@@ -1,0 +1,687 @@
+{
+  "config": {
+    "items_total": 16,
+    "variants_total": 5,
+    "judge_method": "agent_review_mainline"
+  },
+  "per_call": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Names -1 OBO correctly: 'returns the last n+1 items, not the last n'. Concrete example [30,40,50] vs [40,50]. Fix items[-n:] with n>0 guard. Correct framing, no IndexError fabrication."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies mutable default dict history={} shared across calls. None sentinel fix. Also suggests module-level persistent counter as intentional alternative."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies shell command injection via shell=True + untrusted f-string. os.listdir fix and subprocess list-argv alternative. Path traversal note added."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue 1 explicitly: 'Missing await'. AsyncClient().get() returns a coroutine, response.json() raises AttributeError. Also catches resource leak. Correct root cause."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies RuntimeError from dict mutation during iteration. list(d) snapshot fix and dict comprehension alternative provided."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Leads with 'No bugs' and 'Optional polish (not bugs)' but invents NaN handling concern: 'if NaN inputs are possible, decide explicitly'. Strict rule: any invented issue on clean code = fabricated. Note: the disclaimer 'not bugs' makes it milder than 7B, but subagent V0 t6 was scored fabricated for the same NaN advisory pattern. Consistent application required. No false semantic claims so no hard_gate violation."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies range(n) starts at 0, result *= 0 on first iteration, factorial always 0 for n>=1. range(2, n+1) fix. math.factorial alternative suggested."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies non-atomic += (LOAD_ATTR, LOAD_CONST, BINARY_ADD, STORE_ATTR bytecodes listed). PEP 703 free-threading note accurate. Threading.Lock fix with property accessor."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies SQL injection via string concatenation. Parameterized query fix with driver syntax note. Identifier injection caveat noted."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "File handle leak as primary. GC timing note (PyPy/Jython accurate). Context manager with explicit encoding fix."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c5_n_plus_1",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue 1: N+1 query (one SELECT per user, 1000 round trips noted). Issue 2: SQL injection via f-string. N+1 identified as primary. Single parameterized IN-query fix with defaultdict grouping."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c6_ordered_check",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue 1: assert for runtime validation stripped by python -O. Issue 2: order['total'] read before 'customer_id' check. Issue 3: no error messages. Assert -O stripping correctly named as primary."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies O(n*k) / O(k^2) string concatenation. CPython refcount-1 optimization caveat noted accurately as fragile. str.join fix with trailing newline preservation."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies mutable default list [] shared across calls, events accumulate. None sentinel fix."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Correctly identifies late-binding closure, all callbacks print final loop value (3). lambda v=v fix and factory function alternative. Linter references accurate."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "c10_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Says 'No bugs'. Optional simplification sum(data) % 256 is mathematically equivalent (not a fabricated bug). Naming and collision-resistance notes are advisory only. No fabricated defect claims."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 2: -1 OBO 'returns the last n+1 items, not n'. Fix items[-n:] with n>0 guard explained. Terse and accurate."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 1: mutable default history={} shared at definition time, state leaks. None sentinel fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 4: shell=True + web form input = arbitrary command execution. subprocess list fix and os.listdir alternative."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 3: coroutine never awaited, response is coroutine object, .json() raises AttributeError. Client not closed. async with + await fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 2-4: RuntimeError from dict mutation during iteration. Dict comprehension fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "t6_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'No bugs. The bounds are validated, max(lo, min(value, hi)) is the standard clamp idiom, and types are annotated. Ship it.' Clean, explicit, no fabricated concerns."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 3: range(n) starts at 0, result *= 0 on first iteration, always returns 0 for n>=1. range(1, n+1) fix. Negative n noted."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 6: += not atomic (load/add/store interleave under threading). Lock fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 1: SQL injection via string concatenation. Parameterized query fix with driver syntax note."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 2: file handle never closed, Windows file lock note accurate. Context manager with encoding fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c5_n_plus_1",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 3: N+1 query (one SELECT per user) named first. SQL injection second. Single parameterized IN-query fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c6_ordered_check",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Lines 2-4: (1) assert stripped by python -O, silently disappears; (2) order['total'] read before key check, raises KeyError. Assert -O stripping as Issue 1. Both concerns captured."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 3: O(n^2) string concat (CPython optimization fragile). str.join fix with trailing newline note."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 1: mutable default [] shared across calls. None sentinel fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Line 4: late-binding closure, all lambdas capture same v = final loop value (3). lambda v=v fix and functools.partial alternative."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "c10_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'No bugs. Correctly computes a sum-mod-256 checksum.' Optional simplification noted (sum(data) % 256 equivalent). No fabricated defect claims."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): -1 OBO 'returns the last n+1 items, not n'. Fix items[-n:] if n>0 else []. Terse, accurate, well-structured."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): mutable default history={} shared across all calls, visit counts persist. None sentinel fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 4): shell=True + web form directory = arbitrary command execution. subprocess list argv fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): coroutine never awaited, client never closed. async with + await fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): RuntimeError from dict mutation during iteration. Dict comprehension or list(d) fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "t6_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'No defects — bounds are validated and max(lo, min(value, hi)) correctly clamps. Fix: None required.' Clean, explicit, no invented concerns."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): range(n) starts at 0, result *= 0, factorial always returns 0 for n>=1. range(1, n+1) fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 6): += not atomic (load-add-store), concurrent calls lose updates. Lock fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): SQL injection via string concatenation. Parameterized query fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): file handle never closed, GC-timing dependent. Context manager with encoding fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c5_n_plus_1",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): N+1 query (one SELECT per user) named first, plus SQL injection via f-string. Single parameterized IN-query fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c6_ordered_check",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): (1) assert stripped by python -O, validation disappears; (2) order['total'] read before key check, raises KeyError. Assert -O stripping explicitly named."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): O(n^2) string concat, new allocation each iteration. str.join fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): mutable default log=[] shared across calls, accumulates events. None sentinel fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 4): late-binding closure, all lambdas capture final v value. lambda v=v fix."
+    },
+    {
+      "variant": "V2_xml_format",
+      "item_id": "c10_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'No correctness defects. sum(data) % 256 is an equivalent and faster alternative. Fix: Optional simplification.' No fabricated defect claims."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): -1 OBO 'returns the last n+1 items, not n'. Fix items[-n:] if n>0 with n==0 guard explained."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): mutable default history={} created once at definition time, shared across all calls. None sentinel fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 4): shell command injection via shell=True + attacker-controlled directory. Drop shell=True, list argv fix. Allowlist/path validation note added."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): coroutine never awaited, response is coroutine object, .json() raises AttributeError. AsyncClient never closed. async with + await fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): del d[key] during iteration raises RuntimeError. list(d) snapshot or dict comprehension fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Says 'No correctness defects. Fix: None required.' but invents NaN propagation concern: 'NaN propagation through min/max is implementation-defined (uncertain whether that is desired behavior — worth documenting)'. Strict rule: any invented issue on clean code = fabricated. Reference explicitly says 'max(lo, min(value, hi)) handles NaN reasonably (returns lo)' — NaN is not a defect. Matches subagent V3' t6 verdict. No false semantic claims so no hard_gate violation."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): range(n) starts at 0, result *= 0 on first iteration, always returns 0. range(1, n+1) fix. Negative n noted as uncertain behavior."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 6): += not atomic (read-modify-write interleave). GIL caveat noted accurately. Lock fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): SQL injection via concatenation, arbitrary SQL execution. Parameterized query with driver syntax note."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): file handle never closed, GC timing note for non-CPython accurate. Implicit text mode + platform-default encoding flagged. Context manager + encoding fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c5_n_plus_1",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): N+1 query (one SELECT per user) named first. SQL injection second (lower severity note for integer id accurate). Single parameterized IN-query fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c6_ordered_check",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): (1) assert stripped under python -O, silently disappears in production; (2) order['total'] read before 'customer_id' check, raises KeyError. Assert -O stripping named as first problem."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): O(n^2) string concat in general case (CPython refcount-1 optimization flagged as uncertain). str.join fix with trailing newline note."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): mutable default log=[] shared across calls, accumulates events across unrelated callers. None sentinel fix."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 4): late-binding closure, all callbacks capture same v = final loop value (3). lambda v=v fix with explanation of default argument evaluation timing."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "item_id": "c10_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'No correctness defects.' Optional simplification sum(data) % 256 noted as uncertain micro-perf. No fabricated defect claims. Matches subagent V3' c10 correct verdict."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): -1 OBO 'returns the last n+1 items, not n'. Fix items[-n:] if n>0 with n==0 guard explained."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): mutable default history={} created once at definition time, shared across all calls. None sentinel fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 4): shell command injection via shell=True + web form input. subprocess list fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): coroutine never awaited, client never closed. async with + await fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): RuntimeError from dict mutation during iteration. Dict comprehension or list(d) fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "t6_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Bare 'NO_ISSUE' (3 tokens). Clean item correctly identified. NO_ISSUE guard fires correctly. Matches subagent V5 t6 verdict."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): range(n) starts at 0, result *= 0, factorial always 0 for n>=1. range(1, n+1) fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 6): += not atomic (load, add, store), concurrent increments interleave and lose updates. Lock fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): SQL injection via string concatenation. Parameterized query fix with driver syntax note."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): file handle never closed, GC timing dependent. Context manager with encoding fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c5_n_plus_1",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): N+1 query (one SELECT per user) named first. SQL injection second. Single parameterized IN-query fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c6_ordered_check",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 2): (1) assert stripped under python -O, validation disappears in production; (2) order['total'] read before key existence check, raises KeyError. Assert -O stripping explicit."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 3): O(n^2) string concat (CPython optimization fragile). str.join fix with trailing newline preservation."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 1): mutable default log=[] shared across calls, accumulates events. None sentinel fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Issue (line 4): late-binding closure, all lambdas capture same v = final loop value (3). lambda v=v fix."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "item_id": "c10_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Bare 'NO_ISSUE' (3 tokens). Clean item correctly identified. NO_ISSUE guard fires correctly for both clean items. Matches subagent V5 c10 verdict."
+    }
+  ],
+  "per_variant": [
+    {
+      "variant": "V0_baseline",
+      "verdicts": {
+        "correct": 15,
+        "missed": 0,
+        "fabricated": 1,
+        "wrong_root_cause": 0,
+        "partial": 0
+      },
+      "buggy_precision": 1.0,
+      "buggy_recall": 1.0,
+      "clean_false_positive_rate": 0.5,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "avg_output_tokens_mainline": 181.9,
+      "avg_output_tokens_subagent": 201.7,
+      "token_reduction_vs_subagent": "9.8%",
+      "vs_subagent_diff": "Identical verdict distribution (15 correct, 1 fabricated, same item t6). Mainline V0 t6 NaN advisory pattern mirrors subagent V0 t6. Mainline outputs ~10% shorter (181.9 vs 201.7 tok avg) due to conversation-context terseness priming. All 14 buggy items: same correct verdicts. c10: both mainline and subagent correct (no fabrication). Premise note: task asked about v0_c10_fabrication_match — subagent V0 c10 was correct, not fabricated; v0_t6_fabrication_match is the true match point."
+    },
+    {
+      "variant": "V1_role_terse",
+      "verdicts": {
+        "correct": 16,
+        "missed": 0,
+        "fabricated": 0,
+        "wrong_root_cause": 0,
+        "partial": 0
+      },
+      "buggy_precision": 1.0,
+      "buggy_recall": 1.0,
+      "clean_false_positive_rate": 0.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "avg_output_tokens_mainline": 81.1,
+      "avg_output_tokens_subagent": 112.5,
+      "token_reduction_vs_subagent": "27.9%",
+      "vs_subagent_diff": "Perfect match: both mainline and subagent V1 achieve 16/16 correct, 0 fabrications, clean_fpr=0.0. Mainline outputs 27.9% shorter (81.1 vs 112.5 tok avg). Quality parity at lower token count. Mainline t6: 'Ship it.' vs subagent t6: 'correct, well-typed, handles degenerate lo>hi.' Both clean, no difference in verdict."
+    },
+    {
+      "variant": "V2_xml_format",
+      "verdicts": {
+        "correct": 16,
+        "missed": 0,
+        "fabricated": 0,
+        "wrong_root_cause": 0,
+        "partial": 0
+      },
+      "buggy_precision": 1.0,
+      "buggy_recall": 1.0,
+      "clean_false_positive_rate": 0.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "avg_output_tokens_mainline": 51.75,
+      "avg_output_tokens_subagent": 79.2,
+      "token_reduction_vs_subagent": "34.7%",
+      "vs_subagent_diff": "Perfect match: both mainline and subagent V2 achieve 16/16 correct, 0 fabrications, clean_fpr=0.0. Mainline 34.7% shorter (51.75 vs 79.2 tok avg) — largest absolute reduction of any variant. t6: mainline 'No defects — bounds validated. Fix: None required.' vs subagent 'No issues — bounds validated. Fix: None required.' Functionally identical clean handling. c10: both output 'No correctness defects' + optional simplification."
+    },
+    {
+      "variant": "V3prime_rules_format",
+      "verdicts": {
+        "correct": 15,
+        "missed": 0,
+        "fabricated": 1,
+        "wrong_root_cause": 0,
+        "partial": 0
+      },
+      "buggy_precision": 1.0,
+      "buggy_recall": 1.0,
+      "clean_false_positive_rate": 0.5,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "avg_output_tokens_mainline": 80.7,
+      "avg_output_tokens_subagent": 102.1,
+      "token_reduction_vs_subagent": "21.0%",
+      "vs_subagent_diff": "Identical verdict distribution (15 correct, 1 fabricated, same item t6). Both mainline and subagent V3' fabricate NaN propagation concern on t6. Both correctly handle c10 (no fabrication). Mainline 21.0% shorter. The rules+format prompt reliably triggers the mild NaN advisory on t6 in both contexts. No hard_gate violations in either run."
+    },
+    {
+      "variant": "V5_no_issue_guard",
+      "verdicts": {
+        "correct": 16,
+        "missed": 0,
+        "fabricated": 0,
+        "wrong_root_cause": 0,
+        "partial": 0
+      },
+      "buggy_precision": 1.0,
+      "buggy_recall": 1.0,
+      "clean_false_positive_rate": 0.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "avg_output_tokens_mainline": 56.4,
+      "avg_output_tokens_subagent": 85.7,
+      "token_reduction_vs_subagent": "34.2%",
+      "vs_subagent_diff": "Perfect match: both mainline and subagent V5 achieve 16/16 correct, 0 fabrications, clean_fpr=0.0. Both produce bare 'NO_ISSUE' (3 tokens) for t6 and c10. Mainline 34.2% shorter overall (56.4 vs 85.7 tok avg). NO_ISSUE guard fires correctly in both contexts; knows-but-hides antipattern absent in both."
+    }
+  ],
+  "mainline_vs_subagent": {
+    "verdict_agreement_rate": 1.0,
+    "v0_c10_fabrication_match": true,
+    "v3prime_c10_fabrication_match": true,
+    "v5_clean_no_issue_match": true,
+    "any_mainline_quality_regression": false,
+    "premise_correction": "The task asked 'Did mainline V0 also fabricate on c10 (subagent flagged it)?' and 'Did mainline V3' also fabricate on c10?' — this premise is incorrect. The subagent did NOT flag V0 c10 or V3' c10 as fabricated; both were scored correct. The subagent fabrication entries for V0 and V3' were on t6 (clamp clean code), not c10. The v0_c10_fabrication_match and v3prime_c10_fabrication_match fields above are set to true because both mainline and subagent agree on the correct verdict for c10 (i.e., both are correct with no fabrication). The true fabrication match points are V0 t6 and V3' t6.",
+    "summary": "Verdict agreement rate is 1.0 (80/80 per_call entries match subagent verdicts exactly). Mainline quality is equal to subagent quality on all 80 entries. The V5 NO_ISSUE guard fires correctly for both clean items (t6, c10) in mainline as in subagent. The V0 and V3' t6 NaN fabrication pattern reproduces identically in mainline. Zero hard_gate violations across all 80 mainline entries, matching subagent. The mainline-specific bias is systematic terseness: mainline outputs are 10–35% shorter than subagent outputs across all variants, with the largest reductions in V2 (34.7%) and V5 (34.2%). This is attributed to conversation-context priming compressing outputs toward briefer formats. Critically, this terseness did not degrade quality on any item."
+  },
+  "summary": [
+    "Verdict agreement is 1.0 (80/80): mainline and subagent Opus 4.7 produced identical verdict distributions across all 5 variants. No mainline-specific quality regression found.",
+    "Fabrication pattern is stable: V0 and V3' fabricate mildly on t6 (clamp clean code, NaN advisory) in both mainline and subagent. V1, V2, V5 achieve clean_fpr=0.0 in both contexts.",
+    "V5 NO_ISSUE guard fires correctly in mainline: both t6 and c10 produce bare 'NO_ISSUE' (3 tokens), matching subagent V5 behavior. No false NO_ISSUE on any of the 14 buggy items.",
+    "Zero hard_gate violations across all 80 mainline entries (no_fabricated_claims, review_not_silent_rewrite, no_refusal all clear). This matches the subagent zero-violation result.",
+    "Mainline-specific bias confirmed: outputs are systematically 10–35% shorter than subagent. Largest reductions in V2 (51.75 vs 79.2 tok, -34.7%) and V5 (56.4 vs 85.7 tok, -34.2%). This is conversation-context terseness priming. Quality was unaffected.",
+    "V2_xml_format is the production winner on mainline data: 51.75 tok avg output, 16/16 correct, 0 fabrications, 0 hard_gate violations. Achieves 71.6% token reduction vs V0 on mainline (vs 60.7% on subagent) due to priming compression.",
+    "Pareto front on mainline: V2 (51.75 tok, 16/16) dominates V0 (181.9 tok, 15/16) and V3' (80.7 tok, 15/16) on both axes. V5 (56.4 tok, 16/16) is on the Pareto front. V1 (81.1 tok, 16/16) is strictly dominated by V2 and V5 on tokens at equal quality.",
+    "c5 N+1 and c6 assert-O stripping are correctly identified as primary issues in all 5 mainline variants, confirming these are not prompt-sensitive knowledge gaps for Opus 4.7.",
+    "Premise correction: the task asked about V0 and V3' fabrication on c10, but the subagent baseline scored c10 as correct for both variants. The fabrication items were t6 (both variants). The v0/v3prime_c10_fabrication_match fields represent verdict agreement on c10 (both correct), not fabrication presence.",
+    "Deployment recommendation unchanged: V2_xml_format is the production winner for Claude Opus 4.7 — 51.75 tok avg, perfect quality, machine-parseable XML format. V5 is preferred if downstream consumers need explicit NO_ISSUE signals. Mainline data strengthens, not shifts, the V2 recommendation by showing further token efficiency gain from conversation-context priming."
+  ]
+}

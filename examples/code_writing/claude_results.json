@@ -1,0 +1,287 @@
+{
+  "task": "code_writing",
+  "config": {
+    "method": "opus_subagent_simulation",
+    "n_items": 8,
+    "n_variants": 5
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 51.5,
+      "sum": 412,
+      "min": 15,
+      "max": 97
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 52.75,
+      "sum": 422,
+      "min": 15,
+      "max": 101
+    },
+    {
+      "variant": "V2_format",
+      "mean": 64.625,
+      "sum": 517,
+      "min": 20,
+      "max": 122
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 47.25,
+      "sum": 378,
+      "min": 15,
+      "max": 104
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 41.875,
+      "sum": 335,
+      "min": 8,
+      "max": 88
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "text": "```python\ndef reverse_string(s):\n    return s[::-1]\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "text": "```python\ndef binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 30,
+      "text": "```python\nimport json\n\ndef parse_json_file(path):\n    with open(path, 'r') as f:\n        return json.load(f)\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw4_factorial",
+      "tokens": 53,
+      "text": "```python\ndef factorial(n):\n    if n < 0:\n        raise ValueError(\"n must be non-negative\")\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "text": "```python\ndef sort_dict_by_value(d):\n    return dict(sorted(d.items(), key=lambda item: item[1], reverse=True))\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 97,
+      "text": "```python\nimport threading\nfrom functools import wraps\n\ndef debounce(wait_seconds):\n    def decorator(func):\n        timer = None\n        lock = threading.Lock()\n\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            nonlocal timer\n            with lock:\n                if timer is not None:\n                    timer.cancel()\n                timer = threading.Timer(wait_seconds, func, args=args, kwargs=kwargs)\n                timer.start()\n        return wrapper\n    return decorator\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 42,
+      "text": "```python\ndef count_word_frequencies(text):\n    freq = {}\n    for word in text.split():\n        freq[word] = freq.get(word, 0) + 1\n    return freq\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cw8_validate_email",
+      "tokens": 58,
+      "text": "```python\nimport re\n\nEMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')\n\ndef is_valid_email(s):\n    return bool(EMAIL_REGEX.match(s))\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "text": "```python\ndef reverse_string(s):\n    return s[::-1]\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "text": "```python\ndef binary_search(arr, target):\n    lo, hi = 0, len(arr) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        if arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 36,
+      "text": "```python\nimport json\n\ndef parse_json_file(path):\n    with open(path, \"r\", encoding=\"utf-8\") as f:\n        return json.load(f)\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw4_factorial",
+      "tokens": 53,
+      "text": "```python\ndef factorial(n):\n    if n < 0:\n        raise ValueError(\"n must be non-negative\")\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "text": "```python\ndef sort_dict_by_value(d):\n    return dict(sorted(d.items(), key=lambda kv: kv[1], reverse=True))\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 101,
+      "text": "```python\nimport threading\nfrom functools import wraps\n\ndef debounce(wait_seconds):\n    def decorator(fn):\n        lock = threading.Lock()\n        timer = None\n\n        @wraps(fn)\n        def wrapper(*args, **kwargs):\n            nonlocal timer\n            with lock:\n                if timer is not None:\n                    timer.cancel()\n                timer = threading.Timer(wait_seconds, fn, args, kwargs)\n                timer.daemon = True\n                timer.start()\n        return wrapper\n    return decorator\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 33,
+      "text": "```python\nimport re\nfrom collections import Counter\n\ndef count_word_frequencies(s):\n    return dict(Counter(re.findall(r\"\\w+\", s.lower())))\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cw8_validate_email",
+      "tokens": 67,
+      "text": "```python\nimport re\n\n_EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$\")\n\ndef is_valid_email(s):\n    return isinstance(s, str) and _EMAIL_RE.match(s) is not None\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw1_reverse_string",
+      "tokens": 20,
+      "text": "```python\ndef reverse_string(s: str) -> str:\n    return s[::-1]\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw2_binary_search",
+      "tokens": 93,
+      "text": "```python\ndef binary_search(arr: list, target) -> int:\n    lo, hi = 0, len(arr) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        if arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 56,
+      "text": "```python\nimport json\nfrom pathlib import Path\nfrom typing import Any, Union\n\n\ndef parse_json_file(path: Union[str, Path]) -> Any:\n    with open(path, \"r\", encoding=\"utf-8\") as f:\n        return json.load(f)\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw4_factorial",
+      "tokens": 67,
+      "text": "```python\ndef factorial(n: int) -> int:\n    if not isinstance(n, int) or n < 0:\n        raise ValueError(\"n must be a non-negative integer\")\n    result = 1\n    for i in range(2, n + 1):\n        result *= i\n    return result\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 34,
+      "text": "```python\ndef sort_dict_by_value(d: dict) -> dict:\n    return dict(sorted(d.items(), key=lambda item: item[1], reverse=True))\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 122,
+      "text": "```python\nimport threading\nfrom functools import wraps\n\n\ndef debounce(wait_seconds: float):\n    def decorator(func):\n        lock = threading.Lock()\n        timer = {\"t\": None}\n\n        @wraps(func)\n        def wrapper(*args, **kwargs):\n            with lock:\n                if timer[\"t\"] is not None:\n                    timer[\"t\"].cancel()\n                timer[\"t\"] = threading.Timer(\n                    wait_seconds, lambda: func(*args, **kwargs)\n                )\n                timer[\"t\"].daemon = True\n                timer[\"t\"].start()\n\n        return wrapper\n\n    return decorator\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 47,
+      "text": "```python\nimport re\nfrom collections import Counter\n\n\ndef count_word_frequencies(text: str) -> dict:\n    words = re.findall(r\"\\b\\w+\\b\", text.lower())\n    return dict(Counter(words))\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cw8_validate_email",
+      "tokens": 78,
+      "text": "```python\nimport re\n\n_EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$\")\n\n\ndef is_valid_email(s: str) -> bool:\n    if not isinstance(s, str):\n        return False\n    return _EMAIL_RE.match(s) is not None\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "text": "```python\ndef reverse_string(s):\n    return s[::-1]\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "text": "```python\ndef binary_search(arr, target):\n    lo, hi = 0, len(arr) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        if arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 33,
+      "text": "```python\nimport json\n\ndef parse_json_file(path):\n    with open(path, encoding=\"utf-8\") as f:\n        return json.load(f)\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw4_factorial",
+      "tokens": 18,
+      "text": "```python\nimport math\n\ndef factorial(n):\n    return math.factorial(n)\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "text": "```python\ndef sort_dict_by_value(d):\n    return dict(sorted(d.items(), key=lambda kv: kv[1], reverse=True))\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 104,
+      "text": "```python\nimport threading\nfrom functools import wraps\n\ndef debounce(wait_seconds):\n    def decorator(fn):\n        lock = threading.Lock()\n        timer = None\n\n        @wraps(fn)\n        def wrapper(*args, **kwargs):\n            nonlocal timer\n            with lock:\n                if timer is not None:\n                    timer.cancel()\n                timer = threading.Timer(wait_seconds, lambda: fn(*args, **kwargs))\n                timer.daemon = True\n                timer.start()\n\n        return wrapper\n    return decorator\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 33,
+      "text": "```python\nimport re\nfrom collections import Counter\n\ndef count_word_frequencies(text):\n    return dict(Counter(re.findall(r\"\\w+\", text.lower())))\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cw8_validate_email",
+      "tokens": 58,
+      "text": "```python\nimport re\n\n_EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$\")\n\ndef is_valid_email(s):\n    return bool(_EMAIL_RE.match(s))\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw1_reverse_string",
+      "tokens": 15,
+      "text": "```python\ndef reverse_string(s):\n    return s[::-1]\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw2_binary_search",
+      "tokens": 88,
+      "text": "```python\ndef binary_search(arr, target):\n    lo, hi = 0, len(arr) - 1\n    while lo <= hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        if arr[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return -1\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw3_parse_json_file",
+      "tokens": 27,
+      "text": "```python\nimport json\n\ndef parse_json_file(path):\n    with open(path) as f:\n        return json.load(f)\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw4_factorial",
+      "tokens": 8,
+      "text": "USE_STDLIB: math.factorial"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw5_sort_dict_by_value",
+      "tokens": 29,
+      "text": "```python\ndef sort_dict_by_value(d):\n    return dict(sorted(d.items(), key=lambda kv: kv[1], reverse=True))\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw6_debounce_decorator",
+      "tokens": 86,
+      "text": "```python\nimport threading\n\ndef debounce(wait_seconds):\n    def decorator(fn):\n        timer = None\n        lock = threading.Lock()\n        def wrapper(*args, **kwargs):\n            nonlocal timer\n            with lock:\n                if timer is not None:\n                    timer.cancel()\n                timer = threading.Timer(wait_seconds, lambda: fn(*args, **kwargs))\n                timer.start()\n        return wrapper\n    return decorator\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw7_count_word_frequencies",
+      "tokens": 24,
+      "text": "```python\nfrom collections import Counter\n\ndef count_word_frequencies(s):\n    return dict(Counter(s.split()))\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cw8_validate_email",
+      "tokens": 58,
+      "text": "```python\nimport re\n\n_EMAIL_RE = re.compile(r\"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$\")\n\ndef is_valid_email(s):\n    return bool(_EMAIL_RE.match(s))\n```"
+    }
+  ]
+}

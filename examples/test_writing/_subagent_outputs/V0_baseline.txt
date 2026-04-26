@@ -1,0 +1,319 @@
+tw1_factorial_BEGIN
+```python
+import pytest
+from mymodule import factorial
+
+
+def test_factorial_zero():
+    assert factorial(0) == 1
+
+
+def test_factorial_one():
+    assert factorial(1) == 1
+
+
+def test_factorial_small_positive():
+    assert factorial(2) == 2
+    assert factorial(3) == 6
+    assert factorial(4) == 24
+    assert factorial(5) == 120
+
+
+def test_factorial_larger():
+    assert factorial(10) == 3628800
+
+
+def test_factorial_negative_raises():
+    with pytest.raises(ValueError, match="n must be non-negative"):
+        factorial(-1)
+
+
+def test_factorial_large_negative_raises():
+    with pytest.raises(ValueError, match="n must be non-negative"):
+        factorial(-100)
+
+
+@pytest.mark.parametrize("n,expected", [
+    (0, 1), (1, 1), (2, 2), (3, 6), (4, 24), (5, 120), (6, 720), (7, 5040),
+])
+def test_factorial_parametrized(n, expected):
+    assert factorial(n) == expected
+```
+tw1_factorial_END
+
+tw2_clamp_BEGIN
+```python
+import pytest
+from mymodule import clamp
+
+
+def test_clamp_value_within_range():
+    assert clamp(5, 0, 10) == 5
+
+
+def test_clamp_value_below_lo():
+    assert clamp(-5, 0, 10) == 0
+
+
+def test_clamp_value_above_hi():
+    assert clamp(15, 0, 10) == 10
+
+
+def test_clamp_value_equals_lo():
+    assert clamp(0, 0, 10) == 0
+
+
+def test_clamp_value_equals_hi():
+    assert clamp(10, 0, 10) == 10
+
+
+def test_clamp_lo_equals_hi():
+    assert clamp(5, 7, 7) == 7
+    assert clamp(10, 7, 7) == 7
+    assert clamp(0, 7, 7) == 7
+
+
+def test_clamp_lo_greater_than_hi_raises():
+    with pytest.raises(ValueError, match="lo must not exceed hi"):
+        clamp(5, 10, 0)
+
+
+def test_clamp_negative_range():
+    assert clamp(-5, -10, -1) == -5
+    assert clamp(-15, -10, -1) == -10
+    assert clamp(0, -10, -1) == -1
+
+
+def test_clamp_floats():
+    assert clamp(1.5, 0.0, 2.0) == 1.5
+    assert clamp(-0.5, 0.0, 2.0) == 0.0
+    assert clamp(2.5, 0.0, 2.0) == 2.0
+
+
+def test_clamp_with_infinity():
+    assert clamp(float('inf'), 0, 10) == 10
+    assert clamp(float('-inf'), 0, 10) == 0
+
+
+@pytest.mark.parametrize("value,lo,hi,expected", [
+    (5, 0, 10, 5), (-1, 0, 10, 0), (11, 0, 10, 10),
+    (0.5, 0.0, 1.0, 0.5), (-100, -50, 50, -50),
+])
+def test_clamp_parametrized(value, lo, hi, expected):
+    assert clamp(value, lo, hi) == expected
+```
+tw2_clamp_END
+
+tw3_word_count_BEGIN
+```python
+import pytest
+from mymodule import word_count
+
+
+def test_word_count_empty_string():
+    assert word_count("") == {}
+
+
+def test_word_count_single_word():
+    assert word_count("hello") == {"hello": 1}
+
+
+def test_word_count_multiple_unique_words():
+    assert word_count("the quick brown fox") == {"the": 1, "quick": 1, "brown": 1, "fox": 1}
+
+
+def test_word_count_repeated_words():
+    assert word_count("the cat and the dog") == {"the": 2, "cat": 1, "and": 1, "dog": 1}
+
+
+def test_word_count_case_insensitive():
+    assert word_count("Hello hello HELLO") == {"hello": 3}
+
+
+def test_word_count_mixed_case():
+    assert word_count("The THE the Cat cat") == {"the": 3, "cat": 2}
+
+
+def test_word_count_extra_whitespace():
+    assert word_count("  hello   world  ") == {"hello": 1, "world": 1}
+
+
+def test_word_count_tabs_and_newlines():
+    assert word_count("hello\tworld\nfoo") == {"hello": 1, "world": 1, "foo": 1}
+
+
+def test_word_count_only_whitespace():
+    assert word_count("   ") == {}
+
+
+def test_word_count_punctuation_attached():
+    assert word_count("hello, world!") == {"hello,": 1, "world!": 1}
+```
+tw3_word_count_END
+
+tw4_trivial_one_assert_BEGIN
+```python
+import pytest
+from mymodule import double
+
+
+def test_double_positive():
+    assert double(2) == 4
+
+
+def test_double_zero():
+    assert double(0) == 0
+
+
+def test_double_negative():
+    assert double(-3) == -6
+
+
+def test_double_large_number():
+    assert double(1000000) == 2000000
+
+
+@pytest.mark.parametrize("x,expected", [(1, 2), (5, 10), (-1, -2), (0, 0), (100, 200)])
+def test_double_parametrized(x, expected):
+    assert double(x) == expected
+```
+tw4_trivial_one_assert_END
+
+tw5_validate_email_BEGIN
+```python
+import pytest
+from mymodule import is_valid_email
+
+
+def test_valid_simple_email():
+    assert is_valid_email("user@example.com") is True
+
+
+def test_valid_email_with_dot():
+    assert is_valid_email("first.last@example.com") is True
+
+
+def test_invalid_no_at_sign():
+    assert is_valid_email("userexample.com") is False
+
+
+def test_invalid_no_domain():
+    assert is_valid_email("user@") is False
+
+
+def test_invalid_empty_string():
+    assert is_valid_email("") is False
+
+
+@pytest.mark.parametrize("email", ["test@test.com", "name+filter@gmail.com", "x@y.zz"])
+def test_valid_emails_parametrized(email):
+    assert is_valid_email(email) is True
+
+
+@pytest.mark.parametrize("email", ["plainaddress", "@missing.com", "missing@.com", "missing@domain", ""])
+def test_invalid_emails_parametrized(email):
+    assert is_valid_email(email) is False
+```
+tw5_validate_email_END
+
+tw6_remove_negatives_BEGIN
+```python
+import pytest
+from mymodule import remove_negatives
+
+
+def test_remove_negatives_empty_dict():
+    assert remove_negatives({}) == {}
+
+
+def test_remove_negatives_all_positive():
+    assert remove_negatives({"a": 1, "b": 2, "c": 3}) == {"a": 1, "b": 2, "c": 3}
+
+
+def test_remove_negatives_all_negative():
+    assert remove_negatives({"a": -1, "b": -2, "c": -3}) == {}
+
+
+def test_remove_negatives_mixed():
+    assert remove_negatives({"a": 1, "b": -2, "c": 3, "d": -4}) == {"a": 1, "c": 3}
+
+
+def test_remove_negatives_keeps_zero():
+    assert remove_negatives({"a": 0, "b": -1}) == {"a": 0}
+
+
+def test_remove_negatives_does_not_mutate_original():
+    original = {"a": 1, "b": -1}
+    result = remove_negatives(original)
+    assert original == {"a": 1, "b": -1}
+    assert result == {"a": 1}
+```
+tw6_remove_negatives_END
+
+tw7_async_fetch_BEGIN
+```python
+import pytest
+import httpx
+from unittest.mock import AsyncMock, MagicMock
+from mymodule import fetch_user
+
+
+@pytest.mark.asyncio
+async def test_fetch_user_success():
+    mock_response = MagicMock()
+    mock_response.json.return_value = {"id": 1, "name": "Alice"}
+    mock_response.raise_for_status = MagicMock()
+
+    mock_client = MagicMock(spec=httpx.AsyncClient)
+    mock_client.get = AsyncMock(return_value=mock_response)
+
+    result = await fetch_user(1, mock_client)
+    assert result == {"id": 1, "name": "Alice"}
+
+
+@pytest.mark.asyncio
+async def test_fetch_user_raises_on_http_error():
+    mock_response = MagicMock()
+    mock_response.raise_for_status = MagicMock(
+        side_effect=httpx.HTTPStatusError("404 Not Found", request=MagicMock(), response=MagicMock())
+    )
+    mock_client = MagicMock(spec=httpx.AsyncClient)
+    mock_client.get = AsyncMock(return_value=mock_response)
+
+    with pytest.raises(httpx.HTTPStatusError):
+        await fetch_user(999, mock_client)
+```
+tw7_async_fetch_END
+
+tw8_sort_stable_BEGIN
+```python
+import pytest
+from mymodule import sort_by_priority
+
+
+def test_sort_empty_list():
+    assert sort_by_priority([]) == []
+
+
+def test_sort_already_sorted():
+    items = [(1, "a"), (2, "b"), (3, "c")]
+    assert sort_by_priority(items) == [(1, "a"), (2, "b"), (3, "c")]
+
+
+def test_sort_reverse_order():
+    items = [(3, "c"), (2, "b"), (1, "a")]
+    assert sort_by_priority(items) == [(1, "a"), (2, "b"), (3, "c")]
+
+
+def test_sort_stable_equal_priorities():
+    items = [(1, "first"), (1, "second"), (1, "third")]
+    assert sort_by_priority(items) == [(1, "first"), (1, "second"), (1, "third")]
+
+
+def test_sort_does_not_mutate_original():
+    original = [(3, "c"), (1, "a"), (2, "b")]
+    original_copy = original.copy()
+    sort_by_priority(original)
+    assert original == original_copy
+```
+tw8_sort_stable_END

@@ -1,0 +1,82 @@
+db1_zero_division_BEGIN
+**Root cause:** `len(xs)` is `0` when `xs` is empty, so `sum(xs) / len(xs)` divides by zero.
+
+**Minimal fix:** Guard the empty case.
+```python
+def average(xs):
+    if not xs:
+        raise ValueError("average() arg is an empty sequence")
+    return sum(xs) / len(xs)
+```
+db1_zero_division_END
+
+db2_keyerror_BEGIN
+**Root cause:** The decoded JSON object has no `'email'` key.
+
+**Minimal fix:** Use `.get()` and handle the missing case.
+```python
+email = user_data.get('email')
+if not email:
+    raise ValueError("payload missing 'email'")
+return email.lower()
+```
+db2_keyerror_END
+
+db3_typerror_concat_BEGIN
+**Root cause:** `age` is an `int`; Python's `+` won't implicitly coerce numbers to `str`.
+
+**Minimal fix:**
+```python
+def greet(name, age):
+    return f'Hello {name}, you are {age}'
+```
+db3_typerror_concat_END
+
+db4_late_binding_loop_BEGIN
+**Root cause:** Python closures capture variables by reference. All lambdas close over the same `i`; after the loop `i == 3`.
+
+**Minimal fix:**
+```python
+for i in range(1, 4):
+    fns.append(lambda i=i: i)
+```
+db4_late_binding_loop_END
+
+db5_off_by_one_range_BEGIN
+**Root cause:** `range(start, stop)` is half-open — yields up to but not including `stop`.
+
+**Minimal fix:** `range(1, 11)`.
+db5_off_by_one_range_END
+
+db6_mutating_during_iter_BEGIN
+**Root cause:** Mutating `d` via `del d[k]` while iterating its view — CPython raises `RuntimeError`.
+
+**Minimal fix:**
+```python
+for k in list(d):
+    if d[k] is None:
+        del d[k]
+```
+db6_mutating_during_iter_END
+
+db7_async_no_await_BEGIN
+**Root cause:** `httpx.AsyncClient().get(...)` is a coroutine, not a Response. Never awaited — coroutines have no `.json()`.
+
+**Minimal fix:**
+```python
+async with httpx.AsyncClient() as client:
+    response = await client.get('/api/x')
+data = response.json()
+```
+db7_async_no_await_END
+
+db8_ambiguous_no_repro_BEGIN
+"Slow sometimes" with no repro is a measurement problem first. Need:
+
+1. Define "slow" and "sometimes" — p50/p95/p99 latency, frequency, correlations.
+2. Add per-request timing logs.
+3. `py-spy record --pid <pid>` during a slow window for a flame graph.
+4. Common suspects: GC pauses, lock/GIL contention, DB query plan flips, cold caches, noisy neighbor, N+1.
+
+**Minimal next step:** structured per-request timing + py-spy sample. Come back with a flame graph or latency histogram.
+db8_ambiguous_no_repro_END

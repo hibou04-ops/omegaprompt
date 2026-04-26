@@ -1,0 +1,68 @@
+rf1_nested_if_BEGIN
+```python
+if user is None or not user.is_active or not user.has_permission('read'):
+    return None
+return data
+```
+What changed: Inverted conditions with early return to flatten nesting.
+rf1_nested_if_END
+rf2_loop_to_comprehension_BEGIN
+```python
+return [n * n for n in numbers]
+```
+What changed: Replaced explicit loop with a list comprehension.
+rf2_loop_to_comprehension_END
+rf3_string_concat_loop_BEGIN
+```python
+return '\n'.join(lines) + '\n'
+```
+What changed: Replaced O(n^2) string concatenation with str.join for O(n) performance.
+rf3_string_concat_loop_END
+rf4_dict_setdefault_BEGIN
+```python
+d.setdefault(key, []).append(value)
+```
+What changed: Collapsed conditional insert/append into a single setdefault call.
+rf4_dict_setdefault_END
+rf5_multiple_returns_BEGIN
+```python
+def grade(score):
+    for threshold, letter in ((90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')):
+        if score >= threshold:
+            return letter
+    return 'F'
+```
+What changed: Replaced repeated returns with a data-driven threshold table.
+rf5_multiple_returns_END
+rf6_long_function_extract_BEGIN
+```python
+def _validate_order(order):
+    assert 'customer_id' in order, 'missing customer_id'
+    assert order['total'] > 0, 'invalid total'
+    assert order['items'], 'empty items'
+
+
+def process_order(order):
+    _validate_order(order)
+    # ... 20 lines of business logic ...
+```
+What changed: Extracted the assertion block into a dedicated _validate_order helper.
+rf6_long_function_extract_END
+rf7_already_clean_BEGIN
+```python
+def clamp(value: float, lo: float, hi: float) -> float:
+    if lo > hi:
+        raise ValueError(f'lo ({lo}) must not exceed hi ({hi})')
+    return max(lo, min(value, hi))
+```
+What changed: No changes — the function is already clean, correctly typed, and idiomatic.
+rf7_already_clean_END
+rf8_replace_lambda_with_def_BEGIN
+```python
+def _sort_key(x):
+    return (x.priority, x.created_at, x.id)
+
+validators = sorted(items, key=_sort_key)
+```
+What changed: Promoted the lambda to a named function for readability and reuse.
+rf8_replace_lambda_with_def_END

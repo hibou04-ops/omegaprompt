@@ -1,0 +1,97 @@
+t1_off_by_one_slice_BEGIN
+Issue (line 2): `items[len(items) - n - 1:]` returns the last `n + 1` items, not the last `n` (off-by-one). Also fails for `n == 0` (returns last 1 item) and behaves oddly for `n >= len(items)`.
+Fix: `return items[-n:] if n > 0 else []`
+t1_off_by_one_slice_END
+t2_mutable_default_dict_BEGIN
+Issue (line 1): Mutable default argument — `history={}` is created once at function definition and shared across all calls, so the visit count persists across unrelated callers.
+Fix: `def greet(name, history=None):` then `if history is None: history = {}` at the top of the body.
+t2_mutable_default_dict_END
+t3_command_injection_BEGIN
+Issue (line 4): Command injection — `directory` is interpolated into a shell string with `shell=True`, so input like `; rm -rf /` or `$(...)` executes arbitrary commands.
+Fix: Drop the shell and pass an argv list: `subprocess.run(["ls", directory], capture_output=True, text=True)`. Better, validate `directory` against an allowlist or use `os.listdir(directory)` instead.
+t3_command_injection_END
+t4_forgotten_await_BEGIN
+Issue (line 3): The `.get(...)` call returns a coroutine that is never awaited, so `response` is a coroutine object and `response.json()` will fail (AttributeError). The `AsyncClient` is also never closed, leaking the connection.
+Fix:
+```
+async with httpx.AsyncClient() as client:
+    response = await client.get(f"/users/{user_id}")
+    return response.json()
+```
+t4_forgotten_await_END
+t5_dict_iter_mutation_BEGIN
+Issue (line 2): Mutating a dict (`del d[key]`) while iterating over it raises `RuntimeError: dictionary changed size during iteration`.
+Fix: Iterate over a snapshot of the keys: `for key in list(d): ...`, or rebuild: `return {k: v for k, v in d.items() if v >= 0}`.
+t5_dict_iter_mutation_END
+t6_clean_code_BEGIN
+NO_ISSUE
+t6_clean_code_END
+c1_factorial_BEGIN
+Issue (line 3): `range(n)` starts at 0, so `result *= 0` on the first iteration makes `factorial(n)` always return 0 (for `n >= 1`). It also returns 1 for `n == 0` only by accident (loop doesn't run) and gives wrong results for negative `n`.
+Fix: Use `range(1, n + 1)`: `for i in range(1, n + 1): result *= i`.
+c1_factorial_END
+c2_counter_race_BEGIN
+Issue (line 6): `self.count += 1` is not atomic (load, add, store) so concurrent `increment()` calls from multiple threads will lose updates — a classic race condition.
+Fix: Guard with a lock:
+```
+def __init__(self):
+    self.count = 0
+    self._lock = threading.Lock()
+
+def increment(self):
+    with self._lock:
+        self.count += 1
+```
+c2_counter_race_END
+c3_sql_injection_BEGIN
+Issue (line 1): SQL injection — `user_input` is concatenated directly into the query, so input like `' OR '1'='1` (or `'; DROP TABLE users; --`) alters the statement.
+Fix: Use a parameterized query: `cursor.execute("SELECT * FROM users WHERE name = %s", (user_input,))` (placeholder style depends on the DB-API driver, e.g., `?` for sqlite3).
+c3_sql_injection_END
+c4_file_leak_BEGIN
+Issue (line 2): The file handle is never closed — leaks a file descriptor (and on CPython relies on GC timing; on PyPy/other implementations it may stay open indefinitely).
+Fix: Use a context manager:
+```
+with open(path) as f:
+    return f.read()
+```
+c4_file_leak_END
+c5_n_plus_1_BEGIN
+Issue (line 3): N+1 query problem — one SELECT per user. Also a SQL injection vector since `u.id` is interpolated into the query string (safe only if `u.id` is guaranteed to be an int, but still bad practice).
+Fix: Issue a single query and group in Python:
+```
+ids = [u.id for u in users]
+rows = db.query("SELECT * FROM posts WHERE user_id IN %s", (tuple(ids),))
+by_user = {}
+for r in rows:
+    by_user.setdefault(r.user_id, []).append(r)
+return [{'user': u, 'posts': by_user.get(u.id, [])} for u in users]
+```
+(Exact placeholder syntax depends on the DB driver.)
+c5_n_plus_1_END
+c6_ordered_check_BEGIN
+Issue (line 2): Two problems. (1) `assert order['total'] > 0` reads `'total'` before the function has checked the key exists, so a missing `'total'` raises `KeyError` instead of a validation error — and the `'customer_id'` and `'items'` checks are in the wrong order relative to that. (2) Using `assert` for request validation is unsafe: assertions are stripped when Python runs with `-O`, so all checks silently disappear in optimized mode.
+Fix: Replace asserts with explicit checks that raise (e.g., `ValueError`), and check key presence before indexing:
+```
+if 'customer_id' not in order:
+    raise ValueError("customer_id required")
+if 'total' not in order or order['total'] <= 0:
+    raise ValueError("total must be > 0")
+if not order.get('items'):
+    raise ValueError("items required")
+```
+c6_ordered_check_END
+c7_concat_loop_BEGIN
+Issue (line 4): Repeated `result += line + '\n'` builds the string in O(n^2) in the general case (CPython has an optimization for this specific pattern but it's fragile and not guaranteed by the language). It also appends a trailing `'\n'` after the last line, which may or may not be intended.
+Fix: `return '\n'.join(lines) + '\n'` (or drop the trailing newline if not wanted: `return '\n'.join(lines)`).
+c7_concat_loop_END
+c8_mutable_default_BEGIN
+Issue (line 1): Mutable default argument — `log=[]` is evaluated once at function definition, so the same list is shared across all calls that don't pass `log` explicitly, accumulating events across unrelated callers.
+Fix: `def add_event(event: str, log: list | None = None) -> list:` then `if log is None: log = []` at the top of the body.
+c8_mutable_default_END
+c9_late_binding_BEGIN
+Issue (line 4): Late-binding closure — every lambda captures the variable `v`, not its current value, so by the time the callbacks run they all print the final value of `v` (3, 3, 3) instead of 1, 2, 3.
+Fix: Bind `v` as a default argument: `callbacks.append(lambda v=v: print(v))`.
+c9_late_binding_END
+c10_clean_code_BEGIN
+NO_ISSUE
+c10_clean_code_END

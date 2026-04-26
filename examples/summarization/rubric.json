@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "faithfulness",
+      "description": "Does the summary preserve the source's facts without fabrication or distortion? High = all stated facts are in the source. Low = invents details, distorts numbers, attributes claims to wrong entity.",
+      "weight": 0.5,
+      "scale": [1, 5]
+    },
+    {
+      "name": "completeness",
+      "description": "Does the summary capture the most important points (key facts, names, numbers, decisions)? High = preserves the essential content. Low = misses major points or focuses on minor details.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "conciseness",
+      "description": "Is the summary appropriately compact for its content? High = no padding, no preamble, lead with content. Low = padded with intros (\"This article discusses...\"), restates the obvious, runs as long as the source.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must produce a summary or explicitly say ALREADY_BRIEF. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_fabrication",
+      "description": "The summary must not contain facts, numbers, names, or claims absent from the source. Inventing context (e.g., adding 'in 2023' when source doesn't say) fails this gate.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "preserves_specifics",
+      "description": "Specific numbers, names, dates, and proper nouns from the source must appear in the summary if they are central to the content. Genericizing (e.g., 'a few months ago' instead of 'September 2024') fails.",
+      "evaluator": "judge"
+    }
+  ]
+}

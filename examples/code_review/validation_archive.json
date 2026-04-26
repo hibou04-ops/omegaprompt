@@ -1,0 +1,1112 @@
+{
+  "metadata": {
+    "created_at": "2026-04-26",
+    "project": "omegaprompt code-review prompt calibration",
+    "production_winner": "V5_no_issue_guard",
+    "methodology": "6 backtests (3 variant pools × 2 local LLM proxies) + 1 Claude subagent backtest + 1 Claude mainline backtest + 5 independent quality reviews via Sonnet agent",
+    "total_evaluations": "~570 calls + 5 agent reviews",
+    "cost_to_run": "$0 (local Ollama + free count_tokens via tiktoken + Claude subagents on existing Claude Code subscription)"
+  },
+  "pool_evolution": {
+    "variants_v1": {
+      "file": "variants.json (final state)",
+      "note": "Original N=5: V0/V1/V2/V3/V4 — V3=rules-only, V4=basic NO_ISSUE"
+    },
+    "variants_v2": {
+      "file": "variants_v2.json",
+      "note": "V3 → V3prime (rules+format anchor), V4 → V4prime (stronger NO_ISSUE)"
+    },
+    "variants_v3": {
+      "file": "variants_v3.json",
+      "note": "V4prime → V5 (V3prime + NO_ISSUE prefix). Final pool."
+    }
+  },
+  "backtest_summaries": {
+    "exa-v1": {
+      "config": {
+        "ollama_model": "exaone3.5:7.8b",
+        "tiktoken_encoding": "cl100k_base",
+        "n_items": 16,
+        "n_variants": 5,
+        "opus_input_rate_per_M": 15.0,
+        "opus_output_rate_per_M": 75.0
+      },
+      "summary": [
+        {
+          "variant_idx": 0,
+          "input_tokens_tiktoken": 12,
+          "output_mean_tiktoken": 601.875,
+          "output_sd_tiktoken": 112.99255137692337,
+          "output_min_tiktoken": 360,
+          "output_max_tiktoken": 786,
+          "output_sum_tiktoken": 9630,
+          "delta_vs_v0_pct": 0.0,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 1,
+          "input_tokens_tiktoken": 22,
+          "output_mean_tiktoken": 440.25,
+          "output_sd_tiktoken": 121.90570126126177,
+          "output_min_tiktoken": 242,
+          "output_max_tiktoken": 787,
+          "output_sum_tiktoken": 7044,
+          "delta_vs_v0_pct": -26.853582554517136,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 2,
+          "input_tokens_tiktoken": 31,
+          "output_mean_tiktoken": 138,
+          "output_sd_tiktoken": 39.636683345944405,
+          "output_min_tiktoken": 86,
+          "output_max_tiktoken": 216,
+          "output_sum_tiktoken": 2208,
+          "delta_vs_v0_pct": -77.07165109034267,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 3,
+          "input_tokens_tiktoken": 69,
+          "output_mean_tiktoken": 489.4375,
+          "output_sd_tiktoken": 134.48616719449873,
+          "output_min_tiktoken": 335,
+          "output_max_tiktoken": 846,
+          "output_sum_tiktoken": 7831,
+          "delta_vs_v0_pct": -18.681204569055037,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 4,
+          "input_tokens_tiktoken": 50,
+          "output_mean_tiktoken": 143.125,
+          "output_sd_tiktoken": 75.30725949955512,
+          "output_min_tiktoken": 12,
+          "output_max_tiktoken": 354,
+          "output_sum_tiktoken": 2290,
+          "delta_vs_v0_pct": -76.22014537902389,
+          "n_items": 16
+        }
+      ]
+    },
+    "gem-v1": {
+      "config": {
+        "ollama_model": "gemma4:e4b",
+        "tiktoken_encoding": "cl100k_base",
+        "n_items": 16,
+        "n_variants": 5,
+        "variants_file": "C:\\Users\\hibou\\omegaprompt\\examples\\code_review\\variants.json",
+        "opus_input_rate_per_M": 15.0,
+        "opus_output_rate_per_M": 75.0
+      },
+      "summary": [
+        {
+          "variant_idx": 0,
+          "input_tokens_tiktoken": 12,
+          "output_mean_tiktoken": 261.0625,
+          "output_sd_tiktoken": 119.41159561226316,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 416,
+          "output_sum_tiktoken": 4177,
+          "delta_vs_v0_pct": 0.0,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 1,
+          "input_tokens_tiktoken": 22,
+          "output_mean_tiktoken": 210.3125,
+          "output_sd_tiktoken": 82.23601704849281,
+          "output_min_tiktoken": 104,
+          "output_max_tiktoken": 373,
+          "output_sum_tiktoken": 3365,
+          "delta_vs_v0_pct": -19.43978932248025,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 2,
+          "input_tokens_tiktoken": 31,
+          "output_mean_tiktoken": 86.625,
+          "output_sd_tiktoken": 52.187961574805094,
+          "output_min_tiktoken": 33,
+          "output_max_tiktoken": 213,
+          "output_sum_tiktoken": 1386,
+          "delta_vs_v0_pct": -66.81829063921475,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 3,
+          "input_tokens_tiktoken": 69,
+          "output_mean_tiktoken": 224,
+          "output_sd_tiktoken": 82.45645315356869,
+          "output_min_tiktoken": 42,
+          "output_max_tiktoken": 319,
+          "output_sum_tiktoken": 3584,
+          "delta_vs_v0_pct": -14.196791955949244,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 4,
+          "input_tokens_tiktoken": 50,
+          "output_mean_tiktoken": 46.125,
+          "output_sd_tiktoken": 35.988655619977436,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 151,
+          "output_sum_tiktoken": 738,
+          "delta_vs_v0_pct": -82.33181709360785,
+          "n_items": 16
+        }
+      ]
+    },
+    "exa-v2": {
+      "config": {
+        "ollama_model": "exaone3.5:7.8b",
+        "tiktoken_encoding": "cl100k_base",
+        "n_items": 16,
+        "n_variants": 5,
+        "variants_file": "examples\\code_review\\variants_v2.json",
+        "opus_input_rate_per_M": 15.0,
+        "opus_output_rate_per_M": 75.0
+      },
+      "summary": [
+        {
+          "variant_idx": 0,
+          "input_tokens_tiktoken": 12,
+          "output_mean_tiktoken": 604.75,
+          "output_sd_tiktoken": 112.00267853939923,
+          "output_min_tiktoken": 360,
+          "output_max_tiktoken": 786,
+          "output_sum_tiktoken": 9676,
+          "delta_vs_v0_pct": 0.0,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 1,
+          "input_tokens_tiktoken": 22,
+          "output_mean_tiktoken": 440.25,
+          "output_sd_tiktoken": 121.90570126126177,
+          "output_min_tiktoken": 242,
+          "output_max_tiktoken": 787,
+          "output_sum_tiktoken": 7044,
+          "delta_vs_v0_pct": -27.201322860686233,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 2,
+          "input_tokens_tiktoken": 31,
+          "output_mean_tiktoken": 138,
+          "output_sd_tiktoken": 39.636683345944405,
+          "output_min_tiktoken": 86,
+          "output_max_tiktoken": 216,
+          "output_sum_tiktoken": 2208,
+          "delta_vs_v0_pct": -77.18065316246383,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 3,
+          "input_tokens_tiktoken": 79,
+          "output_mean_tiktoken": 86.3125,
+          "output_sd_tiktoken": 32.45041088594514,
+          "output_min_tiktoken": 38,
+          "output_max_tiktoken": 154,
+          "output_sum_tiktoken": 1381,
+          "delta_vs_v0_pct": -85.72757337742868,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 4,
+          "input_tokens_tiktoken": 79,
+          "output_mean_tiktoken": 113.8125,
+          "output_sd_tiktoken": 92.83764951067356,
+          "output_min_tiktoken": 3,
+          "output_max_tiktoken": 291,
+          "output_sum_tiktoken": 1821,
+          "delta_vs_v0_pct": -81.18023976849939,
+          "n_items": 16
+        }
+      ]
+    },
+    "gem-v2": {
+      "config": {
+        "ollama_model": "gemma4:e4b",
+        "tiktoken_encoding": "cl100k_base",
+        "n_items": 16,
+        "n_variants": 5,
+        "variants_file": "examples\\code_review\\variants_v2.json",
+        "opus_input_rate_per_M": 15.0,
+        "opus_output_rate_per_M": 75.0
+      },
+      "summary": [
+        {
+          "variant_idx": 0,
+          "input_tokens_tiktoken": 12,
+          "output_mean_tiktoken": 261.0625,
+          "output_sd_tiktoken": 119.41159561226316,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 416,
+          "output_sum_tiktoken": 4177,
+          "delta_vs_v0_pct": 0.0,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 1,
+          "input_tokens_tiktoken": 22,
+          "output_mean_tiktoken": 210.3125,
+          "output_sd_tiktoken": 82.23601704849281,
+          "output_min_tiktoken": 104,
+          "output_max_tiktoken": 373,
+          "output_sum_tiktoken": 3365,
+          "delta_vs_v0_pct": -19.43978932248025,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 2,
+          "input_tokens_tiktoken": 31,
+          "output_mean_tiktoken": 86.625,
+          "output_sd_tiktoken": 52.187961574805094,
+          "output_min_tiktoken": 33,
+          "output_max_tiktoken": 213,
+          "output_sum_tiktoken": 1386,
+          "delta_vs_v0_pct": -66.81829063921475,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 3,
+          "input_tokens_tiktoken": 79,
+          "output_mean_tiktoken": 64.8125,
+          "output_sd_tiktoken": 37.880898880570406,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 174,
+          "output_sum_tiktoken": 1037,
+          "delta_vs_v0_pct": -75.17356954752215,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 4,
+          "input_tokens_tiktoken": 79,
+          "output_mean_tiktoken": 55.9375,
+          "output_sd_tiktoken": 29.139820978631057,
+          "output_min_tiktoken": 3,
+          "output_max_tiktoken": 112,
+          "output_sum_tiktoken": 895,
+          "delta_vs_v0_pct": -78.57313861623174,
+          "n_items": 16
+        }
+      ]
+    },
+    "exa-v3": {
+      "config": {
+        "ollama_model": "exaone3.5:7.8b",
+        "tiktoken_encoding": "cl100k_base",
+        "n_items": 16,
+        "n_variants": 5,
+        "variants_file": "examples\\code_review\\variants_v3.json",
+        "opus_input_rate_per_M": 15.0,
+        "opus_output_rate_per_M": 75.0
+      },
+      "summary": [
+        {
+          "variant_idx": 0,
+          "input_tokens_tiktoken": 12,
+          "output_mean_tiktoken": 604.75,
+          "output_sd_tiktoken": 112.00267853939923,
+          "output_min_tiktoken": 360,
+          "output_max_tiktoken": 786,
+          "output_sum_tiktoken": 9676,
+          "delta_vs_v0_pct": 0.0,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 1,
+          "input_tokens_tiktoken": 22,
+          "output_mean_tiktoken": 440.25,
+          "output_sd_tiktoken": 121.90570126126177,
+          "output_min_tiktoken": 242,
+          "output_max_tiktoken": 787,
+          "output_sum_tiktoken": 7044,
+          "delta_vs_v0_pct": -27.201322860686233,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 2,
+          "input_tokens_tiktoken": 31,
+          "output_mean_tiktoken": 138,
+          "output_sd_tiktoken": 39.636683345944405,
+          "output_min_tiktoken": 86,
+          "output_max_tiktoken": 216,
+          "output_sum_tiktoken": 2208,
+          "delta_vs_v0_pct": -77.18065316246383,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 3,
+          "input_tokens_tiktoken": 79,
+          "output_mean_tiktoken": 86.3125,
+          "output_sd_tiktoken": 32.45041088594514,
+          "output_min_tiktoken": 38,
+          "output_max_tiktoken": 154,
+          "output_sum_tiktoken": 1381,
+          "delta_vs_v0_pct": -85.72757337742868,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 4,
+          "input_tokens_tiktoken": 96,
+          "output_mean_tiktoken": 71.8125,
+          "output_sd_tiktoken": 45.662849597165234,
+          "output_min_tiktoken": 3,
+          "output_max_tiktoken": 180,
+          "output_sum_tiktoken": 1149,
+          "delta_vs_v0_pct": -88.12525837122777,
+          "n_items": 16
+        }
+      ]
+    },
+    "gem-v3": {
+      "config": {
+        "ollama_model": "gemma4:e4b",
+        "tiktoken_encoding": "cl100k_base",
+        "n_items": 16,
+        "n_variants": 5,
+        "variants_file": "examples\\code_review\\variants_v3.json",
+        "opus_input_rate_per_M": 15.0,
+        "opus_output_rate_per_M": 75.0
+      },
+      "summary": [
+        {
+          "variant_idx": 0,
+          "input_tokens_tiktoken": 12,
+          "output_mean_tiktoken": 261.0625,
+          "output_sd_tiktoken": 119.41159561226316,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 416,
+          "output_sum_tiktoken": 4177,
+          "delta_vs_v0_pct": 0.0,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 1,
+          "input_tokens_tiktoken": 22,
+          "output_mean_tiktoken": 210.3125,
+          "output_sd_tiktoken": 82.23601704849281,
+          "output_min_tiktoken": 104,
+          "output_max_tiktoken": 373,
+          "output_sum_tiktoken": 3365,
+          "delta_vs_v0_pct": -19.43978932248025,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 2,
+          "input_tokens_tiktoken": 31,
+          "output_mean_tiktoken": 86.625,
+          "output_sd_tiktoken": 52.187961574805094,
+          "output_min_tiktoken": 33,
+          "output_max_tiktoken": 213,
+          "output_sum_tiktoken": 1386,
+          "delta_vs_v0_pct": -66.81829063921475,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 3,
+          "input_tokens_tiktoken": 79,
+          "output_mean_tiktoken": 64.8125,
+          "output_sd_tiktoken": 37.880898880570406,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 174,
+          "output_sum_tiktoken": 1037,
+          "delta_vs_v0_pct": -75.17356954752215,
+          "n_items": 16
+        },
+        {
+          "variant_idx": 4,
+          "input_tokens_tiktoken": 96,
+          "output_mean_tiktoken": 51.5625,
+          "output_sd_tiktoken": 37.94552015719378,
+          "output_min_tiktoken": 0,
+          "output_max_tiktoken": 156,
+          "output_sum_tiktoken": 825,
+          "delta_vs_v0_pct": -80.24898252334212,
+          "n_items": 16
+        }
+      ]
+    },
+    "claude-subagent": {
+      "config": {
+        "method": "opus_subagent_simulation",
+        "model": "claude-opus-4-7 (via subagent)",
+        "n_items": 16,
+        "n_variants": 5,
+        "tokenizer": "cl100k_base"
+      },
+      "summary": [
+        {
+          "variant": "V0_baseline",
+          "output_mean_tiktoken": 201.6875,
+          "output_sd_tiktoken": 66.21149824615057,
+          "output_min_tiktoken": 126,
+          "output_max_tiktoken": 356,
+          "output_sum_tiktoken": 3227
+        },
+        {
+          "variant": "V1_role_terse",
+          "output_mean_tiktoken": 112.5,
+          "output_sd_tiktoken": 37.78535871648347,
+          "output_min_tiktoken": 52,
+          "output_max_tiktoken": 183,
+          "output_sum_tiktoken": 1800
+        },
+        {
+          "variant": "V2_xml_format",
+          "output_mean_tiktoken": 79.1875,
+          "output_sd_tiktoken": 31.070283230121994,
+          "output_min_tiktoken": 37,
+          "output_max_tiktoken": 166,
+          "output_sum_tiktoken": 1267
+        },
+        {
+          "variant": "V3prime_rules_format",
+          "output_mean_tiktoken": 102.125,
+          "output_sd_tiktoken": 39.28506925877396,
+          "output_min_tiktoken": 53,
+          "output_max_tiktoken": 205,
+          "output_sum_tiktoken": 1634
+        },
+        {
+          "variant": "V5_no_issue_guard",
+          "output_mean_tiktoken": 85.6875,
+          "output_sd_tiktoken": 46.21358927126666,
+          "output_min_tiktoken": 3,
+          "output_max_tiktoken": 194,
+          "output_sum_tiktoken": 1371
+        }
+      ]
+    },
+    "claude-mainline": {
+      "config": {
+        "method": "mainline_claude_code_opus_4_7",
+        "note": "Generated by main session (not isolated subagents). Use ccusage for direct token cost.",
+        "n_items": 16,
+        "n_variants": 5,
+        "tokenizer": "cl100k_base"
+      },
+      "summary": [
+        {
+          "variant": "V0_baseline",
+          "output_mean_tiktoken": 181.9375,
+          "output_sd_tiktoken": 39.02216250628182,
+          "output_min_tiktoken": 115,
+          "output_max_tiktoken": 270,
+          "output_sum_tiktoken": 2911
+        },
+        {
+          "variant": "V1_role_terse",
+          "output_mean_tiktoken": 81.125,
+          "output_sd_tiktoken": 26.348624252510795,
+          "output_min_tiktoken": 33,
+          "output_max_tiktoken": 147,
+          "output_sum_tiktoken": 1298
+        },
+        {
+          "variant": "V2_xml_format",
+          "output_mean_tiktoken": 51.75,
+          "output_sd_tiktoken": 9.923037169469167,
+          "output_min_tiktoken": 32,
+          "output_max_tiktoken": 72,
+          "output_sum_tiktoken": 828
+        },
+        {
+          "variant": "V3prime_rules_format",
+          "output_mean_tiktoken": 80.6875,
+          "output_sd_tiktoken": 19.888753103198802,
+          "output_min_tiktoken": 53,
+          "output_max_tiktoken": 135,
+          "output_sum_tiktoken": 1291
+        },
+        {
+          "variant": "V5_no_issue_guard",
+          "output_mean_tiktoken": 56.4375,
+          "output_sd_tiktoken": 26.00504758695896,
+          "output_min_tiktoken": 3,
+          "output_max_tiktoken": 116,
+          "output_sum_tiktoken": 903
+        }
+      ]
+    }
+  },
+  "quality_summaries": {
+    "qr-v1": {
+      "config": {
+        "items_total": 16,
+        "variants_total": 5,
+        "judge_method": "agent_review"
+      },
+      "per_variant": [
+        {
+          "variant_idx": 0,
+          "verdicts": {
+            "correct": 11,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 2
+          },
+          "buggy_precision": 0.7857,
+          "buggy_recall": 0.7857,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Verbose (avg ~600 tok). Correctly catches most bugs but fabricates on both clean items. Consistently misses assert-O stripping and t4 missing await primary cause."
+        },
+        {
+          "variant_idx": 1,
+          "verdicts": {
+            "correct": 11,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 2
+          },
+          "buggy_precision": 0.7857,
+          "buggy_recall": 0.7857,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 1,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Focused style. Similar recall to V0 but shorter. V1 c10 is unique: invents false mathematical claim about modulo equivalence -- a hard no_fabricated_claims violation. Both clean items fabricated."
+        },
+        {
+          "variant_idx": 2,
+          "verdicts": {
+            "correct": 8,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 2,
+            "partial": 4
+          },
+          "buggy_precision": 0.5714,
+          "buggy_recall": 0.5714,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Compact output_format style. Lowest token count. c9 wrong root cause (proposed fix still broken). c4 misidentifies root cause. Still fabricates on both clean items."
+        },
+        {
+          "variant_idx": 3,
+          "verdicts": {
+            "correct": 9,
+            "missed": 1,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 3
+          },
+          "buggy_precision": 0.6923,
+          "buggy_recall": 0.6429,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Verbose with NO_ISSUE codas. Only variant to correctly find t4 missing await. But c9 and t2 mutable_default_dict wrong. Both clean items fabricated."
+        },
+        {
+          "variant_idx": 4,
+          "verdicts": {
+            "correct": 9,
+            "missed": 1,
+            "fabricated": 1,
+            "wrong_root_cause": 1,
+            "partial": 4
+          },
+          "buggy_precision": 0.6154,
+          "buggy_recall": 0.5714,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Hybrid NO_ISSUE variant. Correctly handles t6 (bare NO_ISSUE). Still fabricates on c10. c9 missed entirely. Most concise among verbose variants."
+        }
+      ],
+      "summary": [
+        "Best overall variant: V0 (buggy_precision=0.786, buggy_recall=0.786, clean_fpr=1.0, 0 hard-gate violations). V0 and V1 are tied on recall/precision but V1 has a unique no_fabricated_claims violation (false math on c10), making V0 the cleanest single answer.",
+        "V4 (NO_ISSUE hybrid) partially handles clean code: correctly emits bare NO_ISSUE for t6_clean_code but still fabricates on c10_clean_code (hedges with an invented empty-bytes concern before the NO_ISSUE coda). Clean FPR is 0.5, the best of any variant, but not a clean win.",
+        "All 5 variants fabricate on c10_clean_code (checksum). The universal trigger is the empty-bytes edge case -- the model invents an issue (returning 0 for empty input) that is mathematically correct behavior.",
+        "c9_late_binding is the most inconsistently handled buggy item: V3 and V4 explicitly mark NO_ISSUE (wrong, bug is real), V2 proposes a broken fix, V0 and V1 correctly identify and fix it.",
+        "t4_forgotten_await (missing await) is systematically mislabeled as an error-handling gap by V0/V1/V2/V4; only V3 explicitly names the missing await as the root cause.",
+        "c6_ordered_check: assert -O stripping (assert disabled by python -O) is the primary bug per reference. Zero variants identified it; all treated the KeyError ordering issue as the primary concern, resulting in partial scores across the board.",
+        "c5_n_plus_1: all variants found the SQL injection issue but none explicitly identified the N+1 query antipattern (N separate DB round trips), resulting in universal partial scores.",
+        "V1 c10 is the only no_fabricated_claims hard-gate violation: it invents a false mathematical claim that modulo-per-step obscures cumulative differences versus modulo-at-end (the two are arithmetically equivalent).",
+        "Quality vs token tradeoff is real: V2 (compact ~100-200 tok/review) has the most wrong_root_cause errors and lowest precision (0.571). Verbose V0/V1 (~500-700 tok) achieve 0.786 on both metrics but token cost is 3-5x higher.",
+        "No variant achieved a clean false-positive rate below 0.5. The 7B model has a systematic tendency to over-review clean code, inventing minor style/edge-case issues rather than confidently saying NO_ISSUE."
+      ]
+    },
+    "qr-v2": {
+      "config": {
+        "items_total": 16,
+        "variants_total": 5,
+        "judge_method": "agent_review_v2"
+      },
+      "per_variant": [
+        {
+          "variant_idx": 0,
+          "verdicts": {
+            "correct": 10,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 3
+          },
+          "buggy_precision": 0.7143,
+          "buggy_recall": 0.7143,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Verbose (~600 tok/review). t1 misframes bug as IndexError (Python slicing never raises IndexError — false claim). Still fabricates on both clean items. t4 names error handling not missing await. c5/c6 miss deeper antipatterns. Baseline quality slightly lower than old V0 run due to t1 now scoring partial."
+        },
+        {
+          "variant_idx": 1,
+          "verdicts": {
+            "correct": 10,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 3
+          },
+          "buggy_precision": 0.7143,
+          "buggy_recall": 0.7143,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 1,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Focused style (~440 tok). Same verdict profile as V0. V1 c10 is the only no_fabricated_claims hard-gate violation: invents false math that modulo-per-step causes incorrect results vs modulo-at-end (arithmetically equivalent). Both clean items fabricated."
+        },
+        {
+          "variant_idx": 2,
+          "verdicts": {
+            "correct": 8,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 2,
+            "partial": 4
+          },
+          "buggy_precision": 0.5714,
+          "buggy_recall": 0.5714,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Compact XML output_format style (~138 tok). Lowest token count. c9 wrong root cause with broken fix (proposed inner def still has late-binding). c4 misidentifies primary cause as missing mode specifier. t4 misses await entirely. Both clean items fabricated."
+        },
+        {
+          "variant_idx": 3,
+          "verdicts": {
+            "correct": 11,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 2
+          },
+          "buggy_precision": 0.7857,
+          "buggy_recall": 0.7857,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 2,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Rules+format anchor style (~86 tok average — 85% token reduction vs V0). Best buggy recall/precision of any variant. Correctly identifies t4 missing await (V3 did too). c9 now correct (V3 missed it). t2 now correct (V3 had wrong_root_cause). However: 2 hard-gate no_fabricated_claims violations — t6 claims correct raise condition inverts logic (false, proposed fix is wrong), c10 invents integer overflow on clean checksum (false). Format anchor doubled-down on confidence even when wrong."
+        },
+        {
+          "variant_idx": 4,
+          "verdicts": {
+            "correct": 7,
+            "missed": 6,
+            "fabricated": 1,
+            "wrong_root_cause": 0,
+            "partial": 2
+          },
+          "buggy_precision": 0.75,
+          "buggy_recall": 0.4286,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "qualitative_notes": "Stronger NO_ISSUE style (~114 tok average). Massive over-correction: 6 buggy items missed with NO_ISSUE (t2, t4, c6, c7, c8, c9). Achieved design goal on c10 (correct NO_ISSUE), but t6 now fabricated (docstring suggestion before NO_ISSUE). c7 and c9 correctly identify bugs in their body but conclude NO_ISSUE — NO_ISSUE on real bug = missed. Buggy recall dropped to 0.43, worst of any variant."
+        }
+      ],
+      "summary": [
+        "Best overall variant in v2 run: V3' (buggy_precision=0.786, buggy_recall=0.786, 86 tok/review avg — 85% token reduction vs V0), matching the best raw quality of V0/V1 at 14x lower output cost. However V3' has 2 hard-gate no_fabricated_claims violations, which V0 has none of. If hard-gate violations are disqualifying, V0 remains the cleanest single answer.",
+        "V3' beat old V3 on both precision and recall (+0.09 precision, +0.14 recall) while cutting tokens by 86% vs V0. The format anchor plus rules successfully compressed output without sacrificing bug detection — and recovered 2 items old V3 missed (c9, t2). The cost: amplified confidence on clean items escalated both to hard-gate violations.",
+        "V4' achieved its single design target: c10_clean_code now correctly emits bare NO_ISSUE (old V4 fabricated). But the stronger NO_ISSUE prompt caused over-correction: 6 buggy items returned NO_ISSUE (t2, t4, c6, c7, c8, c9). Recall dropped to 0.429 — worst of any variant. Clean FPR held at 0.5 because t6 regressed from correct to fabricated simultaneously.",
+        "c7_concat_loop and c9_late_binding show V4' knows the right answer but overrides it with NO_ISSUE: the model's body correctly identifies O(n^2) and late-binding bugs and proposes correct fixes, then the stronger NO_ISSUE anchor forces an incorrect final verdict. This represents a quality antipattern: the fix instruction defeats the analysis.",
+        "t1_off_by_one_slice is mis-graded partial by ALL 5 variants in this run. Every variant frames the bug as IndexError/n>len rather than the actual -1 OBO. Python slicing never raises IndexError — the model invented a false mechanism. The fix items[-n:] is correct incidentally. This is a systematic hallucination across all 5 runs.",
+        "c6_ordered_check: assert -O stripping is the primary bug per reference. Zero variants across any version identify it. All variants treat KeyError or type-validation as the primary concern. This item remains universally 0% recall on the primary bug. V3' regressed from partial to wrong_root_cause on this item.",
+        "c5_n_plus_1: All 5 variants find the SQL injection f-string but none identify the N+1 query antipattern. Universal partial score across the run. Consistent with old backtest.",
+        "V0 and V1 are tied on precision/recall (0.714 each) in this run, lower than old backtest (0.786) because t1 now scores partial (OBO framing recognized as wrong). V2 ties old score (0.571). V3' improves on old V3 (0.786 vs 0.692). V4' regresses heavily from old V4 (0.429 recall vs 0.571).",
+        "Hard-gate violations in v2: V1 (1, c10 false math), V3' (2, t6 false logic inversion + c10 false overflow). V0, V2, V4' have zero violations. V3' has the most violations of any variant while simultaneously having the best quality on buggy items — a tension that makes it the most complex variant to recommend.",
+        "No variant achieved clean FPR below 0.5. V4' holds at 0.5 but for the wrong reasons (c10 fixed, t6 regressed). V3'/V0/V1/V2 all fabricate on both clean items. The 7B model has a persistent over-review tendency on clean code that no prompt variant in this pool fully suppresses."
+      ]
+    },
+    "qr-v3": {
+      "config": {
+        "items_total": 16,
+        "variants_total": 5,
+        "judge_method": "agent_review_v3"
+      },
+      "per_variant": [
+        {
+          "variant_idx": 0,
+          "verdicts": {
+            "correct": 10,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 3
+          },
+          "buggy_precision": 0.7143,
+          "buggy_recall": 0.7143,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 604.75,
+          "qualitative_notes": "Verbose baseline (~605 tok/review). t1 misframes bug as IndexError (Python slicing never raises IndexError). t4 names error handling not missing await. c5/c6 miss deeper antipatterns. Fabricates on both clean items (t6, c10) with invented edge cases. 0 hard-gate violations."
+        },
+        {
+          "variant_idx": 1,
+          "verdicts": {
+            "correct": 10,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 3
+          },
+          "buggy_precision": 0.7143,
+          "buggy_recall": 0.7143,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 1,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 440.25,
+          "qualitative_notes": "Focused style (~440 tok). Same verdict profile as V0. c10 hard-gate violation: invents false math that modulo-per-step and modulo-at-end are not equivalent (they are). Both clean items fabricated."
+        },
+        {
+          "variant_idx": 2,
+          "verdicts": {
+            "correct": 8,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 2,
+            "partial": 4
+          },
+          "buggy_precision": 0.5714,
+          "buggy_recall": 0.5714,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 138.0,
+          "qualitative_notes": "Compact XML style (~138 tok). Lowest token count. c9 wrong root cause with broken fix (proposed inner def still has late-binding). c4 misidentifies primary cause as missing mode specifier. t4 misses await entirely. Both clean items fabricated. 0 hard-gate violations despite fabrications."
+        },
+        {
+          "variant_idx": 3,
+          "verdicts": {
+            "correct": 11,
+            "missed": 0,
+            "fabricated": 2,
+            "wrong_root_cause": 1,
+            "partial": 2
+          },
+          "buggy_precision": 0.7857,
+          "buggy_recall": 0.7857,
+          "clean_false_positive_rate": 1.0,
+          "no_fabricated_claims_violations": 2,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 86.3125,
+          "qualitative_notes": "Rules+format anchor style (~86 tok avg, 85% reduction vs V0). Best buggy recall/precision of all variants. Correctly identifies t4 missing await. c9 correct (lambda v=v fix). However: 2 hard-gate no_fabricated_claims violations — t6 claims correct raise condition inverts logic (false, proposed fix would break every valid call), c10 invents integer overflow on clean checksum (false). Format anchor doubled confidence even when wrong."
+        },
+        {
+          "variant_idx": 4,
+          "verdicts": {
+            "correct": 9,
+            "missed": 2,
+            "fabricated": 1,
+            "wrong_root_cause": 1,
+            "partial": 3
+          },
+          "buggy_precision": 0.75,
+          "buggy_recall": 0.6429,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 71.8125,
+          "qualitative_notes": "V5 = V3' + NO_ISSUE guard (~72 tok avg, 88% reduction vs V0). Successfully eliminated V3' hard-gate violations on both clean items (t6=correct NO_ISSUE, c10=mild fabrication no hard-gate). NO_ISSUE guard did NOT cause the V4' knows-but-hides antipattern — c7 and c8 correctly flagged bugs without a NO_ISSUE override. Guard over-fired on 2 buggy items (c6, c9 = bare NO_ISSUE on real bugs), costing recall. t4 reverted to wrong_root_cause (V3' had correct). Final: 0 hard-gate violations, recall 0.643 vs V3' 0.786."
+        }
+      ],
+      "summary": [
+        "V5's NO_ISSUE guard fully fixed V3's t6 hard-gate violation: clamp correctly receives bare NO_ISSUE (3 tokens, 0 fabricated claims).",
+        "V5 partially fixed V3's c10 hard-gate violation: dropped from hard-gate (false overflow claim) to plain fabricated (mild hedged concern + NO_ISSUE coda). Hard-gate count goes 2→0.",
+        "V5 did NOT reproduce the V4' knows-but-hides antipattern: c7 and c8 correctly flagged real bugs without a concluding NO_ISSUE override. The guard was selective, not blanket.",
+        "V5 over-fired the NO_ISSUE guard on 2 buggy items: c9_late_binding and c6_ordered_check received bare NO_ISSUE, both real bugs fully missed. This is guard over-suppression, not knows-but-hides.",
+        "V5 recall = 0.643 vs V3' recall = 0.786 vs V0 recall = 0.714. V5 is strictly worse than V0 on recall; worse than V3' on recall.",
+        "V5 clean_fpr = 0.5 (1 of 2 clean items fabricated) vs V0/V1/V2/V3' = 1.0 (both clean items fabricated). Clean-item safety materially improved but not yet achieved.",
+        "V5 token efficiency: 72 tok avg vs 605 tok V0 avg (88% reduction). If recall floor of 64% is acceptable, V5 is dramatically cheaper.",
+        "V5 is not a Pareto improvement over V0: wins on tokens (-88%), precision (+3.5pp), clean_fpr (-50pp FPR), but loses 7.1pp recall. Both have 0 hard-gate violations.",
+        "The iteration V3'→V5 solved the primary hard-gate problem but regresssed 3 previously-correct verdicts (t4, c9, c6). The NO_ISSUE guard needs finer tuning to distinguish truly clean items from subtle-but-real-bug items.",
+        "Production candidacy: V5 is NOT the final production candidate. V0 is the safer choice if recall is the primary metric. V5 is viable if token cost dominates and callers accept 64% recall floor. The target should be V6: V5 precision + V3' recall, requiring a more discriminating NO_ISSUE gate (e.g., require explicit NO_ISSUE rationale, not bare token output)."
+      ]
+    },
+    "qr-claude-subagent": {
+      "config": {
+        "items_total": 16,
+        "variants_total": 5,
+        "judge_method": "agent_review_claude_full",
+        "target_model": "claude-opus-4-7-via-subagent"
+      },
+      "per_variant": [
+        {
+          "variant": "V0_baseline",
+          "verdicts": {
+            "correct": 15,
+            "missed": 0,
+            "fabricated": 1,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 201.7,
+          "vs_7B_summary": "Dramatic improvement over 7B V0 (precision/recall 1.0 vs 0.714). Claude V0 correctly identifies: t1 -1 OBO (7B framed as IndexError), t4 missing await as root cause (7B named error handling), c5 N+1 as primary (7B universally missed), c6 assert -O stripping (7B universally missed). Only regression: t6 fabricated (NaN suggestion) vs 7B both clean items fabricated. Clean FPR 0.5 vs 7B 1.0."
+        },
+        {
+          "variant": "V1_role_terse",
+          "verdicts": {
+            "correct": 16,
+            "missed": 0,
+            "fabricated": 0,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 112.5,
+          "vs_7B_summary": "Perfect score on all 16 items. 7B V1 had precision/recall 0.714, 1 hard_gate violation (false math on c10), both clean items fabricated. Claude V1: 16/16 correct, 0 fabrications, 0 hard_gate violations. t6 explicitly says 'correct, well-typed', c10 says 'No bugs... the function is correct'. Terse style did not cause knows-but-hides. Major surprise: role-terse prompt produced zero fabrications on clean code."
+        },
+        {
+          "variant": "V2_xml_format",
+          "verdicts": {
+            "correct": 16,
+            "missed": 0,
+            "fabricated": 0,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 79.2,
+          "vs_7B_summary": "Perfect score on all 16 items. 7B V2 had precision/recall 0.571, 0 hard_gate violations, both clean items fabricated, 2 wrong_root_cause errors (c9 broken fix, c4 wrong primary). Claude V2: 16/16 correct, 0 fabrications, 0 wrong_root_cause. Despite no rules section, Claude produced reviews that correctly identified c5 N+1, c6 assert-O, t4 missing await — all items 7B missed. Clean items handled with 'No issues... Fix: None required' and 'No correctness or security issues'. XML format alone sufficient for Claude."
+        },
+        {
+          "variant": "V3prime_rules_format",
+          "verdicts": {
+            "correct": 15,
+            "missed": 0,
+            "fabricated": 1,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 102.1,
+          "vs_7B_summary": "Precision/recall 1.0 vs 7B V3' 0.786. 7B V3' had 2 hard_gate violations (false logic inversion on t6, false overflow on c10). Claude V3': 0 hard_gate violations. t6 fabricated for NaN suggestion but says 'No defects found, Fix: None required' — less severe than 7B which invented broken fix logic. c10 correctly says 'No correctness defects'. The rules+format did not amplify hallucinations on Claude unlike 7B where format anchor doubled confidence on wrong claims."
+        },
+        {
+          "variant": "V5_no_issue_guard",
+          "verdicts": {
+            "correct": 16,
+            "missed": 0,
+            "fabricated": 0,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens": 85.7,
+          "vs_7B_summary": "Perfect score on all 16 items. 7B V5 had precision/recall 0.643/0.750, 2 missed items (c9, c6), 1 fabricated (c10), clean_fpr 0.5. Claude V5: 16/16 correct, 0 fabrications, 0 missed. NO_ISSUE guard fired correctly for both clean items (t6, c10) without over-firing on any buggy items. The V4'/V5 knows-but-hides antipattern (7B c7/c9 where model discussed bugs then said NO_ISSUE) did NOT reproduce on Claude. Claude V5 maintained full recall at 57.5% token reduction vs V0."
+        }
+      ],
+      "summary": [
+        "Production winner on Claude is V1_role_terse or V2_xml_format or V5_no_issue_guard — all three achieve 16/16 correct with 0 fabrications and 0 hard_gate violations. V1 wins on qualitative explanation depth; V2 wins on token efficiency (79 tok avg); V5 wins on clean-code handling signal (explicit NO_ISSUE vs implicit correct statements).",
+        "Pareto frontier on Claude: V2 (79 tok, 16/16) dominates V0 (202 tok, 15/16) and V3p (102 tok, 15/16) on both dimensions. V5 (86 tok, 16/16) is on the frontier. V1 (113 tok, 16/16) is on the frontier. There is no quality-token tradeoff within the {V1, V2, V5} cluster — all achieve perfect quality at different token budgets.",
+        "7B silent-miss pattern (model knowing the right answer but concluding NO_ISSUE) did NOT reproduce on Claude. All 5 variants caught all 14 buggy items. The 7B c7/c8/c9 knows-but-hides in V4' and V5 runs is absent in Claude outputs.",
+        "7B fabrication on clean code was universal (clean_fpr=1.0 for V0-V3', 0.5 for V5) with hard_gate violations. Claude fabricates mildly only on t6 in V0 and V3' (NaN advisory note while saying 'no defects found'). V1, V2, V5 achieve clean_fpr=0.0. Claude-Opus-4.7 is materially more calibrated than the 7B model on clean code.",
+        "V5 maintained perfect quality (16/16) at 57.5% token reduction vs V0 (86 tok vs 202 tok avg). This definitively answers the V5 token-quality question: YES, V5 maintains full quality at 57.5% cost on Claude. The 7B quality regression at V5 was a model-specific limitation, not a prompt limitation.",
+        "c5 N+1 and c6 assert-O were universal failures for 7B across all variants (partial/wrong in every run). Claude caught both correctly in all 5 variants — 100% recall on both items. This indicates the 7B model lacked the knowledge to identify these patterns even when prompted correctly; Claude has it natively.",
+        "t4 missing-await was a near-universal 7B failure (wrong_root_cause in 4/5 variants; only V3' of 7B got it right). Claude correctly identifies missing await as root cause in all 5 variants. This is a systematic 7B knowledge gap that does not exist in Claude-Opus-4.7.",
+        "t1 off-by-one was partial for all 7B variants due to false IndexError framing. Claude correctly identifies the -1 OBO (returns n+1 items) in all 5 variants without the IndexError fabrication. Another systematic 7B hallucination absent in Claude.",
+        "No hard_gate violations across all 80 Claude entries vs 1-2 per 7B run. Claude does not invent false mathematical claims (7B V1/V3' c10 overflow), false logic inversions (7B V3' t6), or false Python semantics (7B V0 t4). Claude's fabrications are advisory suggestions on clean code, not mechanistically false claims.",
+        "Deployment recommendation: V2_xml_format is the production winner for Claude. 79 token average output, 16/16 correct, 0 fabrications, 0 hard_gate violations, and XML format makes output machine-parseable. V5 is recommended if explicit NO_ISSUE signaling is needed for downstream consumers. V1 is recommended for human-readable reports where explanation quality matters. All three are safe to deploy; the choice is use-case driven."
+      ]
+    },
+    "qr-claude-mainline": {
+      "config": {
+        "items_total": 16,
+        "variants_total": 5,
+        "judge_method": "agent_review_mainline"
+      },
+      "per_variant": [
+        {
+          "variant": "V0_baseline",
+          "verdicts": {
+            "correct": 15,
+            "missed": 0,
+            "fabricated": 1,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens_mainline": 181.9,
+          "avg_output_tokens_subagent": 201.7,
+          "token_reduction_vs_subagent": "9.8%",
+          "vs_subagent_diff": "Identical verdict distribution (15 correct, 1 fabricated, same item t6). Mainline V0 t6 NaN advisory pattern mirrors subagent V0 t6. Mainline outputs ~10% shorter (181.9 vs 201.7 tok avg) due to conversation-context terseness priming. All 14 buggy items: same correct verdicts. c10: both mainline and subagent correct (no fabrication). Premise note: task asked about v0_c10_fabrication_match — subagent V0 c10 was correct, not fabricated; v0_t6_fabrication_match is the true match point."
+        },
+        {
+          "variant": "V1_role_terse",
+          "verdicts": {
+            "correct": 16,
+            "missed": 0,
+            "fabricated": 0,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens_mainline": 81.1,
+          "avg_output_tokens_subagent": 112.5,
+          "token_reduction_vs_subagent": "27.9%",
+          "vs_subagent_diff": "Perfect match: both mainline and subagent V1 achieve 16/16 correct, 0 fabrications, clean_fpr=0.0. Mainline outputs 27.9% shorter (81.1 vs 112.5 tok avg). Quality parity at lower token count. Mainline t6: 'Ship it.' vs subagent t6: 'correct, well-typed, handles degenerate lo>hi.' Both clean, no difference in verdict."
+        },
+        {
+          "variant": "V2_xml_format",
+          "verdicts": {
+            "correct": 16,
+            "missed": 0,
+            "fabricated": 0,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens_mainline": 51.75,
+          "avg_output_tokens_subagent": 79.2,
+          "token_reduction_vs_subagent": "34.7%",
+          "vs_subagent_diff": "Perfect match: both mainline and subagent V2 achieve 16/16 correct, 0 fabrications, clean_fpr=0.0. Mainline 34.7% shorter (51.75 vs 79.2 tok avg) — largest absolute reduction of any variant. t6: mainline 'No defects — bounds validated. Fix: None required.' vs subagent 'No issues — bounds validated. Fix: None required.' Functionally identical clean handling. c10: both output 'No correctness defects' + optional simplification."
+        },
+        {
+          "variant": "V3prime_rules_format",
+          "verdicts": {
+            "correct": 15,
+            "missed": 0,
+            "fabricated": 1,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.5,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens_mainline": 80.7,
+          "avg_output_tokens_subagent": 102.1,
+          "token_reduction_vs_subagent": "21.0%",
+          "vs_subagent_diff": "Identical verdict distribution (15 correct, 1 fabricated, same item t6). Both mainline and subagent V3' fabricate NaN propagation concern on t6. Both correctly handle c10 (no fabrication). Mainline 21.0% shorter. The rules+format prompt reliably triggers the mild NaN advisory on t6 in both contexts. No hard_gate violations in either run."
+        },
+        {
+          "variant": "V5_no_issue_guard",
+          "verdicts": {
+            "correct": 16,
+            "missed": 0,
+            "fabricated": 0,
+            "wrong_root_cause": 0,
+            "partial": 0
+          },
+          "buggy_precision": 1.0,
+          "buggy_recall": 1.0,
+          "clean_false_positive_rate": 0.0,
+          "no_fabricated_claims_violations": 0,
+          "review_not_silent_rewrite_violations": 0,
+          "avg_output_tokens_mainline": 56.4,
+          "avg_output_tokens_subagent": 85.7,
+          "token_reduction_vs_subagent": "34.2%",
+          "vs_subagent_diff": "Perfect match: both mainline and subagent V5 achieve 16/16 correct, 0 fabrications, clean_fpr=0.0. Both produce bare 'NO_ISSUE' (3 tokens) for t6 and c10. Mainline 34.2% shorter overall (56.4 vs 85.7 tok avg). NO_ISSUE guard fires correctly in both contexts; knows-but-hides antipattern absent in both."
+        }
+      ],
+      "summary": [
+        "Verdict agreement is 1.0 (80/80): mainline and subagent Opus 4.7 produced identical verdict distributions across all 5 variants. No mainline-specific quality regression found.",
+        "Fabrication pattern is stable: V0 and V3' fabricate mildly on t6 (clamp clean code, NaN advisory) in both mainline and subagent. V1, V2, V5 achieve clean_fpr=0.0 in both contexts.",
+        "V5 NO_ISSUE guard fires correctly in mainline: both t6 and c10 produce bare 'NO_ISSUE' (3 tokens), matching subagent V5 behavior. No false NO_ISSUE on any of the 14 buggy items.",
+        "Zero hard_gate violations across all 80 mainline entries (no_fabricated_claims, review_not_silent_rewrite, no_refusal all clear). This matches the subagent zero-violation result.",
+        "Mainline-specific bias confirmed: outputs are systematically 10–35% shorter than subagent. Largest reductions in V2 (51.75 vs 79.2 tok, -34.7%) and V5 (56.4 vs 85.7 tok, -34.2%). This is conversation-context terseness priming. Quality was unaffected.",
+        "V2_xml_format is the production winner on mainline data: 51.75 tok avg output, 16/16 correct, 0 fabrications, 0 hard_gate violations. Achieves 71.6% token reduction vs V0 on mainline (vs 60.7% on subagent) due to priming compression.",
+        "Pareto front on mainline: V2 (51.75 tok, 16/16) dominates V0 (181.9 tok, 15/16) and V3' (80.7 tok, 15/16) on both axes. V5 (56.4 tok, 16/16) is on the Pareto front. V1 (81.1 tok, 16/16) is strictly dominated by V2 and V5 on tokens at equal quality.",
+        "c5 N+1 and c6 assert-O stripping are correctly identified as primary issues in all 5 mainline variants, confirming these are not prompt-sensitive knowledge gaps for Opus 4.7.",
+        "Premise correction: the task asked about V0 and V3' fabrication on c10, but the subagent baseline scored c10 as correct for both variants. The fabrication items were t6 (both variants). The v0/v3prime_c10_fabrication_match fields represent verdict agreement on c10 (both correct), not fabrication presence.",
+        "Deployment recommendation unchanged: V2_xml_format is the production winner for Claude Opus 4.7 — 51.75 tok avg, perfect quality, machine-parseable XML format. V5 is preferred if downstream consumers need explicit NO_ISSUE signals. Mainline data strengthens, not shifts, the V2 recommendation by showing further token efficiency gain from conversation-context priming."
+      ]
+    }
+  },
+  "final_decision": {
+    "winner": "V5_no_issue_guard",
+    "runner_up": "V2_xml_format",
+    "rationale": [
+      "V2 and V5 both achieve 16/16 perfect quality on Claude Opus 4.7 (precision 1.000, recall 1.000, clean_FPR 0.00, 0 hard_gate violations)",
+      "V5 chosen over V2 for qualitative superiority on clean code: emits explicit NO_ISSUE (3 tokens) rather than V2 forcing Issue/Fix format on clean code (37+ tokens with borderline optional suggestions)",
+      "V5 token cost premium ~9% vs V2 (mainline 56 vs 52, subagent 86 vs 79) — negligible",
+      "V5 enables machine-parseable downstream (if response == \"NO_ISSUE\") whereas V2 requires NLP",
+      "V5 reduces borderline fabrication risk on clean code (NO_ISSUE guard prevents pattern-matching style nitpicks into Issue: format)"
+    ],
+    "verdict_consistency": "Mainline vs Subagent verdict agreement = 1.000 (80/80 verdicts identical across execution contexts) — V5 quality is stable"
+  },
+  "cost_projection_per_1k_calls_opus_4_7": {
+    "V0_baseline": {
+      "mainline": 13.65,
+      "subagent": 15.15,
+      "verdict": "dominated"
+    },
+    "V1_role_terse": {
+      "mainline": 6.08,
+      "subagent": 8.4,
+      "verdict": "dominated by V2"
+    },
+    "V2_xml_format": {
+      "mainline": 3.9,
+      "subagent": 5.93,
+      "verdict": "Pareto front (token leader)"
+    },
+    "V3prime_rules_format": {
+      "mainline": 6.08,
+      "subagent": 7.65,
+      "verdict": "dominated"
+    },
+    "V5_no_issue_guard": {
+      "mainline": 4.2,
+      "subagent": 6.45,
+      "verdict": "PRODUCTION CHOICE — Pareto front + clean handling"
+    }
+  },
+  "methodology_lessons": {
+    "7B_to_Claude_transferability": "Direction signals (format anchor compression, variant ranking) transfer reliably; quality numbers do NOT transfer (7B over-reports precision/recall regressions, fabrication, hallucinations)",
+    "mainline_vs_subagent": "Mainline outputs are 10-35% more compact (conversation-context terseness priming). Quality identical (100% verdict agreement). Subagent estimates closer to fresh API calls.",
+    "recommended_workflow": "7B Ollama for cheap design-space exploration → Claude validation (subagent or actual API) for production decision → mainline data is optimistic lower bound"
+  }
+}

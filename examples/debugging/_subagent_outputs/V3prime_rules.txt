@@ -1,0 +1,44 @@
+db1_zero_division_BEGIN
+Root cause: `len(xs)` is 0 when `xs` is an empty list, causing division by zero.
+Fix: Guard against empty input: `return sum(xs) / len(xs) if xs else 0` (or raise `ValueError` if empty input is invalid for the caller).
+db1_zero_division_END
+
+db2_keyerror_BEGIN
+Root cause: The parsed JSON payload has no `'email'` key.
+Fix: `return user_data.get('email', '').lower()` (or validate the payload and handle the missing-key case explicitly per the caller's contract).
+db2_keyerror_END
+
+db3_typerror_concat_BEGIN
+Root cause: `age` is an `int` and cannot be concatenated to a `str` with `+`.
+Fix: Convert `age` to string: `return 'Hello ' + name + ', you are ' + str(age)` (or use an f-string: `f'Hello {name}, you are {age}'`).
+db3_typerror_concat_END
+
+db4_late_binding_loop_BEGIN
+Root cause: Python closures capture variables by reference, not by value; all lambdas reference the same `i`, which is `3` after the loop ends.
+Fix: Bind `i` at lambda creation via a default argument: `fns.append(lambda i=i: i)`.
+db4_late_binding_loop_END
+
+db5_off_by_one_range_BEGIN
+Root cause: `range(start, stop)` is exclusive of `stop`, so `range(1, 10)` yields 1..9.
+Fix: `for i in range(1, 11):`.
+db5_off_by_one_range_END
+
+db6_mutating_during_iter_BEGIN
+Root cause: Deleting keys from `d` while iterating over it mutates the dict's size mid-iteration.
+Fix: Iterate over a snapshot of the keys: `for k in list(d): if d[k] is None: del d[k]` (or rebuild: `d = {k: v for k, v in d.items() if v is not None}`).
+db6_mutating_during_iter_END
+
+db7_async_no_await_BEGIN
+Root cause: `AsyncClient().get(...)` returns a coroutine, not a `Response`; coroutines have no `.json()` method.
+Fix: Await it inside an async context using a managed client:
+```
+async with httpx.AsyncClient() as client:
+    response = await client.get('/api/x')
+    data = response.json()
+```
+db7_async_no_await_END
+
+db8_ambiguous_no_repro_BEGIN
+Root cause: Insufficient information — no reproduction, no profile, no metric defining "slow" or "sometimes." Cannot identify a root cause without data.
+Fix: Collect evidence before changing code: (1) capture timings/logs to define when "slow" occurs, (2) run a profiler (e.g., `cProfile`, `py-spy`) on a slow run, (3) compare against a fast run to isolate the differing call path. Report findings, then debug the specific hotspot.
+db8_ambiguous_no_repro_END

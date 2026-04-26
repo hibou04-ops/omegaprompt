@@ -1,0 +1,787 @@
+{
+  "config": {
+    "items_total": 16,
+    "variants_total": 5,
+    "judge_method": "agent_review_v2"
+  },
+  "per_call": [
+    {
+      "variant_idx": 0,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Frames bug as IndexError when n > len(items) — false claim (Python slicing never raises IndexError for out-of-range). Real bug is -1 OBO (returns n+1 items). Fix items[-n:] incidentally correct but root cause wrong."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Primary issue named as missing error handling, not missing await. Fix code incidentally adds await but that is not the stated root cause."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, dict comprehension fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented error message clarity issue and None type edge case. No NO_ISSUE. Clean code."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug (multiplies by 0), fix range(1, n+1)."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource leak (file not closed), context manager fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection f-string. Missed N+1 query antipattern (N separate DB round trips)."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found KeyError risk (missing key access), improved messages. Missed assert -O stripping (primary) and KeyError ordering issue."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found late-binding closure (all print 3), lambda v=v fix."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented empty-input check and overflow concern. Returns 0 for empty bytes is correct; overflow not possible in Python. No NO_ISSUE."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Frames bug as IndexError when n > len(items) — Python slicing never raises IndexError. Real bug is -1 OBO. Fix items[-n:] correct but framing wrong."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Named issue is potential error handling missing, not the missing await. Fix incidentally adds await via async context manager."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, list-of-keys fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented logical oversight at lo==hi edge case. Function handles lo==hi correctly (clamps to that value). No NO_ISSUE."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug, fix range(1, n+1)."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource management issue (file not closed), context manager fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection f-string. Missed N+1 query antipattern."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found KeyError risks (missing key access), adds validation. Missed assert -O stripping (primary)."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found late-binding closure, lambda v=v fix."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": ["no_fabricated_claims"],
+      "notes": "Invents false math: 'modulo-per-step can lead to incorrect checksum... cumulative errors'. Both modulo-per-step and modulo-at-end are arithmetically equivalent for sum mod 256. False mathematical claim = hard gate violation."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Frames bug as IndexError or small-n misbehavior. Real bug is -1 OBO. Fix items[-n:] correct but root cause wrong."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, os.listdir fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t4_forgotten_await",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Named issue is error handling. Missing await not identified. Fix adds await incidentally."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, keys-snapshot fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invented clarity/edge-case issue and error message modification. Strict: any invented issue = fabricated."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found range(n) bug, fix range(1, n+1)."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c4_file_leak",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Primary issue named as 'open without specifying mode' (not a real bug — defaults to read mode safely). Real primary bug is resource leak from no close. Fix uses context manager correctly but root cause framing is off."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection f-string. Missed N+1 query antipattern."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c6_ordered_check",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Added type checks only (isinstance for customer_id and items). Missed assert -O stripping (primary) and KeyError ordering issue."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c9_late_binding",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Identifies closure issue then dismisses it ('not immediately problematic unless values mutates during iteration'). Proposed fix (inner def callback()) has the SAME late-binding bug — still captures v by reference."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invents need to 'handle empty byte data gracefully'. Returns 0 for empty bytes is correct behavior. Strict: any invented issue = fabricated."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Frames bug as n > len(items) causing negative indexing — wrong framing. Real bug is -1 OBO. Fix items[-n:] correct but stated root cause wrong."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default dict, None fix with correct shared-state explanation."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t4_forgotten_await",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Explicitly identified: 'httpx.AsyncClient().get does not await the response'. Named missing await as root cause, async with + await fix provided."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, keys-snapshot fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": ["no_fabricated_claims"],
+      "notes": "Claims 'raise ValueError(f\"lo ({lo}) must not exceed hi ({hi})\") inverts the expected logic' and proposes 'if lo < hi:' as fix. The original condition (raise when lo > hi) is correct. 'if lo < hi:' would raise on every valid call. False logic-inversion claim on clean code = hard gate violation."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'result *= i should multiply result by i+1'. Fix: result *= i+1. Valid: range(n) yields 0..n-1, so i+1 gives 1..n inclusive — correct factorial."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource leak (file opened but not closed), with statement fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection f-string. Missed N+1 query antipattern."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c6_ordered_check",
+      "verdict": "wrong_root_cause",
+      "hard_gate_violations": [],
+      "notes": "Adds isinstance check for customer_id only. Does not identify assert -O stripping (primary), KeyError ordering, or assert-as-validation problem. Invents a tangential type-validation fix without touching the real bugs."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c7_concat_loop",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found O(n^2) string concat, str.join fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c8_mutable_default",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found mutable default list, None fix."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c9_late_binding",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found late-binding closure (all print last value), lambda v=v fix correctly stated."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c10_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": ["no_fabricated_claims"],
+      "notes": "Claims 'might lead to incorrect checksum if total exceeds 255 due to overflow before taking modulo'. False: modulo is taken every step so total is always 0-255 before each addition. Proposed fix total = total % 256 + byte % 256 is mathematically different from original but claims to correct a non-existent overflow. Hard gate violation."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t1_off_by_one_slice",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Frames bug as negative indexing issue when n > len(items). Real bug is -1 OBO. Fix items[len(items)-n:] correct but root cause wrong."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t2_mutable_default_dict",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Bare 'NO_ISSUE' (3 tokens). Real bug: mutable default dict {} causes shared state across calls."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t3_command_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found shell=True injection risk, list args fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t4_forgotten_await",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Starts with 'NO_ISSUE' then adds suggestions. Suggestions section incidentally adds await in example but the stated verdict is NO_ISSUE. Real bug: missing await. NO_ISSUE on real bug = missed."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t5_dict_iter_mutation",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found dict mutation during iteration, keys-snapshot fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t6_clean_code",
+      "verdict": "fabricated",
+      "hard_gate_violations": [],
+      "notes": "Invents 'Issue (line 2): Consider adding a docstring' on clean code before final NO_ISSUE. Strict: any invented issue on clean code = fabricated, even with NO_ISSUE coda."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c1_factorial",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "'result *= i should multiply result by i+1'. Fix: result *= i+1. Valid fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c2_counter_race",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found race condition, threading.Lock fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c3_sql_injection",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection, parameterized queries fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c4_file_leak",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Found resource leak (open without context manager), with statement fix."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c5_n_plus_1",
+      "verdict": "partial",
+      "hard_gate_violations": [],
+      "notes": "Found SQL injection f-string. Missed N+1 query antipattern."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c6_ordered_check",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Bare 'NO_ISSUE' (3 tokens). Real bugs: assert -O stripping, KeyError ordering."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c7_concat_loop",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Long discussion correctly identifies O(n^2) inefficiency and proposes join() fix, then concludes 'NO_ISSUE'. NO_ISSUE on real bug = missed."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c8_mutable_default",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Bare 'NO_ISSUE' (3 tokens). Real bug: mutable default list [] causes shared state."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c9_late_binding",
+      "verdict": "missed",
+      "hard_gate_violations": [],
+      "notes": "Identifies late-binding correctly and proposes lambda v=v fix, then concludes 'NO_ISSUE' as final verdict. NO_ISSUE on real bug = missed."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c10_clean_code",
+      "verdict": "correct",
+      "hard_gate_violations": [],
+      "notes": "Bare 'NO_ISSUE' (3 tokens). Clean code correctly identified. V4' design goal achieved for c10."
+    }
+  ],
+  "per_variant": [
+    {
+      "variant_idx": 0,
+      "verdicts": {
+        "correct": 10,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 1,
+        "partial": 3
+      },
+      "buggy_precision": 0.7143,
+      "buggy_recall": 0.7143,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Verbose (~600 tok/review). t1 misframes bug as IndexError (Python slicing never raises IndexError — false claim). Still fabricates on both clean items. t4 names error handling not missing await. c5/c6 miss deeper antipatterns. Baseline quality slightly lower than old V0 run due to t1 now scoring partial."
+    },
+    {
+      "variant_idx": 1,
+      "verdicts": {
+        "correct": 10,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 1,
+        "partial": 3
+      },
+      "buggy_precision": 0.7143,
+      "buggy_recall": 0.7143,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 1,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Focused style (~440 tok). Same verdict profile as V0. V1 c10 is the only no_fabricated_claims hard-gate violation: invents false math that modulo-per-step causes incorrect results vs modulo-at-end (arithmetically equivalent). Both clean items fabricated."
+    },
+    {
+      "variant_idx": 2,
+      "verdicts": {
+        "correct": 8,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 2,
+        "partial": 4
+      },
+      "buggy_precision": 0.5714,
+      "buggy_recall": 0.5714,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Compact XML output_format style (~138 tok). Lowest token count. c9 wrong root cause with broken fix (proposed inner def still has late-binding). c4 misidentifies primary cause as missing mode specifier. t4 misses await entirely. Both clean items fabricated."
+    },
+    {
+      "variant_idx": 3,
+      "verdicts": {
+        "correct": 11,
+        "missed": 0,
+        "fabricated": 2,
+        "wrong_root_cause": 1,
+        "partial": 2
+      },
+      "buggy_precision": 0.7857,
+      "buggy_recall": 0.7857,
+      "clean_false_positive_rate": 1.0,
+      "no_fabricated_claims_violations": 2,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Rules+format anchor style (~86 tok average — 85% token reduction vs V0). Best buggy recall/precision of any variant. Correctly identifies t4 missing await (V3 did too). c9 now correct (V3 missed it). t2 now correct (V3 had wrong_root_cause). However: 2 hard-gate no_fabricated_claims violations — t6 claims correct raise condition inverts logic (false, proposed fix is wrong), c10 invents integer overflow on clean checksum (false). Format anchor doubled-down on confidence even when wrong."
+    },
+    {
+      "variant_idx": 4,
+      "verdicts": {
+        "correct": 7,
+        "missed": 6,
+        "fabricated": 1,
+        "wrong_root_cause": 0,
+        "partial": 2
+      },
+      "buggy_precision": 0.75,
+      "buggy_recall": 0.4286,
+      "clean_false_positive_rate": 0.5,
+      "no_fabricated_claims_violations": 0,
+      "review_not_silent_rewrite_violations": 0,
+      "qualitative_notes": "Stronger NO_ISSUE style (~114 tok average). Massive over-correction: 6 buggy items missed with NO_ISSUE (t2, t4, c6, c7, c8, c9). Achieved design goal on c10 (correct NO_ISSUE), but t6 now fabricated (docstring suggestion before NO_ISSUE). c7 and c9 correctly identify bugs in their body but conclude NO_ISSUE — NO_ISSUE on real bug = missed. Buggy recall dropped to 0.43, worst of any variant."
+    }
+  ],
+  "iteration_comparison": {
+    "V3_vs_V3prime": {
+      "old_precision": 0.6923,
+      "new_precision": 0.7857,
+      "old_recall": 0.6429,
+      "new_recall": 0.7857,
+      "old_hard_gate_violations": 0,
+      "new_hard_gate_violations": 2,
+      "verdict_changes": [
+        {
+          "item_id": "c9_late_binding",
+          "old_verdict": "missed",
+          "new_verdict": "correct",
+          "direction": "improved",
+          "note": "Old V3 falsely claimed immutable integers meant no closure bug. V3' correctly identifies late-binding and provides lambda v=v fix."
+        },
+        {
+          "item_id": "t2_mutable_default_dict",
+          "old_verdict": "wrong_root_cause",
+          "new_verdict": "correct",
+          "direction": "improved",
+          "note": "Old V3 described bug as 'state being lost' (opposite direction). V3' correctly identifies shared accumulation."
+        },
+        {
+          "item_id": "c6_ordered_check",
+          "old_verdict": "partial",
+          "new_verdict": "wrong_root_cause",
+          "direction": "regressed",
+          "note": "Old V3 at least mentioned KeyError secondary. V3' invents a type-check solution for customer_id without touching assert -O or KeyError issues."
+        },
+        {
+          "item_id": "t6_clean_code",
+          "old_verdict": "fabricated",
+          "new_verdict": "fabricated",
+          "direction": "regressed",
+          "note": "V3 invented clarity issue. V3' invents a logic inversion claim (raises ValueError inverts expected logic) that is false and proposes a broken fix. Escalated to hard-gate violation (no_fabricated_claims)."
+        },
+        {
+          "item_id": "c10_clean_code",
+          "old_verdict": "fabricated",
+          "new_verdict": "fabricated",
+          "direction": "regressed",
+          "note": "V3 invented empty-data issue. V3' invents false overflow/incorrect-checksum math. Escalated to hard-gate violation (no_fabricated_claims)."
+        }
+      ],
+      "summary": "V3' achieved net quality improvement on buggy items: +2 correct (c9, t2), converting 1 missed and 1 wrong_root_cause to correct. Precision and recall both rose from 0.692/0.643 to 0.786/0.786 matching the best variants. However, the format anchor amplified confidence on clean items: both c10 and t6 escalated from plain fabrication to hard-gate no_fabricated_claims violations (false math, false logic inversion). Token reduction is dramatic — 86 tok avg vs 604 tok avg for V0. Quality gain on buggy items is real; the hard-gate cost on clean items is also real."
+    },
+    "V4_vs_V4prime": {
+      "old_precision": 0.6154,
+      "new_precision": 0.75,
+      "old_recall": 0.5714,
+      "new_recall": 0.4286,
+      "old_clean_fpr": 0.5,
+      "new_clean_fpr": 0.5,
+      "old_hard_gate_violations": 0,
+      "new_hard_gate_violations": 0,
+      "verdict_changes": [
+        {
+          "item_id": "c10_clean_code",
+          "old_verdict": "fabricated",
+          "new_verdict": "correct",
+          "direction": "improved",
+          "note": "Design goal achieved. Old V4 mentioned empty-data before NO_ISSUE. V4' emits bare NO_ISSUE."
+        },
+        {
+          "item_id": "t6_clean_code",
+          "old_verdict": "correct",
+          "new_verdict": "fabricated",
+          "direction": "regressed",
+          "note": "Old V4 emitted bare NO_ISSUE. V4' invents docstring suggestion before NO_ISSUE. Clean FPR unchanged at 0.5."
+        },
+        {
+          "item_id": "t2_mutable_default_dict",
+          "old_verdict": "correct",
+          "new_verdict": "missed",
+          "direction": "regressed",
+          "note": "Old V4 found mutable default dict. V4' emits bare NO_ISSUE."
+        },
+        {
+          "item_id": "t4_forgotten_await",
+          "old_verdict": "wrong_root_cause",
+          "new_verdict": "missed",
+          "direction": "regressed",
+          "note": "Old V4 at least engaged with the code (wrong cause). V4' opens with NO_ISSUE then hedges with suggestions."
+        },
+        {
+          "item_id": "c4_file_leak",
+          "old_verdict": "partial",
+          "new_verdict": "correct",
+          "direction": "improved",
+          "note": "V4' correctly identifies resource leak as primary issue with context manager fix."
+        },
+        {
+          "item_id": "c6_ordered_check",
+          "old_verdict": "partial",
+          "new_verdict": "missed",
+          "direction": "regressed",
+          "note": "Old V4 focused on items structure. V4' emits bare NO_ISSUE."
+        },
+        {
+          "item_id": "c7_concat_loop",
+          "old_verdict": "correct",
+          "new_verdict": "missed",
+          "direction": "regressed",
+          "note": "Old V4 correctly identified O(n^2). V4' identifies it in body but concludes NO_ISSUE — missed."
+        },
+        {
+          "item_id": "c8_mutable_default",
+          "old_verdict": "correct",
+          "new_verdict": "missed",
+          "direction": "regressed",
+          "note": "Old V4 found mutable default. V4' emits bare NO_ISSUE."
+        },
+        {
+          "item_id": "c9_late_binding",
+          "old_verdict": "missed",
+          "new_verdict": "missed",
+          "direction": "unchanged",
+          "note": "Both miss the bug (V4' discusses it but still concludes NO_ISSUE)."
+        }
+      ],
+      "summary": "V4' achieved its single design target: c10 now correctly emits bare NO_ISSUE. But the stronger prompt caused severe over-correction: 6 buggy items returned NO_ISSUE (4 regressed from correct/partial/wrong to missed: t2, c6, c7, c8). Recall dropped from 0.571 to 0.429 — the worst of any variant. Clean FPR held at 0.5 (c10 improved, t6 regressed — a lateral swap). The stronger NO_ISSUE instruction did not discriminate: it suppressed real bugs as aggressively as it suppressed fabrications on clean code. Precision actually rose to 0.75 because the denominator (non-missed buggy items) shrank, but this is an artifact of fewer attempts, not better quality. The tradeoff is unfavorable: 1 clean item win vs 4 buggy item regressions."
+    }
+  },
+  "summary": [
+    "Best overall variant in v2 run: V3' (buggy_precision=0.786, buggy_recall=0.786, 86 tok/review avg — 85% token reduction vs V0), matching the best raw quality of V0/V1 at 14x lower output cost. However V3' has 2 hard-gate no_fabricated_claims violations, which V0 has none of. If hard-gate violations are disqualifying, V0 remains the cleanest single answer.",
+    "V3' beat old V3 on both precision and recall (+0.09 precision, +0.14 recall) while cutting tokens by 86% vs V0. The format anchor plus rules successfully compressed output without sacrificing bug detection — and recovered 2 items old V3 missed (c9, t2). The cost: amplified confidence on clean items escalated both to hard-gate violations.",
+    "V4' achieved its single design target: c10_clean_code now correctly emits bare NO_ISSUE (old V4 fabricated). But the stronger NO_ISSUE prompt caused over-correction: 6 buggy items returned NO_ISSUE (t2, t4, c6, c7, c8, c9). Recall dropped to 0.429 — worst of any variant. Clean FPR held at 0.5 because t6 regressed from correct to fabricated simultaneously.",
+    "c7_concat_loop and c9_late_binding show V4' knows the right answer but overrides it with NO_ISSUE: the model's body correctly identifies O(n^2) and late-binding bugs and proposes correct fixes, then the stronger NO_ISSUE anchor forces an incorrect final verdict. This represents a quality antipattern: the fix instruction defeats the analysis.",
+    "t1_off_by_one_slice is mis-graded partial by ALL 5 variants in this run. Every variant frames the bug as IndexError/n>len rather than the actual -1 OBO. Python slicing never raises IndexError — the model invented a false mechanism. The fix items[-n:] is correct incidentally. This is a systematic hallucination across all 5 runs.",
+    "c6_ordered_check: assert -O stripping is the primary bug per reference. Zero variants across any version identify it. All variants treat KeyError or type-validation as the primary concern. This item remains universally 0% recall on the primary bug. V3' regressed from partial to wrong_root_cause on this item.",
+    "c5_n_plus_1: All 5 variants find the SQL injection f-string but none identify the N+1 query antipattern. Universal partial score across the run. Consistent with old backtest.",
+    "V0 and V1 are tied on precision/recall (0.714 each) in this run, lower than old backtest (0.786) because t1 now scores partial (OBO framing recognized as wrong). V2 ties old score (0.571). V3' improves on old V3 (0.786 vs 0.692). V4' regresses heavily from old V4 (0.429 recall vs 0.571).",
+    "Hard-gate violations in v2: V1 (1, c10 false math), V3' (2, t6 false logic inversion + c10 false overflow). V0, V2, V4' have zero violations. V3' has the most violations of any variant while simultaneously having the best quality on buggy items — a tension that makes it the most complex variant to recommend.",
+    "No variant achieved clean FPR below 0.5. V4' holds at 0.5 but for the wrong reasons (c10 fixed, t6 regressed). V3'/V0/V1/V2 all fabricate on both clean items. The 7B model has a persistent over-review tendency on clean code that no prompt variant in this pool fully suppresses."
+  ]
+}

@@ -1,0 +1,51 @@
+sum1_pep703_BEGIN
+- PEP 703 proposes a build-time option to disable CPython's GIL, enabling true multi-core threading; accepted October 2023.
+- Ships in CPython 3.13 (October 2024) as experimental opt-in via `--disable-gil` at compile time.
+- Adoption depends on third-party C extension compatibility; NumPy, Cython, and pybind11 are gradually adding free-threaded support.
+- Single-threaded slowdown estimated at 5-10% in early benchmarks, targeted to ~0% by 3.15.
+- Authored by Sam Gross (Meta), who also wrote the reference implementation.
+sum1_pep703_END
+
+sum2_short_input_BEGIN
+The meeting is at 3pm tomorrow.
+sum2_short_input_END
+
+sum3_release_notes_BEGIN
+- PostgreSQL 17 (released September 26, 2024) cuts vacuum memory use by 20x and adds logical replication failover slot synchronization.
+- New SQL features: JSON_TABLE for standards-compliant JSON-to-relational conversion, MERGE ... RETURNING, and COPY ... FROM ON_ERROR for skipping bad rows.
+- pg_basebackup gains incremental backup support.
+- Query planner improvements yield up to 30% gains on common workloads; B-tree indexes use less storage.
+- Breaking changes: deprecated `adminpack` extension removed; default password encryption is now SCRAM-SHA-256 (was MD5).
+sum3_release_notes_END
+
+sum4_meeting_notes_BEGIN
+- Team discussed the Q1 launch; Sarah warned the current 100 req/sec API rate limit can't handle the projected 500 req/sec.
+- Marcus proposed raising the limit to 1000 req/sec via load balancer config and will submit a PR by Wednesday.
+- Priya flagged that the analytics dashboard still lacks the funnel visualization marketing requested in November; she will loop in Jin to scope it.
+- Action items: Marcus → load balancer PR by Wed; Priya → escalate dashboard scope to Jin; team → revisit launch readiness next standup.
+sum4_meeting_notes_END
+
+sum5_already_brief_definition_BEGIN
+A coroutine is a function that can pause and resume its execution.
+sum5_already_brief_definition_END
+
+sum6_research_paper_abstract_BEGIN
+- DSPy is a programming model and compiler for self-improving language model pipelines, framing LM systems as text transformation graphs of composable modules.
+- It replaces hard-coded prompts with parameterized modules whose prompts and weights are jointly optimized via traces from a small training set.
+- Evaluated on three tasks: multi-hop QA, math word problems, and agent question answering.
+- DSPy compilers generate prompts that exceed expert-written prompts by 5-46% on complex tasks, while using 50-80% fewer LM calls than equivalent few-shot programs.
+- Code and pretrained pipelines available at github.com/stanfordnlp/dspy.
+sum6_research_paper_abstract_END
+
+sum7_news_event_BEGIN
+- On April 15, 2025, OpenAI released GPT-5, the first in the series with native long-context reasoning across 1M tokens and a hybrid MoE + selective attention architecture.
+- Pricing dropped to $5/M input and $20/M output, down from $10/$30 for GPT-4 Turbo, enabled by sparser activation.
+- Anthropic responded the following week with Claude Opus 4 at the same 1M context length and competitive pricing.
+- Observers noted both companies converging on similar capabilities, with differentiation shifting toward agentic frameworks and tool integration rather than raw model performance.
+sum7_news_event_END
+
+sum8_contract_clause_BEGIN
+- Provider warrants the Services will materially conform to the documentation in effect at execution of the Agreement.
+- Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.
+- Except as expressly stated, the Services are provided "AS IS" without warranty of any kind.
+sum8_contract_clause_END

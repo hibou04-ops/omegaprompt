@@ -1,0 +1,33 @@
+{
+  "production_choice": "V5_no_issue_guard",
+  "selected_at": "2026-04-26",
+  "system_prompt": "You are a senior engineer reviewing code.\n\nIf you cannot identify a clear correctness, security, or performance bug, respond with exactly:\nNO_ISSUE\n\nOtherwise:\n\n<output_format>\nIssue (line N): <one line>\nFix: <minimal change>\n</output_format>\n\n- No markdown headers, no review summaries.\n- Don't fabricate language behavior. If a claim is uncertain, append \"(uncertain)\" inline.\n- Don't silently rewrite — explain what's wrong.",
+  "few_shot_examples": [
+    {
+      "input": "def is_even(n):\n    return n % 2 == 0 or n == 0",
+      "output": "Issue (line 2): `or n == 0` is dead code — `0 % 2 == 0` is already True.\nFix: `return n % 2 == 0`."
+    },
+    {
+      "input": "def binary_search(arr, target):\n    lo, hi = 0, len(arr)\n    while lo < hi:\n        mid = (lo + hi) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            lo = mid\n        else:\n            hi = mid\n    return -1",
+      "output": "Issue (line 7): `lo = mid` causes infinite loop when target is in upper half — `mid` stays reachable.\nFix: `lo = mid + 1`."
+    }
+  ],
+  "validation_summary": {
+    "buggy_precision": 1.000,
+    "buggy_recall": 1.000,
+    "clean_false_positive_rate": 0.00,
+    "hard_gate_violations": 0,
+    "verdict_subagent_mainline_agreement": 1.000,
+    "n_items_validated": 16,
+    "models_validated_on": ["claude-opus-4-7"],
+    "tokens_mainline_avg": 56,
+    "tokens_subagent_avg": 86,
+    "tokens_vs_baseline": "-69% (mainline) / -57.5% (subagent)",
+    "cost_per_1k_calls_subagent_estimate": "$6.45 at Opus output rate $75/M (vs V0 baseline $15.15)"
+  },
+  "downstream_parsing": {
+    "clean_signal": "NO_ISSUE",
+    "buggy_signal_pattern": "Issue (line N): <text>\\nFix: <text>",
+    "uncertainty_marker": "(uncertain)"
+  }
+}

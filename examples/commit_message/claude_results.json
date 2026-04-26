@@ -1,0 +1,286 @@
+{
+  "task": "commit_message",
+  "config": {
+    "method": "opus_subagent",
+    "n_items": 8
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 27.75,
+      "sum": 222,
+      "min": 8,
+      "max": 42
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 37.625,
+      "sum": 301,
+      "min": 5,
+      "max": 60
+    },
+    {
+      "variant": "V2_format",
+      "mean": 13.25,
+      "sum": 106,
+      "min": 7,
+      "max": 37
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 18.5,
+      "sum": 148,
+      "min": 7,
+      "max": 34
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 22.125,
+      "sum": 177,
+      "min": 8,
+      "max": 50
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm1_typo_fix",
+      "tokens": 8,
+      "text": "Fix typo in npm install command in README"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm2_feature_add",
+      "tokens": 36,
+      "text": "Add endpoint to fetch posts by user ID\n\nAdds GET /users/{user_id}/posts endpoint to retrieve a user's posts\nwith a configurable limit (default: 20)."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm3_refactor",
+      "tokens": 24,
+      "text": "Refactor parse_date to use strptime\n\nReplace manual date string parsing with datetime.strptime for cleaner,\nmore concise code."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm4_perf_fix",
+      "tokens": 42,
+      "text": "Fix N+1 query in get_posts_with_authors\n\nReplace per-post author lookup with a single batched query, reducing\ndatabase round-trips from N+1 to 2 regardless of post count."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm5_whitespace",
+      "tokens": 10,
+      "text": "Normalize whitespace in verify function\n\nNo functional changes."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm6_test_add",
+      "tokens": 33,
+      "text": "Add tests for clamp edge cases\n\nCover the case where lo > hi raises ValueError, and verify that values\nbelow the range are clamped to the lower bound."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm7_breaking_change",
+      "tokens": 38,
+      "text": "Require MFA code for login\n\nBREAKING CHANGE: `login()` now requires an `mfa_code` parameter.\nAll callers must be updated to pass the user's MFA code."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "cm8_docs_only",
+      "tokens": 31,
+      "text": "Document JWT authentication requirements\n\nAdd details on the required Authorization header format, token issuance\nvia POST /auth/login, and the 24-hour token expiration."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm1_typo_fix",
+      "tokens": 8,
+      "text": "Fix typo in npm install command in README"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm2_feature_add",
+      "tokens": 50,
+      "text": "Add endpoint to fetch posts by user ID\n\nExposes `GET /users/{user_id}/posts` with a configurable `limit`\n(default 20) so clients can retrieve a user's posts without\nfiltering the full posts collection client-side."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm3_refactor",
+      "tokens": 55,
+      "text": "Simplify parse_date using strptime\n\nReplace manual split/int parsing with `datetime.strptime`. The\nstdlib parser already validates the `YYYY-MM-DD` format and\nraises `ValueError` on bad input, so the hand-rolled logic was\nredundant."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm4_perf_fix",
+      "tokens": 60,
+      "text": "Fix N+1 query in get_posts_with_authors\n\nPreviously fetched each post's author with a separate query,\nproducing N+1 round-trips. Now collect distinct author IDs and\nload them in a single `WHERE id = ANY($1)` query, then join\nin memory."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm5_whitespace",
+      "tokens": 5,
+      "text": "Normalize whitespace in verify()"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm6_test_add",
+      "tokens": 31,
+      "text": "Add tests for clamp edge cases\n\nCover the `lo > hi` validation error and the below-range\nclamping behavior, which were previously untested."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm7_breaking_change",
+      "tokens": 51,
+      "text": "Require MFA code for login\n\nBREAKING CHANGE: `login()` now takes a mandatory `mfa_code`\nargument. All callers must be updated to pass the user's\ncurrent MFA token; logins without MFA are no longer accepted."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "cm8_docs_only",
+      "tokens": 41,
+      "text": "Document JWT authentication requirements\n\nDescribe the `Authorization: Bearer <token>` header, point\nreaders to `POST /auth/login` for token issuance, and note\nthe 24-hour expiry."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm1_typo_fix",
+      "tokens": 9,
+      "text": "docs(readme): fix typo in install command"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm2_feature_add",
+      "tokens": 10,
+      "text": "feat(api): add endpoint to list posts by user"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm3_refactor",
+      "tokens": 10,
+      "text": "refactor(utils): simplify parse_date using strptime"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm4_perf_fix",
+      "tokens": 12,
+      "text": "perf(posts): batch author lookup to avoid N+1 queries"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm5_whitespace",
+      "tokens": 7,
+      "text": "style(auth): normalize whitespace in verify"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm6_test_add",
+      "tokens": 11,
+      "text": "test(clamp): cover invalid range and below-range inputs"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm7_breaking_change",
+      "tokens": 37,
+      "text": "feat(auth)!: require mfa_code parameter in login\n\nBREAKING CHANGE: login() now requires an mfa_code argument; existing callers must supply the user's MFA code."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "cm8_docs_only",
+      "tokens": 10,
+      "text": "docs(api): document JWT authentication header and token lifetime"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm1_typo_fix",
+      "tokens": 10,
+      "text": "docs(readme): fix typo in npm install command"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm2_feature_add",
+      "tokens": 11,
+      "text": "feat(api): add endpoint to fetch posts for a user"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm3_refactor",
+      "tokens": 32,
+      "text": "refactor(utils): use strptime for date parsing\n\nReplaces manual split/int parsing with strptime, which handles\nvalidation and conversion in a single call."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm4_perf_fix",
+      "tokens": 33,
+      "text": "perf(posts): batch author lookup to avoid N+1 queries\n\nFetch all authors in a single query keyed by id instead of\nissuing one query per post."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm5_whitespace",
+      "tokens": 7,
+      "text": "style(auth): normalize whitespace in verify"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm6_test_add",
+      "tokens": 11,
+      "text": "test(clamp): cover invalid bounds and below-range value"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm7_breaking_change",
+      "tokens": 34,
+      "text": "feat(auth)!: require mfa_code in login\n\nBREAKING CHANGE: login() now requires an mfa_code argument;\nexisting callers must be updated to pass it."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "cm8_docs_only",
+      "tokens": 10,
+      "text": "docs(api): document JWT authentication header and token lifetime"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm1_typo_fix",
+      "tokens": 10,
+      "text": "fix: correct `npm install` typo in README"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm2_feature_add",
+      "tokens": 11,
+      "text": "feat(api): add endpoint to fetch posts for a user"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm3_refactor",
+      "tokens": 34,
+      "text": "refactor(utils): use strptime for date parsing\n\nReplace manual split/int parsing with strptime to reduce code\nsurface and rely on stdlib validation for malformed input."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm4_perf_fix",
+      "tokens": 43,
+      "text": "perf(posts): batch author lookup to avoid N+1 queries\n\nPreviously issued one SELECT per post to fetch its author. Collect\nunique author_ids and fetch them in a single query, then join in\nmemory."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm5_whitespace",
+      "tokens": 8,
+      "text": "style: normalize whitespace in api/auth.py"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm6_test_add",
+      "tokens": 11,
+      "text": "test(clamp): cover invalid bounds and below-range inputs"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm7_breaking_change",
+      "tokens": 50,
+      "text": "feat(auth)!: require mfa_code on login\n\nBREAKING CHANGE: `login()` now requires an `mfa_code` argument.\nCallers must collect and pass the user's MFA code; existing\ntwo-argument calls will fail."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "cm8_docs_only",
+      "tokens": 10,
+      "text": "docs(api): document JWT auth header and token lifetime"
+    }
+  ]
+}

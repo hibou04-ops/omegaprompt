@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "root_cause_accuracy",
+      "description": "Does the response correctly identify the root cause (not just the symptom)? High = names the actual mechanism (e.g., 'late-binding closure captures the variable, not its value'). Low = names a downstream symptom or guesses without justification.",
+      "weight": 0.5,
+      "scale": [1, 5]
+    },
+    {
+      "name": "fix_minimality",
+      "description": "Is the proposed fix minimal and targeted? High = a focused 1-3 line change addressing the cause. Low = unnecessary rewrites, scope creep into unrelated improvements.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "no_fabricated_claims",
+      "description": "Does the response avoid inventing language/library behavior to support the diagnosis? High = accurate technical claims. Low = invents APIs, misstates language semantics (e.g., 'Python's `+=` is atomic'), fabricates exception types.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must attempt the diagnosis. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "addresses_actual_error",
+      "description": "The diagnosis must address the error/symptom in the input. Diagnosing a different bug while ignoring the actual error fails.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "fix_executable",
+      "description": "The proposed fix must be syntactically valid and not introduce a new obvious bug. Pseudocode fixes that don't compile, or fixes that introduce a different error, fail.",
+      "evaluator": "judge"
+    }
+  ]
+}

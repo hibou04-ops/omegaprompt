@@ -1,0 +1,205 @@
+tw1_factorial_BEGIN
+```python
+import pytest
+from mymodule import factorial
+
+
+def test_factorial_zero():
+    assert factorial(0) == 1
+
+
+def test_factorial_one():
+    assert factorial(1) == 1
+
+
+def test_factorial_small_positive():
+    assert factorial(5) == 120
+
+
+def test_factorial_larger_value():
+    assert factorial(10) == 3628800
+
+
+def test_factorial_negative_raises():
+    with pytest.raises(ValueError, match='n must be non-negative'):
+        factorial(-1)
+```
+tw1_factorial_END
+
+tw2_clamp_BEGIN
+```python
+import pytest
+from mymodule import clamp
+
+
+def test_clamp_within_range():
+    assert clamp(5.0, 0.0, 10.0) == 5.0
+
+
+def test_clamp_below_low_bound():
+    assert clamp(-3.0, 0.0, 10.0) == 0.0
+
+
+def test_clamp_above_high_bound():
+    assert clamp(15.0, 0.0, 10.0) == 10.0
+
+
+def test_clamp_equal_bounds():
+    assert clamp(7.5, 5.0, 5.0) == 5.0
+
+
+def test_clamp_invalid_bounds_raises():
+    with pytest.raises(ValueError, match='lo must not exceed hi'):
+        clamp(5.0, 10.0, 0.0)
+```
+tw2_clamp_END
+
+tw3_word_count_BEGIN
+```python
+from mymodule import word_count
+
+
+def test_word_count_basic():
+    assert word_count("the quick brown fox") == {"the": 1, "quick": 1, "brown": 1, "fox": 1}
+
+
+def test_word_count_repeated_words():
+    assert word_count("foo bar foo baz foo") == {"foo": 3, "bar": 1, "baz": 1}
+
+
+def test_word_count_case_insensitive():
+    assert word_count("Hello hello HELLO") == {"hello": 3}
+
+
+def test_word_count_empty_string():
+    assert word_count("") == {}
+
+
+def test_word_count_collapses_whitespace():
+    assert word_count("  spaced   out   words  ") == {"spaced": 1, "out": 1, "words": 1}
+```
+tw3_word_count_END
+
+tw4_trivial_one_assert_BEGIN
+```python
+import pytest
+from mymodule import double
+
+
+@pytest.mark.parametrize("x,expected", [
+    (0, 0),
+    (3, 6),
+    (-4, -8),
+])
+def test_double(x, expected):
+    assert double(x) == expected
+```
+tw4_trivial_one_assert_END
+
+tw5_validate_email_BEGIN
+```python
+import pytest
+from mymodule import is_valid_email
+
+
+@pytest.mark.parametrize("email", [
+    "user@example.com",
+    "first.last@example.co",
+    "name+tag@sub.example.org",
+    "a_b-c%d@example-host.io",
+])
+def test_valid_emails(email):
+    assert is_valid_email(email) is True
+
+
+@pytest.mark.parametrize("email", [
+    "",
+    "plainaddress",
+    "missing@tld",
+    "@no-local.com",
+    "no-at-symbol.com",
+    "spaces in@example.com",
+    "trailing@example.c",
+])
+def test_invalid_emails(email):
+    assert is_valid_email(email) is False
+```
+tw5_validate_email_END
+
+tw6_remove_negatives_BEGIN
+```python
+from mymodule import remove_negatives
+
+
+def test_remove_negatives_filters_negative_values():
+    assert remove_negatives({"a": 1, "b": -2, "c": 3, "d": -4}) == {"a": 1, "c": 3}
+
+
+def test_remove_negatives_keeps_zero():
+    assert remove_negatives({"a": 0, "b": -1}) == {"a": 0}
+
+
+def test_remove_negatives_empty_dict():
+    assert remove_negatives({}) == {}
+
+
+def test_remove_negatives_all_non_negative_unchanged():
+    d = {"a": 1, "b": 2, "c": 0}
+    assert remove_negatives(d) == d
+```
+tw6_remove_negatives_END
+
+tw7_async_fetch_BEGIN
+```python
+import httpx
+import pytest
+from mymodule import fetch_user
+
+
+@pytest.mark.asyncio
+async def test_fetch_user_returns_json():
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/users/42"
+        return httpx.Response(200, json={"id": 42, "name": "Ada"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        result = await fetch_user(42, client)
+
+    assert result == {"id": 42, "name": "Ada"}
+
+
+@pytest.mark.asyncio
+async def test_fetch_user_raises_on_http_error():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(404)
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            await fetch_user(99, client)
+```
+tw7_async_fetch_END
+
+tw8_sort_stable_BEGIN
+```python
+from mymodule import sort_by_priority
+
+
+def test_sort_by_priority_orders_by_first_element():
+    assert sort_by_priority([(3, "c"), (1, "a"), (2, "b")]) == [(1, "a"), (2, "b"), (3, "c")]
+
+
+def test_sort_by_priority_is_stable_for_equal_keys():
+    items = [(1, "a"), (1, "b"), (1, "c"), (0, "z")]
+    assert sort_by_priority(items) == [(0, "z"), (1, "a"), (1, "b"), (1, "c")]
+
+
+def test_sort_by_priority_empty_list():
+    assert sort_by_priority([]) == []
+
+
+def test_sort_by_priority_single_element():
+    assert sort_by_priority([(5, "only")]) == [(5, "only")]
+```
+tw8_sort_stable_END

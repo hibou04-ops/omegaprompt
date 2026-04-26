@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "behavior_preservation",
+      "description": "Does the refactor preserve the original behavior for all valid inputs? High = semantically equivalent or explicitly flags the difference. Low = silently changes behavior, breaks edge cases, or introduces new bugs.",
+      "weight": 0.5,
+      "scale": [1, 5]
+    },
+    {
+      "name": "improvement_actually_helps",
+      "description": "Is the refactor a real improvement (clarity, performance, idiomaticity), or just a stylistic shuffle? High = measurably better (shorter, faster, easier to read for the stated goal). Low = lateral move, or churn for churn's sake.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "scope_discipline",
+      "description": "Does the refactor stay scoped to what was asked? High = touches only the relevant code. Low = renames variables in unrelated functions, adds features, restructures layers beyond the request.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must attempt the refactor or explicitly say ALREADY_CLEAN. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "syntactically_valid",
+      "description": "The refactored code must parse without SyntaxError in the named language.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_silent_semantic_change",
+      "description": "If the refactor changes behavior, it MUST be flagged in the explanation. A silently behavior-changing refactor (e.g., changing `>=` to `>`, swapping args, dropping error handling) without explicit note fails this gate.",
+      "evaluator": "judge"
+    }
+  ]
+}

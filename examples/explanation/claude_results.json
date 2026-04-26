@@ -1,0 +1,287 @@
+{
+  "task": "explanation",
+  "config": {
+    "method": "opus_subagent_simulation",
+    "n_items": 8,
+    "n_variants": 5
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 328.375,
+      "sum": 2627,
+      "min": 259,
+      "max": 455
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 177.375,
+      "sum": 1419,
+      "min": 144,
+      "max": 223
+    },
+    {
+      "variant": "V2_format",
+      "mean": 128.625,
+      "sum": 1029,
+      "min": 91,
+      "max": 166
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 170.625,
+      "sum": 1365,
+      "min": 126,
+      "max": 214
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 139.875,
+      "sum": 1119,
+      "min": 5,
+      "max": 191
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex1_what_is_async",
+      "tokens": 288,
+      "text": "`async def` defines a coroutine function in Python. Instead of a regular function, it creates a function that, when called, returns a coroutine object rather than executing immediately.\n\nKey points:\n\n1. **Returns a coroutine, doesn't run code immediately**\n   ```python\n   async def greet():\n       return \"hello\"\n\n   result = greet()  # This is a coroutine object, NOT \"hello\"\n   ```\n\n2. **Must be awaited or run by an event loop**\n   ```python\n   import asyncio\n\n   async def greet():\n       return \"hello\"\n\n   print(asyncio.run(greet()))  # \"hello\"\n   ```\n\n3. **Allows use of `await` inside the function**\n   ```python\n   async def fetch_data():\n       await asyncio.sleep(1)\n       return \"data\"\n   ```\n\n4. **Enables concurrent I/O without threads**\n   ```python\n   async def main():\n       results = await asyncio.gather(\n           fetch_data(),\n           fetch_data(),\n           fetch_data(),\n       )\n   ```\n\n**When to use it:** I/O-bound tasks like network requests, file operations, or database queries. It doesn't help with CPU-bound work.\n\n**Note:** `async def` functions are \"infectious\" — to await one, the calling function also needs to be `async`, or you need an event loop runner like `asyncio.run()`."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex2_difference_is_vs_eq",
+      "tokens": 294,
+      "text": "- **`==`** checks **value equality** — do the two objects have the same value?\n- **`is`** checks **identity** — are the two names referring to the *exact same object* in memory?\n\n### Examples\n\n```python\na = [1, 2, 3]\nb = [1, 2, 3]\nc = a\n\na == b   # True\na is b   # False\na is c   # True\n```\n\n### Why it matters\n\n`==` can be customized via `__eq__`; `is` cannot be overridden. So `is` is faster but only meaningful when you actually care about object identity.\n\n### Common correct uses of `is`\n\nComparing to singletons:\n```python\nx is None\nx is True\nx is False\n```\nPEP 8 mandates `is None`, not `== None`.\n\n### The classic gotcha\n\n```python\na = 256\nb = 256\na is b   # True — CPython caches small ints\n\na = 257\nb = 257\na is b   # False (usually)\n```\n\nImplementation detail. **Never use `is` to compare numbers or strings** — use `==`.\n\n### Rule of thumb\n\n- Use `is` for `None`, `True`, `False`, and sentinel objects.\n- Use `==` for everything else."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex3_what_is_gil",
+      "tokens": 301,
+      "text": "The **GIL (Global Interpreter Lock)** is a mutex in CPython that allows only **one thread to execute Python bytecode at a time**, even on multi-core machines.\n\n### Why it exists\n\nCPython's memory management isn't thread-safe. The GIL is a simple solution: serialize bytecode execution.\n\n### When it matters (hurts you)\n\n**CPU-bound, multi-threaded Python code.**\n\n```python\nimport threading\n\ndef crunch():\n    sum(i*i for i in range(10_000_000))\n\nt1 = threading.Thread(target=crunch)\nt2 = threading.Thread(target=crunch)\nt1.start(); t2.start()\nt1.join(); t2.join()\n```\n\nYou get concurrency, not parallelism.\n\n### When it doesn't matter\n\n1. **I/O-bound work** — the GIL is released during blocking I/O.\n2. **C extensions that release the GIL** — NumPy, SciPy, etc.\n3. **Single-threaded code**.\n4. **Multiple processes** — each has its own GIL.\n\n### Workarounds\n\n- `multiprocessing`\n- C extensions / Cython / Rust (PyO3)\n- `asyncio`\n- Other Python implementations (Jython, IronPython)\n- PEP 703 (Python 3.13+ free-threaded build) — experimental\n\n### Bottom line\n\nCPU-bound → use processes. I/O-bound → threads or asyncio work fine."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex4_explain_for_loop",
+      "tokens": 259,
+      "text": "A **for loop** is a control structure that repeats a block of code once for each item in a sequence.\n\n### Basic syntax (Python)\n\n```python\nfor item in iterable:\n    # do something with item\n```\n\n### Examples\n\n```python\nfor fruit in [\"apple\", \"banana\", \"cherry\"]:\n    print(fruit)\n\nfor i in range(5):\n    print(i)\n\nfor ch in \"hi\":\n    print(ch)\n\nfor key, value in {\"a\": 1, \"b\": 2}.items():\n    print(key, value)\n```\n\n### How it works conceptually\n\nThe loop:\n1. Asks the iterable for an iterator.\n2. Calls `next()` on that iterator until it's exhausted.\n3. On each call, binds the value to the loop variable and runs the body.\n\n### vs. other languages\n\nIn C/Java/JavaScript, `for` is usually a counted loop. Python's `for` is a \"for-each\" — to get a counter, use `range()` or `enumerate()`:\n\n```python\nfor i, item in enumerate(items):\n    print(i, item)\n```\n\n### When to use it\n\nWhenever you need to do something **for each element** of a collection."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex5_explain_closure",
+      "tokens": 301,
+      "text": "A **closure** is a function that \"remembers\" variables from the scope in which it was defined, even after that outer scope has finished executing.\n\n### Minimal example\n\n```python\ndef make_counter():\n    count = 0\n    def increment():\n        nonlocal count\n        count += 1\n        return count\n    return increment\n\ncounter = make_counter()\nprint(counter())  # 1\nprint(counter())  # 2\nprint(counter())  # 3\n```\n\n`increment` captured `count`. Even though `make_counter` has returned, `count` lives on.\n\n### Three ingredients\n\n1. A **nested function**.\n2. The inner function **references variables from the enclosing function's scope**.\n3. The outer function **returns the inner function**.\n\n### Why `nonlocal`?\n\nBy default, assigning to a variable inside a function makes it a *new local*. To modify an enclosing-scope variable, use `nonlocal`. For *reading*, you don't need it.\n\n### Common uses\n\n**Function factories, decorators, callbacks** with state without classes.\n\n### Closure vs. class\n\nA closure with one method and some state is essentially a tiny one-method class. Use closures for small, simple cases; reach for a class when you have multiple methods or complex state.\n\n### Inspecting captured variables\n\n```python\ncounter.__closure__       # tuple of cell objects\ncounter.__closure__[0].cell_contents\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "tokens": 455,
+      "text": "Both are involved in creating instances of a class, but they do different things:\n\n| | `__new__` | `__init__` |\n|---|---|---|\n| Purpose | **Create** the instance | **Initialize** the instance |\n| Called | First | After `__new__` returns |\n| First arg | `cls` | `self` |\n| Returns | The new instance | `None` |\n| Type | Static method | Regular method |\n\n### The flow\n\n```python\nobj = MyClass.__new__(MyClass, x, y)\nif isinstance(obj, MyClass):\n    MyClass.__init__(obj, x, y)\n```\n\nIf `__new__` doesn't return an instance of `cls`, `__init__` is *skipped*.\n\n### Default behavior\n\nYou almost never need to override `__new__`:\n\n```python\nclass Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n```\n\n### When `__new__` actually matters\n\n**1. Subclassing immutable types** (`int`, `str`, `tuple`, `frozenset`)\n\n```python\nclass PositiveInt(int):\n    def __new__(cls, value):\n        if value < 0:\n            raise ValueError(\"must be non-negative\")\n        return super().__new__(cls, value)\n```\n\n**2. Singletons**\n\n```python\nclass Singleton:\n    _instance = None\n    def __new__(cls):\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n        return cls._instance\n```\n\n**3. Returning a different class** (factory patterns, caching).\n\n**4. Metaclasses**.\n\n### Common gotchas\n\n- If `__new__` returns an instance of a *different* class, `__init__` won't be called.\n- If you override `__new__`, forward extra arguments correctly to `super().__new__(cls)`.\n\n### Rule of thumb\n\nUse `__init__` for setup. Only reach for `__new__` when subclassing an immutable, building a singleton, or controlling instance creation itself."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex7_explain_slots",
+      "tokens": 303,
+      "text": "`__slots__` is a class attribute that tells Python to allocate a **fixed set of attribute slots** for instances, instead of giving each instance a dynamic `__dict__`.\n\n### Basic usage\n\n```python\nclass Point:\n    __slots__ = (\"x\", \"y\")\n\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n\np = Point(1, 2)\np.x = 10        # OK\np.z = 30        # AttributeError\np.__dict__      # AttributeError\n```\n\n### Why use it\n\n**1. Lower memory usage** — typically 40-50% smaller for small classes.\n\n**2. Faster attribute access** — small win per-access but adds up in tight loops.\n\n**3. Prevents typos** — `p.xx = 5` raises immediately.\n\n### When to use\n\n- Many instances of a small class\n- Strict attribute control\n- Optimizing memory in a hot path\n\n### Costs and gotchas\n\n- No new attributes\n- No `__dict__` and no `__weakref__` unless added\n- Inheritance is tricky — non-slot subclass loses the benefit\n- Default class-level values conflict\n- `dataclasses` support `@dataclass(slots=True)` (3.10+) — cleanest modern way\n\n### Bottom line\n\nUse for small, numerous, fixed-shape objects when memory or attribute-discipline matters."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "ex8_explain_yield",
+      "tokens": 426,
+      "text": "`yield` turns a function into a **generator**: instead of computing all results and returning them at once, the function produces values **one at a time, on demand**.\n\n### Basic example\n\n```python\ndef count_up_to(n):\n    i = 1\n    while i <= n:\n        yield i\n        i += 1\n\nfor x in count_up_to(3):\n    print(x)\n# 1, 2, 3\n```\n\nCalling `count_up_to(3)` doesn't run the function — it returns a **generator object**.\n\n### How it works\n\nEach `next()` call:\n1. Runs until it hits `yield`.\n2. The yielded value is handed back.\n3. State is **frozen**.\n4. On next `next()`, resumes after the `yield`.\n5. When function returns, `StopIteration` is raised.\n\n### Why it matters\n\n**1. Lazy evaluation — handle huge or infinite sequences**\n\n```python\ndef naturals():\n    i = 1\n    while True:\n        yield i\n        i += 1\n```\n\n**2. Streaming data — avoid loading everything**\n\n```python\ndef read_lines(path):\n    with open(path) as f:\n        for line in f:\n            yield line.rstrip()\n```\n\n**3. Cleaner pipelines than building lists**\n\n### `yield` vs. `return`\n\n| | `return` | `yield` |\n|---|---|---|\n| Exits the function | Yes | No — pauses it |\n| Multiple times per call | No | Yes |\n| Function type | Regular | Generator |\n\n### `yield from`\n\n```python\ndef chain(a, b):\n    yield from a\n    yield from b\n```\n\n### `yield` as expression\n\n```python\ndef echo():\n    while True:\n        received = yield\n        print(\"got\", received)\n```\n\nModern code uses `async`/`await` instead for that pattern.\n\n### Bottom line\n\nUse `yield` when you want to **produce a sequence lazily**."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex1_what_is_async",
+      "tokens": 152,
+      "text": "`async def` defines a coroutine function — calling it doesn't run the body, it returns a coroutine object that must be awaited (or scheduled on an event loop). Inside, you can use `await` to suspend execution while waiting on I/O, letting the event loop run other tasks concurrently on a single thread.\n\n```python\nimport asyncio\n\nasync def fetch(n):\n    await asyncio.sleep(1)\n    return n * 2\n\nasync def main():\n    results = await asyncio.gather(fetch(1), fetch(2))\n    print(results)  # [2, 4]\n\nasyncio.run(main())\n```\n\nNote: `fetch(1)` alone does nothing useful — you must `await` it or pass it to the loop."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex2_difference_is_vs_eq",
+      "tokens": 184,
+      "text": "`==` checks **value equality** (calls `__eq__`). `is` checks **identity** — whether two names point to the exact same object.\n\nUse `==` for comparing values; use `is` only for singletons like `None`, `True`, `False`.\n\n```python\na = [1, 2, 3]\nb = [1, 2, 3]\nc = a\n\na == b   # True  — same contents\na is b   # False — different list objects\na is c   # True  — same object\n\nx = None\nx is None    # Correct idiom\nx == None    # Works but discouraged\n```\n\nGotcha: small ints (-5..256) and interned strings are cached, so `is` may *accidentally* return `True` — never rely on it for value comparison."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex3_what_is_gil",
+      "tokens": 223,
+      "text": "The **Global Interpreter Lock** is a mutex in CPython that allows only one thread to execute Python bytecode at a time. It exists because CPython's memory management isn't thread-safe.\n\n**When it matters:**\n- **CPU-bound** Python code: threads don't give you parallelism. Use `multiprocessing` or native extensions.\n- **I/O-bound** code: GIL is released during I/O syscalls, so threads work fine.\n\n```python\nimport threading, time\n\ndef cpu_burn():\n    x = 0\n    for _ in range(10_000_000):\n        x += 1\n\nt0 = time.time()\nts = [threading.Thread(target=cpu_burn) for _ in range(2)]\n[t.start() for t in ts]; [t.join() for t in ts]\nprint(f\"threads: {time.time()-t0:.2f}s\")\n# multiprocessing.Process instead → true parallelism\n```\n\nPEP 703 (free-threaded CPython, 3.13+ experimental) is gradually removing the GIL."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex4_explain_for_loop",
+      "tokens": 144,
+      "text": "A `for` loop iterates over the items of any **iterable** (list, tuple, string, dict, generator, file, range), binding each item to a variable and running the body once per item. Python's `for` is a *foreach* — it calls `iter()` on the iterable and repeatedly calls `next()` until `StopIteration`.\n\n```python\nfor word in [\"apple\", \"banana\", \"cherry\"]:\n    print(len(word), word)\n\nfor i, word in enumerate([\"apple\", \"banana\"], start=1):\n    print(i, word)\n```\n\nUse `range(n)` if you really need a counter: `for i in range(10): ...`."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex5_explain_closure",
+      "tokens": 167,
+      "text": "A **closure** is an inner function that \"remembers\" variables from its enclosing scope, even after that outer scope has finished executing. The inner function captures references (not copies) to those names.\n\n```python\ndef make_counter(start=0):\n    count = start\n    def increment():\n        nonlocal count\n        count += 1\n        return count\n    return increment\n\nc1 = make_counter()\nc1(); c1(); c1()   # 1, 2, 3 — `count` lives on inside c1\n\nc2 = make_counter(100)\nc2()               # 101 — c2 has its own independent `count`\n```\n\nClosures give you lightweight stateful functions without writing a class. Common uses: decorators, callbacks, partial application, factory functions."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "tokens": 210,
+      "text": "`__new__` **creates** the instance (returns a new object); `__init__` **initializes** it (sets attributes on the already-created object, returns `None`). Python calls `__new__` first, then `__init__` on its result.\n\nYou almost never override `__new__` — only when subclassing **immutable** types (`int`, `str`, `tuple`, `frozenset`), implementing singletons, or controlling instance creation itself.\n\n```python\nclass Distance(float):              # immutable base — must use __new__\n    def __new__(cls, value, unit):\n        instance = super().__new__(cls, value)\n        return instance\n    def __init__(self, value, unit):\n        self.unit = unit\n\nd = Distance(3.2, \"km\")\nprint(d, d.unit, d * 2)   # 3.2 km 6.4\n```\n\nFor ordinary mutable classes, just use `__init__`."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex7_explain_slots",
+      "tokens": 191,
+      "text": "`__slots__` declares a fixed set of attribute names for a class. Instances then store attributes in a compact array-like structure instead of a per-instance `__dict__`. Two wins: **less memory** (often 40-50% smaller instances) and **faster attribute access**. Trade-offs: can't add unlisted attributes, no weak references by default.\n\n```python\nclass Point:\n    __slots__ = (\"x\", \"y\")\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\np = Point(1, 2)\np.x = 10           # OK\np.z = 3            # AttributeError: 'Point' object has no attribute 'z'\n\n# Memory: 1M Point instances ≈ ~56 MB with __slots__ vs ~152 MB without\n```\n\nUse it when you create many instances of the same small class."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "ex8_explain_yield",
+      "tokens": 148,
+      "text": "`yield` turns a function into a **generator**. Each `yield` produces a value to the caller and pauses the function's state; the next `next()` call resumes right after the `yield`. This gives you lazy, memory-efficient iteration.\n\n```python\ndef fibonacci(limit):\n    a, b = 0, 1\n    while a < limit:\n        yield a\n        a, b = b, a + b\n\nfor n in fibonacci(50):\n    print(n, end=\" \")        # 0 1 1 2 3 5 8 13 21 34\n```\n\nEven a billion-element fibonacci stream uses constant memory — only one number is alive at a time."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex1_what_is_async",
+      "tokens": 102,
+      "text": "What: `async def` defines a coroutine function — calling it returns a coroutine object instead of executing the body.\nWhy/how: Coroutines run on an event loop and can `await` other awaitables, suspending execution so the loop can run other tasks during I/O waits; this enables concurrency in a single thread without blocking.\nExample:\n```python\nimport asyncio\n\nasync def fetch():\n    await asyncio.sleep(1)\n    return \"done\"\n\nasyncio.run(fetch())  # \"done\"\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex2_difference_is_vs_eq",
+      "tokens": 136,
+      "text": "What: `==` compares values for equality, while `is` compares object identity (whether two references point to the exact same object in memory).\nWhy/how: `==` calls `__eq__` and asks \"are these equivalent?\"; `is` is a pointer comparison and asks \"are these the same object?\" Use `is` only for singletons like `None`, `True`, `False`.\nExample:\n```python\na = [1, 2]\nb = [1, 2]\na == b   # True  (same contents)\na is b   # False (different objects)\na is None  # correct idiom\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex3_what_is_gil",
+      "tokens": 158,
+      "text": "What: The Global Interpreter Lock (GIL) is a mutex in CPython that allows only one thread to execute Python bytecode at a time.\nWhy/how: It simplifies memory management (reference counting) and C-extension safety, but it means CPU-bound multithreaded code doesn't actually run in parallel — it matters for CPU-bound workloads, but not for I/O-bound code.\nExample:\n```python\nfrom concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor\n\ndef crunch(n): return sum(i*i for i in range(n))\n\nThreadPoolExecutor().map(crunch, [10**7]*4)   # Slow (GIL-bound)\nProcessPoolExecutor().map(crunch, [10**7]*4)  # Fast (bypasses GIL)\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex4_explain_for_loop",
+      "tokens": 91,
+      "text": "What: A `for` loop iterates over the elements of an iterable, executing its body once per element.\nWhy/how: It calls `iter()` on the iterable to get an iterator, then repeatedly calls `next()` until `StopIteration` is raised — this works uniformly for lists, strings, files, generators, and any custom `__iter__` object.\nExample:\n```python\nfor ch in \"abc\":\n    print(ch)\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex5_explain_closure",
+      "tokens": 118,
+      "text": "What: A closure is a nested function that captures and remembers variables from its enclosing lexical scope, even after that scope has finished executing.\nWhy/how: Python keeps the referenced free variables alive via cell objects on the inner function, so the inner function can read (and with `nonlocal`, write) them later.\nExample:\n```python\ndef make_counter():\n    count = 0\n    def inc():\n        nonlocal count\n        count += 1\n        return count\n    return inc\n\nc = make_counter()\nc(); c(); c()  # 3\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "tokens": 166,
+      "text": "What: `__new__` creates and returns a new instance of a class; `__init__` initializes that already-created instance.\nWhy/how: `__new__` is a static method that runs first and is responsible for allocation, while `__init__` runs after on the returned instance to set its attributes — override `__new__` only when you need to control instance creation (immutable types, singletons, factory behavior).\nExample:\n```python\nclass Singleton:\n    _inst = None\n    def __new__(cls):\n        if cls._inst is None:\n            cls._inst = super().__new__(cls)\n        return cls._inst\n    def __init__(self):\n        self.x = 1\n\na = Singleton(); b = Singleton()\na is b  # True\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex7_explain_slots",
+      "tokens": 136,
+      "text": "What: `__slots__` declares a fixed set of allowed attributes on a class, replacing the per-instance `__dict__` with a compact array-like layout.\nWhy/how: It cuts memory per instance and slightly speeds attribute access, while preventing accidental creation of new attributes — use it for classes you instantiate in large numbers.\nExample:\n```python\nclass Point:\n    __slots__ = (\"x\", \"y\")\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\np = Point(1, 2)\np.z = 3  # AttributeError: 'Point' object has no attribute 'z'\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "ex8_explain_yield",
+      "tokens": 122,
+      "text": "What: `yield` turns a function into a generator: each `yield` produces a value to the caller and pauses the function, resuming where it left off on the next `next()` call.\nWhy/how: It enables lazy, streaming iteration — values are produced on demand instead of building a full list in memory — and preserves local state across resumes.\nExample:\n```python\ndef count_up(n):\n    i = 0\n    while i < n:\n        yield i\n        i += 1\n\nlist(count_up(3))  # [0, 1, 2]\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex1_what_is_async",
+      "tokens": 156,
+      "text": "What: `async def` defines a coroutine function — calling it returns a coroutine object instead of executing the body.\nWhy/how: The coroutine only runs when driven by an event loop (e.g., `asyncio.run`, `await`), enabling cooperative multitasking where `await` points yield control back to the loop so other tasks can progress during I/O waits.\nExample:\n```python\nimport asyncio\n\nasync def fetch(n):\n    await asyncio.sleep(1)\n    return n * 2\n\nasync def main():\n    results = await asyncio.gather(fetch(1), fetch(2), fetch(3))\n    print(results)  # [2, 4, 6] — total ~1s, not 3s\n\nasyncio.run(main())\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex2_difference_is_vs_eq",
+      "tokens": 183,
+      "text": "What: `==` compares values (calls `__eq__`); `is` compares object identity (same object in memory).\nWhy/how: Use `==` for equality of contents; use `is` only for singletons like `None`, `True`, `False`. Relying on `is` for ints/strings is a misconception — small int caching and string interning are CPython implementation details, not guarantees.\nExample:\n```python\na = [1, 2, 3]\nb = [1, 2, 3]\na == b   # True\na is b   # False\n\nx = None\nx is None   # True\nx == None   # works but discouraged (PEP 8)\n\n256 is 256       # True in CPython (cached)\n1000 is 1000     # may be False — implementation detail\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex3_what_is_gil",
+      "tokens": 214,
+      "text": "What: The Global Interpreter Lock is a mutex in CPython that allows only one thread to execute Python bytecode at a time per interpreter.\nWhy/how: It simplifies CPython's memory management (reference counting is not thread-safe without it), but it means CPU-bound multithreaded Python code does not scale across cores — use `multiprocessing` or release the GIL via C extensions instead. The GIL does not hurt I/O-bound threading. (Note: PEP 703 / Python 3.13+ offers an experimental free-threaded build.)\nExample:\n```python\nimport threading, time\n\ndef cpu_bound():\n    x = 0\n    for _ in range(10_000_000):\n        x += 1\n\nt0 = time.perf_counter()\nthreads = [threading.Thread(target=cpu_bound) for _ in range(2)]\nfor t in threads: t.start()\nfor t in threads: t.join()\nprint(f\"threaded: {time.perf_counter() - t0:.2f}s\")\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex4_explain_for_loop",
+      "tokens": 128,
+      "text": "What: A `for` loop iterates over the items produced by an iterable, binding each item to a variable and executing the body once per item.\nWhy/how: Python's `for` calls `iter()` on the iterable to get an iterator, then repeatedly calls `next()` until `StopIteration` — so it works uniformly on lists, dicts, files, generators, and any custom `__iter__`.\nExample:\n```python\nfor line in open(\"data.txt\"):\n    print(line.rstrip())\n\nfor i, name in enumerate([\"a\", \"b\", \"c\"], start=1):\n    print(i, name)\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex5_explain_closure",
+      "tokens": 126,
+      "text": "What: A closure is a nested function that captures and remembers variables from its enclosing function's scope, even after that outer function has returned.\nWhy/how: Python binds the free variables by reference to the enclosing scope's cell. Use `nonlocal` to rebind (not just read) a captured name.\nExample:\n```python\ndef make_counter(start=0):\n    count = start\n    def increment():\n        nonlocal count\n        count += 1\n        return count\n    return increment\n\nc = make_counter()\nc(); c(); c()  # -> 1, 2, 3\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "tokens": 195,
+      "text": "What: `__new__` creates and returns the instance; `__init__` initializes the already-created instance (and must return `None`).\nWhy/how: `__new__` is a static method called first by the metaclass — it allocates the object, so you override it when you need to control creation itself (immutable types, singletons, returning a different/cached instance). `__init__` runs only if `__new__` returned an instance of `cls`.\nExample:\n```python\nclass Singleton:\n    _instance = None\n    def __new__(cls, *args, **kw):\n        if cls._instance is None:\n            cls._instance = super().__new__(cls)\n        return cls._instance\n    def __init__(self, value):\n        self.value = value\n\na = Singleton(1)\nb = Singleton(2)\na is b           # True\na.value          # 2\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex7_explain_slots",
+      "tokens": 183,
+      "text": "What: `__slots__` declares a fixed set of attribute names for a class, replacing the per-instance `__dict__` with compact descriptor-based storage.\nWhy/how: It cuts memory per instance significantly (no dict overhead) and makes attribute access slightly faster, at the cost of disallowing new attributes and (by default) breaking multiple inheritance and weakrefs.\nExample:\n```python\nimport sys\n\nclass Point:\n    __slots__ = (\"x\", \"y\")\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\nclass PointDict:\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\np = Point(1, 2)\nd = PointDict(1, 2)\n\np.z = 3        # AttributeError\nd.z = 3        # works\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "ex8_explain_yield",
+      "tokens": 180,
+      "text": "What: `yield` turns a function into a generator: it suspends the function, hands a value back to the caller, and resumes from that exact point on the next `next()` call.\nWhy/how: Local state (variables, position in loops) is preserved between resumes. `yield from` delegates to a sub-iterable; `value = yield x` lets the caller send a value back via `gen.send(...)`.\nExample:\n```python\ndef read_chunks(path, size=4096):\n    with open(path, \"rb\") as f:\n        while chunk := f.read(size):\n            yield chunk\n\ntotal = sum(len(c) for c in read_chunks(\"big.bin\"))\n\ndef countdown(n):\n    while n > 0:\n        yield n\n        n -= 1\n\nlist(countdown(3))   # [3, 2, 1]\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex1_what_is_async",
+      "tokens": 164,
+      "text": "What: `async def` defines a coroutine function — calling it returns a coroutine object instead of executing the body immediately.\nWhy/how: The coroutine must be driven by an event loop (e.g., `asyncio.run`, `await`, or `asyncio.create_task`); inside it, `await` suspends execution at I/O points so the loop can run other coroutines concurrently on a single thread.\nExample:\n```python\nimport asyncio\n\nasync def fetch(n):\n    await asyncio.sleep(1)\n    return n * 2\n\nasync def main():\n    results = await asyncio.gather(fetch(1), fetch(2), fetch(3))\n    print(results)           # [2, 4, 6] in ~1s, not 3s\n\nasyncio.run(main())\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex2_difference_is_vs_eq",
+      "tokens": 132,
+      "text": "What: `==` compares values (calls `__eq__`); `is` compares identity.\nWhy/how: Use `==` for value equality, `is` only for singletons like `None`, `True`, `False`. A common misconception is that `is` works for small ints/strings because CPython caches them — that's an implementation detail.\nExample:\n```python\na = [1, 2, 3]\nb = [1, 2, 3]\na == b        # True\na is b        # False\nx = None\nx is None     # True (correct idiom)\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex3_what_is_gil",
+      "tokens": 191,
+      "text": "What: The Global Interpreter Lock is a mutex in CPython that allows only one thread to execute Python bytecode at a time within a single interpreter process.\nWhy/how: It exists to make CPython's reference-counting memory management thread-safe; matters for CPU-bound multithreaded code (use `multiprocessing` or `ProcessPoolExecutor`) but not for I/O-bound code or NumPy-style C extensions that release it. Python 3.13+ offers an experimental free-threaded build.\nExample:\n```python\nfrom concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor\n\ndef cpu_work(n):\n    s = 0\n    for i in range(n):\n        s += i*i\n    return s\n\n# threads ≈ same as sequential due to GIL; procs ≈ ~4x faster on 4 cores\nlist(ProcessPoolExecutor(4).map(cpu_work, [10_000_000]*4))\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex4_explain_for_loop",
+      "tokens": 5,
+      "text": "ALREADY_OBVIOUS"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex5_explain_closure",
+      "tokens": 135,
+      "text": "What: A closure is a function that captures and remembers variables from the enclosing lexical scope, even after that outer scope has finished executing.\nWhy/how: Python creates a closure when a nested function references a name from an enclosing function; the captured names live in the inner function's `__closure__` cells. Use `nonlocal` to rebind a captured variable.\nExample:\n```python\ndef make_counter():\n    count = 0\n    def inc():\n        nonlocal count\n        count += 1\n        return count\n    return inc\n\nc = make_counter()\nc(); c(); c()        # 1, 2, 3\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex6_explain_dunder_init_vs_new",
+      "tokens": 168,
+      "text": "What: `__new__` creates and returns the instance; `__init__` initializes the already-created instance.\nWhy/how: `__new__` is a static method that receives the class; `__init__` is an instance method that receives `self` and returns `None`. You almost never override `__new__` for normal classes — only when subclassing immutable types (`int`, `str`, `tuple`), implementing singletons, or returning a cached instance.\nExample:\n```python\nclass UpperStr(str):\n    def __new__(cls, value):\n        return super().__new__(cls, value.upper())\n    def __init__(self, value):\n        self.original = value\n\ns = UpperStr(\"hello\")\nprint(s)            # HELLO\nprint(s.original)   # hello\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex7_explain_slots",
+      "tokens": 157,
+      "text": "What: `__slots__` declares a fixed set of attribute names for a class, telling Python to store instance attributes in a compact array instead of a per-instance `__dict__`.\nWhy/how: It saves memory and speeds up attribute access slightly; trade-off: can't add new attributes at runtime, and multiple inheritance with slotted classes is tricky. Useful when you create millions of small instances.\nExample:\n```python\nimport sys\n\nclass PointS:\n    __slots__ = (\"x\", \"y\")\n    def __init__(self, x, y):\n        self.x, self.y = x, y\n\nps = PointS(1, 2)\nsys.getsizeof(ps)    # ~48 bytes\nps.z = 3             # AttributeError\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "ex8_explain_yield",
+      "tokens": 167,
+      "text": "What: `yield` turns a function into a generator: each `yield` pauses the function, returns a value to the caller, and resumes from the same point on the next `next()` call.\nWhy/how: Generators produce values lazily — state (locals, instruction pointer) is preserved between calls. `yield` can also receive a value sent in via `gen.send(...)`, and `yield from` delegates to a sub-iterator.\nExample:\n```python\ndef fib():\n    a, b = 0, 1\n    while True:\n        yield a\n        a, b = b, a + b\n\ng = fib()\n[next(g) for _ in range(7)]  # [0, 1, 1, 2, 3, 5, 8]\n```"
+    }
+  ]
+}

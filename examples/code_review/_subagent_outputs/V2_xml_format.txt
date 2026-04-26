@@ -1,0 +1,97 @@
+t1_off_by_one_slice_BEGIN
+Issue (line 3): Slice `items[len(items) - n - 1:]` returns the last `n + 1` items (off-by-one), and misbehaves when `n == 0` (returns last 1 item instead of empty).
+Fix: `return items[-n:] if n > 0 else []`
+t1_off_by_one_slice_END
+t2_mutable_default_dict_BEGIN
+Issue (line 1): Mutable default argument `history={}` is shared across all calls, so visit counts persist between unrelated invocations.
+Fix: `def greet(name, history=None):` and add `if history is None: history = {}` at the top of the body.
+t2_mutable_default_dict_END
+t3_command_injection_BEGIN
+Issue (line 4): `shell=True` with an f-string interpolating untrusted `directory` allows command injection (e.g., `directory="; rm -rf /"`).
+Fix: Drop the shell and pass an argument list: `subprocess.run(["ls", directory], shell=False, capture_output=True, text=True)` (or, better, use `os.listdir(directory)` with path validation).
+t3_command_injection_END
+t4_forgotten_await_BEGIN
+Issue (line 3): `httpx.AsyncClient().get(...)` returns a coroutine that is never awaited; the client is also never closed, and `.json()` is called on the coroutine instead of a response.
+Fix:
+```python
+async def fetch_user(user_id):
+    async with httpx.AsyncClient() as client:
+        response = await client.get(f"/users/{user_id}")
+        return response.json()
+```
+t4_forgotten_await_END
+t5_dict_iter_mutation_BEGIN
+Issue (line 2): Mutating `d` while iterating over it raises `RuntimeError: dictionary changed size during iteration`.
+Fix: Iterate over a snapshot of the keys: `for key in list(d): if d[key] < 0: del d[key]` (or rebuild: `return {k: v for k, v in d.items() if v >= 0}`).
+t5_dict_iter_mutation_END
+t6_clean_code_BEGIN
+Issue (line 1): No issues — bounds are validated and `max(lo, min(value, hi))` correctly clamps including NaN-free numeric inputs.
+Fix: None required.
+t6_clean_code_END
+c1_factorial_BEGIN
+Issue (line 3): `range(n)` starts at 0, so `result *= 0` on the first iteration makes `factorial(n)` always return 0 (and `factorial(0)` should be 1, not 0).
+Fix: Use `range(1, n + 1)`: `for i in range(1, n + 1): result *= i`.
+c1_factorial_END
+c2_counter_race_BEGIN
+Issue (line 6): `self.count += 1` is not atomic (load-add-store), so concurrent `increment()` calls from multiple threads lose updates.
+Fix: Guard with a lock:
+```python
+def __init__(self):
+    self.count = 0
+    self._lock = threading.Lock()
+
+def increment(self):
+    with self._lock:
+        self.count += 1
+```
+c2_counter_race_END
+c3_sql_injection_BEGIN
+Issue (line 1): String-concatenated `user_input` into the SQL query is a classic SQL injection vulnerability.
+Fix: Use a parameterized query: `cursor.execute("SELECT * FROM users WHERE name = %s", (user_input,))` (use the placeholder style required by your DB driver, e.g. `?` for sqlite3).
+c3_sql_injection_END
+c4_file_leak_BEGIN
+Issue (line 2): File handle is never closed — leaks a descriptor; also no encoding specified, so behavior depends on the locale.
+Fix: Use a context manager: `with open(path, encoding="utf-8") as f: return f.read()`.
+c4_file_leak_END
+c5_n_plus_1_BEGIN
+Issue (line 3): Classic N+1 query (one SELECT per user) and SQL-injection via f-string interpolation of `u.id`.
+Fix: Single parameterized query plus in-memory grouping, e.g.:
+```python
+ids = [u.id for u in users]
+rows = db.query("SELECT * FROM posts WHERE user_id IN %s", (tuple(ids),))
+by_user = {}
+for r in rows:
+    by_user.setdefault(r.user_id, []).append(r)
+return [{'user': u, 'posts': by_user.get(u.id, [])} for u in users]
+```
+c5_n_plus_1_END
+c6_ordered_check_BEGIN
+Issue (line 2): Uses `assert` for request validation — assertions are stripped under `python -O`, so validation silently disappears in production; also `order['total']` and `order['items']` raise `KeyError` (not a clean validation error) before `'customer_id' in order` is checked, and the check ordering is inconsistent.
+Fix: Raise explicit exceptions and check keys first:
+```python
+def validate_order(order: dict) -> None:
+    for key in ("customer_id", "total", "items"):
+        if key not in order:
+            raise ValueError(f"missing field: {key}")
+    if order["total"] <= 0:
+        raise ValueError("total must be positive")
+    if not order["items"]:
+        raise ValueError("items must not be empty")
+```
+c6_ordered_check_END
+c7_concat_loop_BEGIN
+Issue (line 3): Repeated `result += line + '\n'` is O(n^2) in CPython for large inputs and appends a trailing newline even when the input is empty or callers don't want one.
+Fix: Use `str.join`: `return '\n'.join(lines) + ('\n' if lines else '')` (or just `'\n'.join(lines)` if a trailing newline isn't desired).
+c7_concat_loop_END
+c8_mutable_default_BEGIN
+Issue (line 1): Mutable default `log: list = []` is shared across all calls — events accumulate in the same list across unrelated invocations.
+Fix: `def add_event(event: str, log: list | None = None) -> list:` and `if log is None: log = []` at the top of the body.
+c8_mutable_default_END
+c9_late_binding_BEGIN
+Issue (line 4): Late binding of `v` — every lambda captures the same variable, so all callbacks print the final value (`3, 3, 3`) instead of `1, 2, 3`.
+Fix: Bind per-iteration via a default argument: `callbacks.append(lambda v=v: print(v))`.
+c9_late_binding_END
+c10_clean_code_BEGIN
+Issue (line 1): No correctness or security issues; `sum(data) % 256` is equivalent and clearer/faster.
+Fix: `return sum(data) % 256`.
+c10_clean_code_END

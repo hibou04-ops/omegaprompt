@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "accuracy",
+      "description": "Is the explanation technically accurate? High = correct facts, no oversimplifications that mislead. Low = wrong claims, distorted analogies, fabricated mechanisms.",
+      "weight": 0.5,
+      "scale": [1, 5]
+    },
+    {
+      "name": "concreteness",
+      "description": "Does the explanation include a concrete, useful example? High = a runnable code snippet or real-world case that clarifies the concept. Low = abstract definition only, contrived metaphor, or example that doesn't actually demonstrate the concept.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "appropriate_depth",
+      "description": "Is the depth right for the question — neither over-explaining trivia nor glossing over the actual mechanism? High = covers what's needed, no historical preamble, no padding. Low = walls of irrelevant background, or skips the actual answer.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must answer or explicitly say ALREADY_OBVIOUS. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_misleading_analogy",
+      "description": "Analogies must not distort the technical truth. An analogy that breaks down in a way that creates a wrong mental model fails.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_fabricated_facts",
+      "description": "No invented language behavior, library APIs, or version-specific claims that aren't true. Naming a real feature with wrong semantics fails.",
+      "evaluator": "judge"
+    }
+  ]
+}

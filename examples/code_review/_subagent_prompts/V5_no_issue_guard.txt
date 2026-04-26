@@ -1,0 +1,211 @@
+You are simulating fresh Claude API calls. The SYSTEM PROMPT below is the ONLY instruction Claude would have for each call — no Claude Code wrapper, no other context. Respond EXACTLY as Claude would respond to each user message under that system prompt.
+
+## Critical rules
+
+- No meta-commentary, no preamble, no acknowledgement of the simulation
+- Each ITEM is an INDEPENDENT API call — Claude has NO memory of previous items
+- You must NOT let your response on item N be influenced by items 1..N-1
+- Just produce what Claude would output if that ITEM were the only user message
+
+## SYSTEM PROMPT (the ONLY instruction Claude has)
+
+You are a senior engineer reviewing code.
+
+If you cannot identify a clear correctness, security, or performance bug, respond with exactly:
+NO_ISSUE
+
+Otherwise:
+
+<output_format>
+Issue (line N): <one line>
+Fix: <minimal change>
+</output_format>
+
+- No markdown headers, no review summaries.
+- Don't fabricate language behavior. If a claim is uncertain, append "(uncertain)" inline.
+- Don't silently rewrite — explain what's wrong.
+
+## ITEMS — 16 independent calls
+
+
+### ITEM: t1_off_by_one_slice
+```
+Review this Python function meant to return the last n items:
+
+def last_n(items, n):
+    return items[len(items) - n - 1:]
+```
+
+### ITEM: t2_mutable_default_dict
+```
+Review this Python function:
+
+def greet(name, history={}):
+    history[name] = history.get(name, 0) + 1
+    return f"Hello {name}, visit #{history[name]}"
+```
+
+### ITEM: t3_command_injection
+```
+Review this Python function — `directory` comes from a web form:
+
+import subprocess
+def list_files(directory):
+    return subprocess.run(
+        f"ls {directory}",
+        shell=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+```
+
+### ITEM: t4_forgotten_await
+```
+Review this async Python function:
+
+import httpx
+async def fetch_user(user_id):
+    response = httpx.AsyncClient().get(f"/users/{user_id}")
+    return response.json()
+```
+
+### ITEM: t5_dict_iter_mutation
+```
+Review this Python function:
+
+def remove_negatives(d):
+    for key in d:
+        if d[key] < 0:
+            del d[key]
+    return d
+```
+
+### ITEM: t6_clean_code
+```
+Review this Python function:
+
+def clamp(value: float, lo: float, hi: float) -> float:
+    if lo > hi:
+        raise ValueError(f"lo ({lo}) must not exceed hi ({hi})")
+    return max(lo, min(value, hi))
+```
+
+### ITEM: c1_factorial
+```
+Review the following Python function:
+
+def factorial(n):
+    result = 1
+    for i in range(n):
+        result *= i
+    return result
+```
+
+### ITEM: c2_counter_race
+```
+Review this Python class — it's used from multiple threads simultaneously:
+
+class Counter:
+    def __init__(self):
+        self.count = 0
+
+    def increment(self):
+        self.count += 1
+```
+
+### ITEM: c3_sql_injection
+```
+Review this Python SQL call — `user_input` comes from a web request:
+
+cursor.execute("SELECT * FROM users WHERE name = '" + user_input + "'")
+```
+
+### ITEM: c4_file_leak
+```
+Review this Python function for issues:
+
+def process_file(path):
+    f = open(path)
+    data = f.read()
+    return data
+```
+
+### ITEM: c5_n_plus_1
+```
+Review this Python function that builds a user+posts view:
+
+def get_users_with_posts(users):
+    return [
+        {'user': u, 'posts': db.query(f"SELECT * FROM posts WHERE user_id = {u.id}")}
+        for u in users
+    ]
+```
+
+### ITEM: c6_ordered_check
+```
+Review this function that validates request data:
+
+def validate_order(order: dict) -> None:
+    assert order['total'] > 0
+    assert 'customer_id' in order
+    assert order['items']
+```
+
+### ITEM: c7_concat_loop
+```
+Review this Python function for efficiency and correctness:
+
+def join_lines(lines):
+    result = ''
+    for line in lines:
+        result += line + '\n'
+    return result
+```
+
+### ITEM: c8_mutable_default
+```
+Review this Python function signature and body:
+
+def add_event(event: str, log: list = []) -> list:
+    log.append(event)
+    return log
+```
+
+### ITEM: c9_late_binding
+```
+Review this Python code that builds callbacks in a loop:
+
+def make_callbacks(values):
+    callbacks = []
+    for v in values:
+        callbacks.append(lambda: print(v))
+    return callbacks
+
+# usage:
+for cb in make_callbacks([1, 2, 3]):
+    cb()
+```
+
+### ITEM: c10_clean_code
+```
+Review this Python function:
+
+def checksum(data: bytes) -> int:
+    total = 0
+    for byte in data:
+        total = (total + byte) % 256
+    return total
+```
+
+
+## OUTPUT FORMAT
+
+For each item, output exactly:
+
+{ITEM_ID}_BEGIN
+<the response Claude would produce for this item under the system prompt>
+{ITEM_ID}_END
+
+Where {ITEM_ID} is the id from the ITEM header (e.g., t1_off_by_one_slice, c1_factorial).
+
+Output all 16 items in order. NO content outside the BEGIN/END markers.

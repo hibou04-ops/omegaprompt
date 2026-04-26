@@ -1,0 +1,812 @@
+{
+  "config": {
+    "ollama_model": "gemma4:e4b",
+    "tiktoken_encoding": "cl100k_base",
+    "n_items": 16,
+    "n_variants": 5,
+    "variants_file": "examples\\code_review\\variants_v2.json",
+    "opus_input_rate_per_M": 15.0,
+    "opus_output_rate_per_M": 75.0
+  },
+  "summary": [
+    {
+      "variant_idx": 0,
+      "input_tokens_tiktoken": 12,
+      "output_mean_tiktoken": 261.0625,
+      "output_sd_tiktoken": 119.41159561226316,
+      "output_min_tiktoken": 0,
+      "output_max_tiktoken": 416,
+      "output_sum_tiktoken": 4177,
+      "delta_vs_v0_pct": 0.0,
+      "n_items": 16
+    },
+    {
+      "variant_idx": 1,
+      "input_tokens_tiktoken": 22,
+      "output_mean_tiktoken": 210.3125,
+      "output_sd_tiktoken": 82.23601704849281,
+      "output_min_tiktoken": 104,
+      "output_max_tiktoken": 373,
+      "output_sum_tiktoken": 3365,
+      "delta_vs_v0_pct": -19.43978932248025,
+      "n_items": 16
+    },
+    {
+      "variant_idx": 2,
+      "input_tokens_tiktoken": 31,
+      "output_mean_tiktoken": 86.625,
+      "output_sd_tiktoken": 52.187961574805094,
+      "output_min_tiktoken": 33,
+      "output_max_tiktoken": 213,
+      "output_sum_tiktoken": 1386,
+      "delta_vs_v0_pct": -66.81829063921475,
+      "n_items": 16
+    },
+    {
+      "variant_idx": 3,
+      "input_tokens_tiktoken": 79,
+      "output_mean_tiktoken": 64.8125,
+      "output_sd_tiktoken": 37.880898880570406,
+      "output_min_tiktoken": 0,
+      "output_max_tiktoken": 174,
+      "output_sum_tiktoken": 1037,
+      "delta_vs_v0_pct": -75.17356954752215,
+      "n_items": 16
+    },
+    {
+      "variant_idx": 4,
+      "input_tokens_tiktoken": 79,
+      "output_mean_tiktoken": 55.9375,
+      "output_sd_tiktoken": 29.139820978631057,
+      "output_min_tiktoken": 3,
+      "output_max_tiktoken": 112,
+      "output_sum_tiktoken": 895,
+      "delta_vs_v0_pct": -78.57313861623174,
+      "n_items": 16
+    }
+  ],
+  "cost_projection_per_1k": [
+    {
+      "variant_idx": 0,
+      "cost_per_1k_calls_usd": 19.759687500000002
+    },
+    {
+      "variant_idx": 1,
+      "cost_per_1k_calls_usd": 16.103437500000002
+    },
+    {
+      "variant_idx": 2,
+      "cost_per_1k_calls_usd": 6.961875
+    },
+    {
+      "variant_idx": 3,
+      "cost_per_1k_calls_usd": 6.045937499999999
+    },
+    {
+      "variant_idx": 4,
+      "cost_per_1k_calls_usd": 5.3803125
+    }
+  ],
+  "raw": [
+    {
+      "variant_idx": 0,
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 23,
+      "input_tokens_ollama": 65,
+      "elapsed_sec": 30.254646062850952,
+      "text": "This function contains a **critical logical error** in its indexing calculation. It will not reliably return the last $N"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 344,
+      "input_tokens_ollama": 76,
+      "elapsed_sec": 24.328770875930786,
+      "text": "This function is very clever and achieves its goal of tracking state, but it contains a **critical anti-pattern** related to Python's default arguments.\n\nHere is a detailed review, categorized by severity.\n\n---\n\n## 🚨 Critical Issue (Must Fix)\n\n### 1. Mutable Default Argument (`history={}`)\n\n**The Problem:**\nIn Python, default arguments are evaluated only once when the function is defined (when the module is loaded). When you use a mutable object (like a dictionary `{}` or a list `[]`) as a default argument, that single object instance is reused across *all* calls to the function that do not explicitly provide a `history` argument.\n\nThis means the `history` dictionary is not reset between calls, leading to unexpected state accumulation and side effects.\n\n**Example of the Bug:**\nIf you call `greet(\"Alice\")` and then later call `greet(\"Bob\")`, the `history` dictionary will contain data from both calls, even if you intended to start fresh.\n\n**The Fix (The Python Idiom):**\nThe standard way to handle mutable defaults is to use `None` as the default value and initialize the mutable object inside the function body.\n\n**Refactored Code:**\n\n```python\ndef greet(name: str, history: dict = None) -> str:\n    # Initialize history if it was not provided (i.e., it is None)\n    if history is None:\n        history = {}\n    \n    # The rest of the logic remains the same\n    history[name] = history.get(name, 0) + 1\n    return f\"Hello {name}, visit #{history[name]}\"\n```\n\n---\n\n## ✨ Design and"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t3_command_injection",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 345,
+      "input_tokens_ollama": 92,
+      "elapsed_sec": 24.23020052909851,
+      "text": "This code contains a **critical security vulnerability** and several areas where it violates modern Python best practices.\n\nHere is a detailed review, starting with the most severe issue.\n\n---\n\n## 🚨 1. Critical Security Vulnerability: Command Injection\n\n**The Problem:**\nThe use of `shell=True` combined with unvalidated, user-supplied input (`directory`) creates a severe **Command Injection** vulnerability.\n\nWhen you use `shell=True`, Python passes the entire formatted string (`f\"ls {directory}\"`) to the operating system's shell (e.g., `/bin/sh` or `cmd.exe`). An attacker does not need to provide a valid directory name; they can inject shell metacharacters (like `;`, `&&`, `|`, `$()`) to execute arbitrary commands.\n\n**Example Attack:**\nIf an attacker provides the input:\n`./some_dir; rm -rf /`\n\nThe executed command becomes:\n`ls ./some_dir; rm -rf /`\n\nThe shell executes `ls ./some_dir` (the intended command) and then executes the malicious command `rm -rf /` (which attempts to recursively delete the entire file system).\n\n**The Fix (The Absolute Must-Do):**\n**Never use `shell=True` with untrusted input.**\n\nInstead of building a string and passing it to the shell, pass the command and its arguments as a list. This tells `subprocess` to execute the program directly, bypassing the shell interpreter entirely.\n\n**Vulnerable Code:**\n```python\nsubprocess.run(f\"ls {directory}\", shell=True, ...)\n```\n\n**Secure Replacement:**\n```python\n# Pass the command and arguments as a list\nsubprocess"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t4_forgotten_await",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 213,
+      "input_tokens_ollama": 76,
+      "elapsed_sec": 24.28913378715515,
+      "text": "This function has several critical issues related to asynchronous programming and resource management.\n\nHere is a detailed breakdown of the issues, followed by a corrected version.\n\n---\n\n## 🚨 Critical Bugs (Must Fix)\n\n### 1. Missing `await` on the Request\nThe most critical error is that you are calling an asynchronous method (`.get()`) but not awaiting the result.\n\nWhen you write `httpx.AsyncClient().get(...)`, Python does not execute the request; it simply returns a **coroutine object**. By assigning this object to `response`, you are storing the *promise* of a response, not the actual response object.\n\n**Fix:** You must use `await` before the `.get()` call.\n\n### 2. Missing `await` on the Response Body (Potential)\nWhile `httpx` often makes `response.json()` synchronous *after* the request has completed, it is best practice to ensure that any operation that reads the body is handled correctly. More importantly, the entire flow needs to be awaited.\n\n## ✨ Best Practices"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 296,
+      "input_tokens_ollama": 71,
+      "elapsed_sec": 24.42234206199646,
+      "text": "This function contains a critical bug related to modifying a dictionary while iterating over it. It also has issues regarding best practices (side effects and Pythonic style).\n\nHere is a detailed breakdown of the issues and recommended solutions.\n\n---\n\n## 🐞 Critical Bug: Modifying While Iterating\n\n**The Problem:**\nWhen you use a `for` loop (`for key in d:`) and delete items from the dictionary (`del d[key]`) within that loop, you are modifying the underlying structure that the loop is using to track its progress. This can cause the iterator to skip elements or, in some Python versions/scenarios, raise a `RuntimeError`.\n\n**Example of Failure:**\nIf your dictionary is `{'a': -1, 'b': -2, 'c': 3}`, the loop might delete `'a'`, and then when it tries to move to the next key, it might skip `'b'` entirely because the internal index structure has shifted.\n\n**The Fix (Option 1: Iterating over a copy):**\nTo safely delete items, you must iterate over a static copy of the keys (or items).\n\n```python\ndef remove_negatives_fixed_inplace(d):\n    # Create a list of keys first, so the iteration is stable\n    keys_to_check = list(d.keys())\n    for key in keys_to_check:\n        if d[key] < 0:\n            del d[key]\n    return d\n```\n\n---\n\n"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "t6_clean_code",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 257,
+      "input_tokens_ollama": 91,
+      "elapsed_sec": 24.171602487564087,
+      "text": "This is an excellent, concise, and highly Pythonic implementation of a clamping function. The code is correct, efficient, and includes necessary defensive programming.\n\nHere is a detailed review:\n\n---\n\n### 🟢 Overall Assessment\n\n**Grade: A+**\n\nThe function is robust, readable, and mathematically correct. It handles the critical edge case of inverted bounds (`lo > hi`) gracefully by raising a descriptive `ValueError`. The use of `max(lo, min(value, hi))` is the standard, most efficient way to implement this logic.\n\n### 💡 Strengths\n\n1.  **Correctness:** The core logic `max(lo, min(value, hi))` is flawless.\n2.  **Efficiency:** The function runs in $O(1)$ time complexity, which is optimal.\n3.  **Type Hinting:** Excellent use of type hints (`float`, `-> float`) improves readability and maintainability.\n4.  **Defensive Programming:** The explicit check for `lo > hi` is crucial and prevents silent failures or incorrect results. The accompanying error message is very helpful.\n\n### 🛠️ Minor Suggestions for Improvement\n\nSince the code is already very good, these suggestions are purely for documentation and style, not for fixing bugs.\n\n"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c1_factorial",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 0,
+      "input_tokens_ollama": 64,
+      "elapsed_sec": 23.901459217071533,
+      "text": ""
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c2_counter_race",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 368,
+      "input_tokens_ollama": 77,
+      "elapsed_sec": 24.31733512878418,
+      "text": "This code has a **critical thread safety issue** (a race condition).\n\nSince the class is used by multiple threads simultaneously, the `increment` method is not atomic, meaning that the operation `self.count += 1` can be interrupted between reading the value and writing the new value, leading to lost updates and an incorrect final count.\n\nHere is a detailed breakdown of the issue and the recommended fix.\n\n---\n\n## 🔴 Critical Issue: Race Condition (Thread Safety)\n\n### The Problem\nThe operation `self.count += 1` is not a single, atomic step in Python. It involves three underlying steps:\n\n1. **Read:** Read the current value of `self.count` from memory.\n2. **Calculate:** Calculate the new value (current value + 1).\n3. **Write:** Write the new value back to `self.count` in memory.\n\nIf two threads (Thread A and Thread B) execute this method concurrently:\n\n1. Thread A reads `self.count` (e.g., value is 5).\n2. **Context Switch:** The operating system pauses Thread A and starts Thread B.\n3. Thread B reads `self.count` (still 5).\n4. Thread B calculates 6 and writes 6 to `self.count`.\n5. **Context Switch:** The OS resumes Thread A.\n6. Thread A (which still thinks the value was 5) calculates 6 and writes 6 to `self.count`.\n\nThe counter should have been 7, but because the operations overlapped, it is only 6.\n\n### The Solution: Using a Lock\nTo ensure that the read-calculate-write sequence happens entirely without interruption, you must use a synchronization primitive, specifically a `threading.Lock`. The lock ensures that only one thread can execute the critical section of code at any given time."
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c3_sql_injection",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 416,
+      "input_tokens_ollama": 65,
+      "elapsed_sec": 24.381442546844482,
+      "text": "This code contains a **critical security vulnerability** known as **SQL Injection (SQLi)**.\n\n**Do not use this code in a production environment.**\n\nHere is a detailed breakdown of the issue, the impact, and the secure solution.\n\n---\n\n### 🚨 🔴 Critical Vulnerability: SQL Injection\n\n#### 1. The Problem\nThe code constructs the SQL query by directly concatenating the user-provided string (`user_input`) into the SQL command string.\n\n```python\n# VULNERABLE CODE\ncursor.execute(\"SELECT * FROM users WHERE name = '\" + user_input + \"'\")\n```\n\nBecause the database driver treats the entire string as a single command, an attacker can manipulate the input to change the structure and intent of the query.\n\n#### 2. The Impact (What an Attacker Can Do)\nAn attacker does not need to know the user's actual name. They can provide a specially crafted string that breaks out of the intended quotes and executes arbitrary SQL commands.\n\n**Example Attack Payload:**\nIf an attacker sets `user_input` to:\n`' OR '1'='1`\n\nThe resulting SQL query executed by the database becomes:\n```sql\nSELECT * FROM users WHERE name = '' OR '1'='1'\n```\nSince `'1'='1'` is always true, the `WHERE` clause is bypassed, and the query will return **every single row** from the `users` table, regardless of the name.\n\n**More Malicious Attacks:**\nDepending on the database permissions, an attacker could use payloads to:\n*   **Steal Data:** Select data from other tables (e.g., passwords, credit card numbers).\n*   **Modify Data:** Change records (e.g., `'; UPDATE users SET is_admin = TRUE WHERE name = 'attacker'; --`).\n*   **Delete Data:** Drop entire tables (e.g., `'; DROP TABLE users; --`).\n\n---\n\n### ✅ 💡 The Solution: Parameterized Queries\n\nThe only secure way to handle external input in SQL is"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c4_file_leak",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 310,
+      "input_tokens_ollama": 63,
+      "elapsed_sec": 24.382539987564087,
+      "text": "This function is very simple, but it contains a **critical resource management flaw** and lacks modern Python best practices regarding robustness and readability.\n\nHere is a detailed breakdown of the issues, followed by the recommended fix.\n\n---\n\n### 🔴 Critical Issue: Resource Leakage (The biggest problem)\n\nThe most serious issue is that you are opening the file using `f = open(path)` but you are **never explicitly closing it** (`f.close()`).\n\nIf an exception occurs (e.g., a `PermissionError` or a network interruption) after the file is opened but before the function returns, the file handle will remain open, leading to a **resource leak**. In a long-running application, this can eventually exhaust the operating system's limit on open file descriptors, causing the entire program to crash.\n\n**The Fix:** Always use the `with open(...) as f:` context manager. This construct guarantees that the file will be closed automatically, even if exceptions occur.\n\n### 🟡 Major Issue: Error Handling (Robustness)\n\nThe function assumes that the file at `path` exists and that the program has permission to read it. If the file does not exist, the function will crash with a `FileNotFoundError`. If the program doesn't have permission, it will crash with a `PermissionError`.\n\nA robust function should anticipate these common failures and handle them gracefully (e.g., by logging the error and returning a default value, or by raising a custom, more informative exception).\n\n### 🟢 Minor Issues: Best Practices (Readability"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c5_n_plus_1",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 271,
+      "input_tokens_ollama": 96,
+      "elapsed_sec": 24.312405586242676,
+      "text": "This function has several significant issues, ranging from critical security vulnerabilities to major performance bottlenecks.\n\nHere is a detailed review, categorized by severity.\n\n---\n\n## 🚨 Critical Issues (Security & Functionality)\n\n### 1. 🛑 SQL Injection Vulnerability (CRITICAL)\n**The Problem:** Using f-strings to directly embed variables (`{u.id}`) into an SQL query string is extremely dangerous. If `u.id` were to come from untrusted input (or if the database layer somehow allowed malicious data types), an attacker could inject arbitrary SQL commands, leading to data theft, modification, or deletion.\n\n**Example Attack:** If `u.id` was set to `1 OR 1=1`, the query would become:\n`SELECT * FROM posts WHERE user_id = 1 OR 1=1`\nThis would return *all* posts, regardless of the user ID, bypassing the intended security boundary.\n\n**The Fix:** You must use **parameterized queries**. Database libraries are designed to handle variable substitution safely, ensuring that the input is always treated as data, never as executable code.\n\n### 2. 🐌 N+1 Query Problem (MAJOR PERFORMANCE ISSUE)\n**The Problem:** This function generates $N$ separate database queries (where $N$ is the number of users). If you"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c6_ordered_check",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 227,
+      "input_tokens_ollama": 76,
+      "elapsed_sec": 24.419004440307617,
+      "text": "This function has several critical issues related to robustness, error handling, and Python best practices.\n\nHere is a detailed breakdown of the issues, categorized by severity.\n\n---\n\n## 🚨 Critical Issues (Must Fix)\n\n### 1. Using `assert` for Validation (The Biggest Flaw)\n**Problem:** Using `assert` statements for input validation is dangerous in production code. `assert` statements are designed for internal sanity checks and debugging. If the Python interpreter is run with the optimization flag (`python -O`), **all `assert` statements are completely ignored**. This means your validation could silently fail in a production environment, leading to unexpected bugs.\n**Recommendation:** Replace all `assert` statements with explicit `if` checks that raise a standard exception, such as `ValueError` or a custom `ValidationError`.\n\n### 2. Lack of Key Existence Checks (Potential `KeyError`)\n**Problem:** The first and third assertions assume the keys `'total'` and `'items'` exist in the `order` dictionary. If the input dictionary is missing either of these keys, the function will crash with"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c7_concat_loop",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 315,
+      "input_tokens_ollama": 70,
+      "elapsed_sec": 24.405575037002563,
+      "text": "This function is **correct** in that it achieves the goal of combining the lines into a single string with newlines.\n\nHowever, it is **highly inefficient** and un-Pythonic due to the way it handles string concatenation.\n\nHere is a detailed review covering efficiency, correctness, and best practices.\n\n---\n\n## 🔴 Issues Identified\n\n### 1. Efficiency (Major Issue)\nThe primary issue is the use of the `+=` operator for string concatenation inside a loop.\n\n*   **The Problem:** Strings in Python are immutable. When you execute `result += line + '\\n'`, Python cannot modify the existing `result` string. Instead, it must allocate memory for an entirely *new* string object, copy the contents of the old `result`, copy the new line, and then assign this new object back to `result`.\n*   **Time Complexity:** This process leads to quadratic time complexity ($O(N \\cdot K)$, where $N$ is the number of lines and $K$ is the total length of the resulting string). For large inputs, this will be extremely slow and consume excessive memory.\n\n### 2. Correctness/Style (Minor Issue)\nThe current implementation adds a newline character (`\\n`) *after every* line, including the very last one.\n\n*   **Example:** If `lines = ['a', 'b', 'c']`, the output will be `'a\\n' + 'b\\n' + 'c\\n'`.\n*   **Standard Behavior:** Most functions designed to join lines ("
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c8_mutable_default",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 306,
+      "input_tokens_ollama": 66,
+      "elapsed_sec": 24.50252628326416,
+      "text": "This function has one critical, common Python anti-pattern that will lead to unexpected bugs.\n\nHere is a detailed review, followed by recommended fixes.\n\n---\n\n## 🚨 Critical Issue: Mutable Default Argument\n\nThe most significant problem is using a mutable object (`[]`) as a default argument.\n\n### The Problem Explained\n\nIn Python, default arguments are evaluated only **once** when the function is defined (when the module is loaded). When you use `log: list = []`, Python creates a single list object in memory and assigns it as the default value.\n\nEvery time you call `add_event` without providing a `log` argument, you are not getting a *new* empty list; you are getting a reference to that *same* list object from the previous call.\n\n**Example of the Bug:**\n\n```python\n# 1. First call: log is created and modified\nlog1 = add_event(\"Login\")\nprint(log1)  # Output: ['Login']\n\n# 2. Second call: It reuses the SAME list object from the first call!\nlog2 = add_event(\"Logout\")\nprint(log2)  # Output: ['Login', 'Logout'] <-- The 'Login' event is still there!\n```\n\nIf you intended for `log2` to start fresh, it failed because the default list was mutated across calls.\n\n---\n\n## ✅ Recommendations and Fixes\n\nThere are two ways to fix this, depending on whether you intend the function to modify the list in place (side effect"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c9_late_binding",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 127,
+      "input_tokens_ollama": 99,
+      "elapsed_sec": 24.28572392463684,
+      "text": "This code contains a very common and subtle Python pitfall related to **closures** and **late binding** within loops.\n\nThe code will **not** behave as intended. Every single callback function will print the value from the *last* iteration of the loop.\n\nHere is a detailed breakdown of the issue, the explanation, and the correct solutions.\n\n---\n\n## 🚨 Issue: Late Binding (The Closure Trap)\n\nWhen you define a lambda function inside a loop and that lambda references a variable from the enclosing scope (like `v`), the lambda does not capture the *value* of `v` at that moment. Instead"
+    },
+    {
+      "variant_idx": 0,
+      "item_id": "c10_clean_code",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 359,
+      "input_tokens_ollama": 75,
+      "elapsed_sec": 24.093872547149658,
+      "text": "This function is simple, clear, and correctly implements a basic 8-bit additive checksum. However, as a code reviewer, I can point out areas related to efficiency, Pythonic style, and documentation.\n\nHere is a detailed review:\n\n---\n\n### 🟢 Overall Assessment\n\nThe code is **correct** and highly readable. It successfully calculates an 8-bit additive checksum (summing all bytes and taking the result modulo 256). The logic is sound.\n\n### 🟡 Suggestions for Improvement\n\n#### 1. Pythonic Efficiency (The biggest improvement)\n\nThe explicit `for` loop is unnecessary. Since the goal is simply to sum all the elements and then apply a modulo, Python's built-in `sum()` function can achieve this much more concisely and efficiently.\n\n**Current Code:**\n```python\ntotal = 0\nfor byte in data:\n    total = (total + byte) % 256\nreturn total\n```\n\n**Suggested Improvement:**\n```python\nreturn sum(data) % 256\n```\n*Reasoning:* When you pass a `bytes` object to `sum()`, Python automatically treats it as an iterable of integers (the byte values). This single line replaces the entire loop structure while maintaining the exact mathematical result.\n\n#### 2. Documentation (Crucial for reusable code)\n\nThe function lacks a docstring. A docstring should explain *what* the function does, *why* it does it (the algorithm), and what the constraints are.\n\n**Suggestion:** Add a comprehensive docstring (using Google or NumPy style is recommended).\n\n#### 3. Type Hinting and Clarity\n\nWhile `-> int` is technically correct, it might be helpful to note in the docstring that the return value is guaranteed"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_ollama": 906,
+      "output_tokens_tiktoken": 158,
+      "input_tokens_ollama": 74,
+      "elapsed_sec": 21.42471194267273,
+      "text": "**Line 2:** `return items[len(items) - n - 1:]`\n\n**Bug Name:** Incorrect starting index calculation (Off-by-one error).\n\n**Proposed Minimal Fix:**\n```python\nreturn items[-n:]\n```\n\n*(Alternatively, if you must use positive indexing: `return items[len(items) - n:]`)*\n\n**Reasoning:**\nThe original code subtracts `n + 1` from the length, causing the slice to start one element too early.\n\nThe most Pythonic way to select the last $N$ elements is using negative indexing (`items[-n:]`). This approach is clean, readable, and automatically handles edge cases (such as when $N$ is greater than the list length, or when $N=0$)."
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_ollama": 818,
+      "output_tokens_tiktoken": 162,
+      "input_tokens_ollama": 85,
+      "elapsed_sec": 19.39367437362671,
+      "text": "**Line 1:** `def greet(name, history={}):`\n**Bug Name:** Mutable Default Argument\n**Proposed Fix:** Change the default argument to `None` and initialize the dictionary inside the function body.\n\n**Explanation:**\nUsing a mutable object (like a dictionary `{}`) as a default argument in Python is dangerous because the default object is created only once when the function is defined. Every subsequent call that relies on the default will modify the *same* dictionary instance, leading to unexpected state persistence and bugs.\n\n**Minimal Code Fix:**\n\n```python\ndef greet(name, history=None):\n    if history is None:\n        history = {}\n    history[name] = history.get(name, 0) + 1\n    return f\"Hello {name}, visit #{history[name]}\"\n```"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t3_command_injection",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 373,
+      "input_tokens_ollama": 101,
+      "elapsed_sec": 24.35371732711792,
+      "text": "This code contains a critical security vulnerability.\n\n### 🚨 Security Bug: Command Injection\n\n**Line:** 3\n**Bug:** Command Injection (CWE-78)\n\n**Explanation:**\nBecause the `directory` variable comes directly from a web form (user input) and is concatenated into a string that is executed via `shell=True`, an attacker can inject arbitrary shell commands.\n\nFor example, if an attacker provides the input:\n`directory = \"/tmp/safe_dir; echo pwned > /tmp/hacked\"`\n\nThe executed command becomes:\n`ls /tmp/safe_dir; echo pwned > /tmp/hacked`\n\nThe semicolon (`;`) allows the attacker to chain commands, executing malicious code on the server.\n\n---\n\n### ✅ Proposed Minimal Fix\n\nThe fix is to stop using `shell=True` and instead pass the command and its arguments as a list. This forces `subprocess` to treat the arguments as literal strings, preventing the shell from interpreting special characters like semicolons or pipes.\n\n```python\nimport subprocess\ndef list_files(directory):\n    # Pass the command and arguments as a list, and remove shell=True\n    return subprocess.run(\n        [\"ls\", directory], # Arguments are passed as a list\n        capture_output=True,\n        text=True,\n        check=True # Added check=True for better error handling\n    ).stdout\n```\n\n**Note on Robustness (Highly Recommended Improvement):**\nWhile the fix above resolves the security vulnerability, the function currently lacks robust error handling. If the directory does not exist or the user lacks permissions, `subprocess.run` will raise a `CalledProcessError` (if `check=True` is used) or simply return an empty/error `stdout`.\n\nFor production code, you should wrap this in a `try...except` block to gracefully handle `"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t4_forgotten_await",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 328,
+      "input_tokens_ollama": 85,
+      "elapsed_sec": 24.579121589660645,
+      "text": "This function has several critical bugs related to asynchronous execution and resource management.\n\n### Review\n\n**Line 3:** `response = httpx.AsyncClient().get(f\"/users/{user_id}\")`\n**Bug:** Missing `await` keyword.\n**Explanation:** Calling `httpx.AsyncClient().get(...)` returns a coroutine object, but it does not execute the HTTP request. You must use `await` to pause execution until the request completes and the response object is received.\n\n**Line 3 (and surrounding context):** `response = httpx.AsyncClient().get(f\"/users/{user_id}\")`\n**Bug:** Improper Client Management.\n**Explanation:** Creating a new `httpx.AsyncClient()` on every function call is inefficient and can lead to resource leaks. The client should be managed using an `async with` block to ensure proper setup and teardown.\n\n**Line 4:** `return response.json()`\n**Bug:** Missing `await` keyword for JSON parsing.\n**Explanation:** Reading the response body (like parsing JSON) is an asynchronous operation. You must `await` the `.json()` method to retrieve the parsed data.\n\n### Proposed Minimal Fix\n\nThe most minimal and correct fix involves using `async with` for the client and adding the necessary `await` keywords.\n\n```python\nimport httpx\nasync def fetch_user(user_id):\n    # Use async with for proper client resource management\n    async with httpx.AsyncClient() as client:\n        # 1. Await the request execution\n        response = await client.get(f\"/users/{user_id}\")\n        \n        # Optional: Check for bad status codes"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_ollama": 655,
+      "output_tokens_tiktoken": 131,
+      "input_tokens_ollama": 80,
+      "elapsed_sec": 15.677310705184937,
+      "text": "**Line 3:** `for key in d:`\n**Bug:** Modifying a dictionary while iterating over it.\n**Explanation:** When you iterate over a dictionary using `for key in d:`, Python creates an internal view of the keys. If you delete keys from the dictionary during this iteration, the iterator can become corrupted, causing the loop to skip elements or behave unpredictably.\n**Minimal Fix:** Instead of modifying the dictionary in place, create and return a new dictionary using a dictionary comprehension.\n\n```python\ndef remove_negatives(d):\n    return {key: value for key, value in d.items() if value >= 0}\n```"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "t6_clean_code",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 128,
+      "input_tokens_ollama": 100,
+      "elapsed_sec": 24.417705535888672,
+      "text": "This function is extremely clean, efficient, and uses the most Pythonic approach for clamping. Functionally, it is correct.\n\nHowever, as a senior engineer, I would flag the lack of documentation, which is critical for maintainability and understanding the function's contract.\n\n**Line:** 1\n**Bug:** Missing docstring/type documentation.\n**Minimal Fix:** Add a comprehensive docstring explaining the function's purpose, parameters, return value, and what exceptions it raises.\n\n```python\ndef clamp(value: float, lo: float, hi: float) -> float:\n    \"\"\"\n    Clamps a value to ensure it falls within a"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c1_factorial",
+      "output_tokens_ollama": 860,
+      "output_tokens_tiktoken": 167,
+      "input_tokens_ollama": 73,
+      "elapsed_sec": 20.328410625457764,
+      "text": "**Line 4:** The loop range is incorrect.\n\n**Bug Name:** Off-by-one error / Incorrect iteration start.\n\n**Description:** The function calculates the product of numbers from $0$ up to $n-1$ because `range(n)` includes $0$. Since the product is multiplied by $0$ in the first iteration, the function incorrectly returns $0$ for any $n \\ge 1$. To calculate $n!$, the loop must iterate from $1$ up to and including $n$.\n\n**Minimal Fix:** Change `range(n)` to `range(1, n + 1)`.\n\n```python\ndef factorial(n):\n    result = 1\n    for i in range(1, n + 1): # Fixed line\n        result *= i\n    return result\n```"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c2_counter_race",
+      "output_tokens_ollama": 840,
+      "output_tokens_tiktoken": 289,
+      "input_tokens_ollama": 86,
+      "elapsed_sec": 19.692750692367554,
+      "text": "This code suffers from a classic concurrency bug known as a **Race Condition**.\n\nWhen multiple threads execute `self.count += 1` simultaneously, the operation is not atomic. The read, modify, and write steps can be interleaved by the operating system, causing updates to be lost.\n\n### Review\n\n**Line:** 7\n**Bug:** Race Condition / Non-Atomic Operation\n**Explanation:** The operation `self.count += 1` is not atomic. If Thread A reads `self.count` (e.g., 5), and before it can write the new value, the OS switches context to Thread B, Thread B reads the same value (5), increments it, and writes 6. When Thread A resumes, it calculates 6 (based on its initial read of 5) and writes 6, effectively overwriting Thread B's update. The counter will frequently undercount.\n\n**Proposed Minimal Fix:**\n\nYou must use a synchronization primitive, such as a `threading.Lock`, to ensure that the entire read-modify-write sequence happens atomically.\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.count = 0\n        self._lock = threading.Lock() # Initialize the lock\n\n    def increment(self):\n        # Use 'with' statement to ensure the lock is acquired and released\n        with self._lock:\n            self.count += 1\n```"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c3_sql_injection",
+      "output_tokens_ollama": 670,
+      "output_tokens_tiktoken": 190,
+      "input_tokens_ollama": 74,
+      "elapsed_sec": 16.02333688735962,
+      "text": "**Line:** `cursor.execute(\"SELECT * FROM users WHERE name = '\" + user_input + \"'\")`\n\n**Bug:** SQL Injection\n\n**Explanation:** Directly concatenating user input (`user_input`) into the SQL query string allows an attacker to manipulate the query structure. An attacker could provide input like `' OR '1'='1` to bypass the intended name check and potentially retrieve all records from the `users` table.\n\n**Minimal Fix:** Use parameterized queries. The database driver handles the safe escaping and quoting of the input, ensuring it is treated only as data, never as executable code.\n\n```python\ncursor.execute(\"SELECT * FROM users WHERE name = ?\", (user_input,))\n```\n\n*(Note: The placeholder `?` is standard for many Python DBAPI implementations, such as `sqlite3`. If you are using a specific library like `psycopg2` (PostgreSQL), the placeholder might be `%s`.)*"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c4_file_leak",
+      "output_tokens_ollama": 956,
+      "output_tokens_tiktoken": 261,
+      "input_tokens_ollama": 72,
+      "elapsed_sec": 22.947588682174683,
+      "text": "**Bug:** Resource Leak (File Handle not closed)\n\n**Line:** 2\n**Explanation:** The code uses `f = open(path)` but never explicitly closes the file handle `f`. If an exception occurs during the execution of `f.read()`, or even if the function exits normally, the file handle remains open until the garbage collector eventually runs, which is unreliable and can lead to resource exhaustion or file locking issues.\n\n**Minimal Fix:** Use a `with` statement (context manager) to ensure the file is automatically closed, even if errors occur.\n\n***\n\n### Recommended Refactoring (Addressing Best Practices)\n\nWhile the resource leak is the critical bug, the code also lacks explicit encoding handling, which is a common source of bugs when dealing with text files across different operating systems.\n\n**Bug:** Missing Encoding Specification (Potential `UnicodeDecodeError`)\n\n**Line:** 2\n**Explanation:** When opening a file, Python should always specify the encoding (e.g., `'utf-8'`) to ensure consistent behavior regardless of the operating system or the file's actual content.\n\n**Refactored Code:**\n\n```python\ndef process_file(path):\n    with open(path, 'r', encoding='utf-8') as f:\n        data = f.read()\n    return data\n```"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c5_n_plus_1",
+      "output_tokens_ollama": 940,
+      "output_tokens_tiktoken": 244,
+      "input_tokens_ollama": 105,
+      "elapsed_sec": 22.68590211868286,
+      "text": "**Line:** 3\n**Bug Name:** SQL Injection Vulnerability\n**Proposed Minimal Fix:** Use parameterized queries instead of f-strings to safely pass variables into the SQL statement.\n\n**Explanation:**\nThe current implementation uses an f-string (`f\"SELECT * FROM posts WHERE user_id = {u.id}\"`) to embed the user ID directly into the SQL query string. This is highly vulnerable to SQL injection. If `u.id` were ever derived from untrusted input, an attacker could manipulate the query (e.g., by setting `u.id` to `'1 OR 1=1'`).\n\nThe database library (`db.query`) must be called using placeholders (`?` or `%s`, depending on the library) and passing the variable as a separate argument.\n\n**Corrected Code Snippet:**\n\n```python\ndef get_users_with_posts(users):\n    return [\n        {'user': u, 'posts': db.query(\"SELECT * FROM posts WHERE user_id = ?\", u.id)}\n        for u in users\n    ]\n```\n*(Note: I assume the database library uses `?` as the placeholder syntax. If it uses `%s`, the fix should reflect that.)*"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c6_ordered_check",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 303,
+      "input_tokens_ollama": 85,
+      "elapsed_sec": 24.26998019218445,
+      "text": "This function is brittle because it relies on the presence of keys and assumes the data types are correct. Using `assert` statements for validation is also poor practice, as they can be disabled in production environments.\n\nHere are the specific bugs and proposed fixes:\n\n### Line 2\n**Bug:** `KeyError` on missing key.\nIf the input dictionary `order` does not contain the key `'total'`, the function will crash with a `KeyError` instead of failing validation gracefully.\n\n**Minimal Fix:** Check for key existence before accessing the value.\n\n```python\n    assert 'total' in order and order['total'] > 0\n```\n\n### Line 3\n**Bug:** `KeyError` on missing key.\nIf the input dictionary `order` does not contain the key `'customer_id'`, the function will crash with a `KeyError`.\n\n**Minimal Fix:** Check for key existence before accessing the value.\n\n```python\n    assert 'customer_id' in order\n```\n\n### Line 4\n**Bug:** `KeyError` on missing key.\nIf the input dictionary `order` does not contain the key `'items'`, the function will crash with a `KeyError`.\n\n**Minimal Fix:** Check for key existence before accessing the value.\n\n```python\n    assert 'items' in order and order['items']\n```\n\n***\n\n### Recommended Refactoring (Best Practice)\n\nWhile the fixes above address the immediate `KeyError` bugs, using `assert` for validation is"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c7_concat_loop",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 104,
+      "input_tokens_ollama": 79,
+      "elapsed_sec": 24.016473531723022,
+      "text": "**Line 3:** `result += line + '\\n'`\n**Bug Name:** Inefficient String Concatenation (Quadratic Time Complexity)\n**Proposed Fix:** Use `str.join()` with a generator expression.\n\n### Explanation\n\nThe current implementation uses repeated string concatenation (`+=`) inside a loop. Since strings in Python are immutable, each time `result += ...` is executed, Python must allocate memory for an entirely new string object and copy the contents of the old `result` plus the new segment"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c8_mutable_default",
+      "output_tokens_ollama": 794,
+      "output_tokens_tiktoken": 188,
+      "input_tokens_ollama": 75,
+      "elapsed_sec": 18.827351808547974,
+      "text": "**Line 1:** `def add_event(event: str, log: list = []) -> list:`\n\n**Bug:** Mutable Default Argument (State Leakage)\n\n**Explanation:** Using a mutable object (like a list `[]`) as a default argument in Python is dangerous. The default list object is created only once when the function is defined. Every subsequent call to `add_event` that omits the `log` argument will modify the *same* list object, leading to unexpected state accumulation across calls.\n\n**Minimal Fix:** Change the default argument to `None` and initialize the list inside the function body.\n\n```python\ndef add_event(event: str, log: list | None = None) -> list:\n    if log is None:\n        log = []\n    log.append(event)\n    return log\n```\n\n*(Note: I updated the type hint for `log` to reflect that it can now be `None`.)*"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c9_late_binding",
+      "output_tokens_ollama": 958,
+      "output_tokens_tiktoken": 229,
+      "input_tokens_ollama": 108,
+      "elapsed_sec": 22.809717416763306,
+      "text": "This is a classic Python closure bug.\n\n**Line 5:** `callbacks.append(lambda: print(v))`\n**Bug Name:** Late Binding Closure Bug (or Loop Variable Capture Bug)\n**Description:** When you define a lambda (or a function) inside a loop and reference a variable from the loop's scope (`v`), the lambda does not capture the *value* of `v` at that moment. Instead, it captures a *reference* to the variable `v`. By the time the callbacks are executed, the loop has finished, and `v` holds the value of the last item processed (3). Therefore, every callback will print the final value of `v`.\n\n**Minimal Fix:** Use a default argument in the lambda definition. This forces the value of `v` to be evaluated and bound to the lambda's scope immediately upon creation.\n\n```python\ndef make_callbacks(values):\n    callbacks = []\n    for v in values:\n        # Use a default argument (e.g., x=v) to force immediate binding of v's value\n        callbacks.append(lambda x=v: print(x)) \n    return callbacks\n```"
+    },
+    {
+      "variant_idx": 1,
+      "item_id": "c10_clean_code",
+      "output_tokens_ollama": 848,
+      "output_tokens_tiktoken": 110,
+      "input_tokens_ollama": 84,
+      "elapsed_sec": 20.350531339645386,
+      "text": "**Bug Name:** Inefficient/Redundant Modulo Operations\n\n**Line:** 4\n\n**Description:** The modulo operation (`% 256`) is applied inside the loop on every iteration. While mathematically correct for keeping the running total within a byte, this is computationally inefficient. The sum of all bytes can be calculated first, and the modulo operation should only be applied once at the end.\n\n**Minimal Fix:**\n\n```python\ndef checksum(data: bytes) -> int:\n    return sum(data) % 256\n```"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_ollama": 954,
+      "output_tokens_tiktoken": 40,
+      "input_tokens_ollama": 90,
+      "elapsed_sec": 22.878122806549072,
+      "text": "Issue (line 2): The slicing index calculation `len(items) - n - 1` is incorrect for retrieving the last `n` elements.\nFix: `return items[-n:]`"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_ollama": 786,
+      "output_tokens_tiktoken": 105,
+      "input_tokens_ollama": 101,
+      "elapsed_sec": 18.81095266342163,
+      "text": "Issue (line 1): Using a mutable object (dictionary) as a default argument is dangerous because the same object instance is reused across all calls, leading to unexpected state persistence.\nFix: Change the default argument to `None` and initialize the dictionary inside the function body.\n\n```python\ndef greet(name, history=None):\n    if history is None:\n        history = {}\n    history[name] = history.get(name, 0) + 1\n    return f\"Hello {name}, visit #{history[name]}\"\n```"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t3_command_injection",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 213,
+      "input_tokens_ollama": 117,
+      "elapsed_sec": 24.303701877593994,
+      "text": "Issue (line 4): Shell Injection vulnerability due to using `shell=True` with unsanitized user input.\nFix: import os and replace the subprocess call with os.listdir(directory)\n\n***\n\n### Explanation of the Fix\n\n1.  **Security Vulnerability (Shell Injection):** The original code constructs a command string (`f\"ls {directory}\"`) and executes it using `shell=True`. If a malicious user provides input like `directory = \"../etc/passwd; rm -rf /\"`, the resulting command executed by the shell will be `ls ../etc/passwd; rm -rf /`, allowing the attacker to run arbitrary commands on the server.\n2.  **Pythonic Approach:** For simple file listing, using the built-in `os` module (`os.listdir`) is significantly safer, faster, and more Pythonic than shelling out to an external command like `ls`.\n3.  **Refactored Code (Recommended):**\n\n```python\nimport os\n# subprocess is no longer needed\ndef list_files(directory):\n    # os.listdir"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t4_forgotten_await",
+      "output_tokens_ollama": 816,
+      "output_tokens_tiktoken": 63,
+      "input_tokens_ollama": 101,
+      "elapsed_sec": 19.34176540374756,
+      "text": "Issue (line 2): The request call must be awaited, and the client should be managed using `async with` for proper resource cleanup.\nFix: ```python\nasync with httpx.AsyncClient() as client:\n    response = await client.get(f\"/users/{user_id}\")\n    return response.json()\n```"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_ollama": 705,
+      "output_tokens_tiktoken": 129,
+      "input_tokens_ollama": 96,
+      "elapsed_sec": 17.264598608016968,
+      "text": "Issue (line 2): Modifying a dictionary while iterating over it using `for key in d:` is unsafe and can lead to skipped elements or runtime errors.\nFix: Iterate over a copy of the keys (e.g., `list(d)`) to safely delete items.\n\n```python\ndef remove_negatives(d):\n    for key in list(d):\n        if d[key] < 0:\n            del d[key]\n    return d\n```\n\n*(Alternative, more Pythonic fix if in-place modification is not strictly required: `return {k: v for k, v in d.items() if v >= 0}`)*"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "t6_clean_code",
+      "output_tokens_ollama": 687,
+      "output_tokens_tiktoken": 33,
+      "input_tokens_ollama": 116,
+      "elapsed_sec": 16.882355451583862,
+      "text": "Issue (line 1): Missing docstring explaining function purpose, parameters, and return value.\nFix: Add a comprehensive docstring block immediately after the function definition."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c1_factorial",
+      "output_tokens_ollama": 520,
+      "output_tokens_tiktoken": 64,
+      "input_tokens_ollama": 89,
+      "elapsed_sec": 12.850767374038696,
+      "text": "Issue (line 4): The loop iterates from 0 to n-1, causing the result to be multiplied by 0 and returning 0 incorrectly.\nFix: Change `range(n)` to `range(1, n + 1)` to correctly multiply by all integers from 1 up to n."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c2_counter_race",
+      "output_tokens_ollama": 657,
+      "output_tokens_tiktoken": 132,
+      "input_tokens_ollama": 102,
+      "elapsed_sec": 16.001636028289795,
+      "text": "Issue (line 6): The `increment` method is not thread-safe because the operation `self.count += 1` is a read-modify-write cycle, which can lead to race conditions when accessed by multiple threads simultaneously.\nFix: Import `threading` and use a `Lock` to protect the critical section in `increment`.\n\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.count = 0\n        self.lock = threading.Lock() # Initialize the lock\n\n    def increment(self):\n        with self.lock: # Acquire the lock before modifying the shared resource\n            self.count += 1\n```"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c3_sql_injection",
+      "output_tokens_ollama": 574,
+      "output_tokens_tiktoken": 103,
+      "input_tokens_ollama": 90,
+      "elapsed_sec": 13.793454885482788,
+      "text": "Issue (line 1): SQL Injection vulnerability due to string concatenation of user input.\nFix: Use parameterized queries to safely pass user input to the database driver.\n\n```python\ncursor.execute(\"SELECT * FROM users WHERE name = %s\", (user_input,))\n```\n*(Note: The placeholder style `%s` is common, but check your specific database connector documentation for the correct placeholder (e.g., `?` for `sqlite3`, or `:name` for `pyodbc`).)*"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c4_file_leak",
+      "output_tokens_ollama": 557,
+      "output_tokens_tiktoken": 52,
+      "input_tokens_ollama": 88,
+      "elapsed_sec": 13.249218940734863,
+      "text": "Issue (line 2): The file handle `f` is opened manually and is not guaranteed to be closed if an exception occurs, leading to a resource leak.\nFix: Use a `with open(...)` context manager to ensure the file is automatically closed."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c5_n_plus_1",
+      "output_tokens_ollama": 677,
+      "output_tokens_tiktoken": 42,
+      "input_tokens_ollama": 121,
+      "elapsed_sec": 16.11733841896057,
+      "text": "Issue (line 3): Using f-strings to construct SQL queries is vulnerable to SQL injection.\nFix: Use parameterized queries instead of f-strings to safely pass the user ID to the database query."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c6_ordered_check",
+      "output_tokens_ollama": 903,
+      "output_tokens_tiktoken": 166,
+      "input_tokens_ollama": 101,
+      "elapsed_sec": 21.184306621551514,
+      "text": "Issue (line 2): Using `assert` for validation is unreliable as it can be disabled. Furthermore, accessing `order['total']` will raise a `KeyError` if the key is missing, which is not handled.\nFix: Check for key existence and raise a specific exception (e.g., `ValueError`) instead of using `assert`.\n\nIssue (line 3): While checking for key existence is good, using `assert` is still poor practice.\nFix: Replace `assert` with an explicit `if` check and raise a `ValueError` if the key is missing.\n\nIssue (line 4): Similar to line 2, accessing `order['items']` without checking for the key first can raise a `KeyError`.\nFix: Check for key existence before attempting to validate the value."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c7_concat_loop",
+      "output_tokens_ollama": 1004,
+      "output_tokens_tiktoken": 67,
+      "input_tokens_ollama": 95,
+      "elapsed_sec": 23.90346908569336,
+      "text": "Issue (line 3): Repeated string concatenation (`result += ...`) inside a loop is inefficient, leading to $O(N^2)$ time complexity due to the creation of new string objects in every iteration.\nFix: Use `\"\".join()` with a generator expression to build the string efficiently in $O(N)$ time."
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c8_mutable_default",
+      "output_tokens_ollama": 905,
+      "output_tokens_tiktoken": 96,
+      "input_tokens_ollama": 91,
+      "elapsed_sec": 21.59308409690857,
+      "text": "Issue (line 1): Using a mutable default argument (`log: list = []`) causes the same list object to be modified across multiple calls, leading to unexpected state leakage.\nFix: Change the signature default to `None` and initialize the list inside the function body.\n\n```python\ndef add_event(event: str, log: list | None = None) -> list:\n    if log is None:\n        log = []\n    log.append(event)\n    return log\n```"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c9_late_binding",
+      "output_tokens_ollama": 381,
+      "output_tokens_tiktoken": 47,
+      "input_tokens_ollama": 124,
+      "elapsed_sec": 9.167540550231934,
+      "text": "Issue (line 4): The lambda functions capture the loop variable `v` by reference, causing all callbacks to print the value of the last element in `values`.\nFix: callbacks.append(lambda current_v=v: print(current_v))"
+    },
+    {
+      "variant_idx": 2,
+      "item_id": "c10_clean_code",
+      "output_tokens_ollama": 608,
+      "output_tokens_tiktoken": 34,
+      "input_tokens_ollama": 100,
+      "elapsed_sec": 14.48261308670044,
+      "text": "Issue (line 3): The explicit loop structure is verbose and less Pythonic than using built-in functions for summation.\nFix: return sum(data) % 256"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_ollama": 465,
+      "output_tokens_tiktoken": 42,
+      "input_tokens_ollama": 142,
+      "elapsed_sec": 11.18276834487915,
+      "text": "Issue (line 2): The slice start index calculation `len(items) - n - 1` is off by one, causing the function to return the wrong elements.\nFix: return items[-n:]"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_ollama": 481,
+      "output_tokens_tiktoken": 66,
+      "input_tokens_ollama": 153,
+      "elapsed_sec": 11.564228773117065,
+      "text": "Issue (line 1): Using a mutable default argument (`history={}`) means the same dictionary object is reused across all calls, which can lead to unexpected state persistence and side effects.\nFix: `def greet(name, history=None):` and add `history = history or {}` at the start of the function body."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t3_command_injection",
+      "output_tokens_ollama": 423,
+      "output_tokens_tiktoken": 59,
+      "input_tokens_ollama": 169,
+      "elapsed_sec": 10.151639223098755,
+      "text": "Issue (line 4): Using `shell=True` with user-provided input (`directory`) creates a command injection vulnerability.\nFix: Change the call to `subprocess.run([\"ls\", directory], shell=False, ...)` to pass arguments as a list, preventing shell interpretation of the input."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t4_forgotten_await",
+      "output_tokens_ollama": 686,
+      "output_tokens_tiktoken": 84,
+      "input_tokens_ollama": 153,
+      "elapsed_sec": 16.134283781051636,
+      "text": "Issue (line 2): The call to `client.get()` returns a coroutine and must be awaited to execute the HTTP request.\nFix: `async with httpx.AsyncClient() as client: response = await client.get(f\"/users/{user_id}\")`\n\nIssue (line 3): Reading the JSON body (`response.json()`) is an asynchronous operation and must be awaited.\nFix: `return await response.json()`"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_ollama": 414,
+      "output_tokens_tiktoken": 58,
+      "input_tokens_ollama": 148,
+      "elapsed_sec": 9.816482305526733,
+      "text": "Issue (line 2): Modifying a dictionary while iterating over it using `for key in d:` is unsafe and can raise a `RuntimeError` or lead to unpredictable behavior.\nFix: Iterate over a copy of the keys, e.g., `for key in list(d):`."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "t6_clean_code",
+      "output_tokens_ollama": 1024,
+      "output_tokens_tiktoken": 0,
+      "input_tokens_ollama": 168,
+      "elapsed_sec": 23.97148847579956,
+      "text": ""
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c1_factorial",
+      "output_tokens_ollama": 558,
+      "output_tokens_tiktoken": 47,
+      "input_tokens_ollama": 141,
+      "elapsed_sec": 13.41665267944336,
+      "text": "Issue (line 3): The loop iterates from 0 to n-1, causing the result to be multiplied by 0 in the first iteration, incorrectly returning 0 for n > 0.\nFix: result *= i"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c2_counter_race",
+      "output_tokens_ollama": 410,
+      "output_tokens_tiktoken": 95,
+      "input_tokens_ollama": 154,
+      "elapsed_sec": 9.994530439376831,
+      "text": "Issue (line 1): The `increment` method is not thread-safe because the operation `self.count += 1` is a read-modify-write operation that can suffer from race conditions when accessed by multiple threads simultaneously.\nFix:\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.count = 0\n        self.lock = threading.Lock()\n\n    def increment(self):\n        with self.lock:\n            self.count += 1\n```"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c3_sql_injection",
+      "output_tokens_ollama": 232,
+      "output_tokens_tiktoken": 42,
+      "input_tokens_ollama": 142,
+      "elapsed_sec": 5.763417720794678,
+      "text": "Issue (line 1): The query is vulnerable to SQL injection because user input is concatenated directly into the SQL string.\nFix: cursor.execute(\"SELECT * FROM users WHERE name = ?\", (user_input,))"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c4_file_leak",
+      "output_tokens_ollama": 435,
+      "output_tokens_tiktoken": 76,
+      "input_tokens_ollama": 140,
+      "elapsed_sec": 10.527133226394653,
+      "text": "Issue (line 2): The file handle `f` is opened but never explicitly closed, leading to a resource leak.\nFix: Use a `with open(...)` context manager to ensure the file is automatically closed, even if errors occur.\n\n```python\ndef process_file(path):\n    with open(path) as f:\n        data = f.read()\n    return data\n```"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c5_n_plus_1",
+      "output_tokens_ollama": 470,
+      "output_tokens_tiktoken": 99,
+      "input_tokens_ollama": 173,
+      "elapsed_sec": 11.38816523551941,
+      "text": "Issue (line 3): Using an f-string to construct the SQL query (`f\"SELECT * FROM posts WHERE user_id = {u.id}\"`) is vulnerable to SQL injection.\nFix: Use parameterized queries provided by the database library instead of string formatting. Assuming `db.query` supports parameters, it should be `db.query(\"SELECT * FROM posts WHERE user_id = :user_id\", {\"user_id\": u.id})` (or similar syntax depending on the specific DB library)."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c6_ordered_check",
+      "output_tokens_ollama": 779,
+      "output_tokens_tiktoken": 174,
+      "input_tokens_ollama": 153,
+      "elapsed_sec": 18.547727823257446,
+      "text": "Issue (line 1): Using `assert` for input validation is incorrect because assertions can be disabled at runtime (e.g., using Python's `-O` flag), making the validation unreliable.\nFix: Replace `assert` statements with explicit `if` checks that raise appropriate exceptions (e.g., `ValueError`).\n\nIssue (line 2): Accessing `order['total']` assumes the key exists; if it's missing, a `KeyError` will occur before the assertion logic is evaluated.\nFix: Check for the existence of 'total' and ensure it is numeric before checking its value.\n\nIssue (line 3): Accessing `order['items']` assumes the key exists; if it's missing, a `KeyError` will occur.\nFix: Check for the existence of 'items' before checking if the list is truthy."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c7_concat_loop",
+      "output_tokens_ollama": 642,
+      "output_tokens_tiktoken": 58,
+      "input_tokens_ollama": 147,
+      "elapsed_sec": 15.301199913024902,
+      "text": "Issue (line 3): Repeated string concatenation (`result += ...`) is inefficient in Python because strings are immutable, leading to $O(N^2)$ time complexity.\nFix: Use ''.join() with a generator expression to build the string efficiently in $O(N)$ time."
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c8_mutable_default",
+      "output_tokens_ollama": 873,
+      "output_tokens_tiktoken": 57,
+      "input_tokens_ollama": 143,
+      "elapsed_sec": 20.516439199447632,
+      "text": "Issue (line 1): Using a mutable default argument (`log: list = []`) causes the same list object to be modified across multiple calls, leading to unexpected state persistence.\nFix: `def add_event(event: str, log: list | None = None) -> list:`"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c9_late_binding",
+      "output_tokens_ollama": 374,
+      "output_tokens_tiktoken": 45,
+      "input_tokens_ollama": 176,
+      "elapsed_sec": 9.017313241958618,
+      "text": "Issue (line 4): The lambda function captures the loop variable `v` by reference, causing all callbacks to print the value from the last iteration of the loop.\nFix: callbacks.append(lambda val=v: print(val))"
+    },
+    {
+      "variant_idx": 3,
+      "item_id": "c10_clean_code",
+      "output_tokens_ollama": 522,
+      "output_tokens_tiktoken": 35,
+      "input_tokens_ollama": 152,
+      "elapsed_sec": 12.375893354415894,
+      "text": "Issue (line 3): The manual loop calculation is verbose and less efficient than using built-in functions for summing bytes.\nFix: total = sum(data) % 256"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t1_off_by_one_slice",
+      "output_tokens_ollama": 625,
+      "output_tokens_tiktoken": 38,
+      "input_tokens_ollama": 142,
+      "elapsed_sec": 14.913716554641724,
+      "text": "Issue (line 2): The start index calculation `len(items) - n - 1` is incorrect for retrieving the last `n` elements.\nFix: return items[-n:]"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t2_mutable_default_dict",
+      "output_tokens_ollama": 393,
+      "output_tokens_tiktoken": 82,
+      "input_tokens_ollama": 153,
+      "elapsed_sec": 9.541442155838013,
+      "text": "Issue (line 1): Using a mutable default argument (`history={}`) causes state leakage across function calls, as the same dictionary object is reused and modified globally.\nFix: def greet(name, history=None):\n    if history is None:\n        history = {}\n    history[name] = history.get(name, 0) + 1\n    return f\"Hello {name}, visit #{history[name]}\""
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t3_command_injection",
+      "output_tokens_ollama": 479,
+      "output_tokens_tiktoken": 70,
+      "input_tokens_ollama": 169,
+      "elapsed_sec": 11.578251838684082,
+      "text": "Issue (line 4): Using `shell=True` with user-controlled input creates a command injection vulnerability.\nFix: Change `subprocess.run(f\"ls {directory}\", shell=True, ...)` to `subprocess.run([\"ls\", directory], shell=False, ...)` (or simply remove `shell=True` and pass the command as a list)."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t4_forgotten_await",
+      "output_tokens_ollama": 664,
+      "output_tokens_tiktoken": 58,
+      "input_tokens_ollama": 153,
+      "elapsed_sec": 15.909943580627441,
+      "text": "Issue (line 3): The HTTP request is not awaited, and the client is not managed using an asynchronous context manager.\nFix: async with httpx.AsyncClient() as client:\n    async with client.get(f\"/users/{user_id}\") as response:\n        return await response.json()"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t5_dict_iter_mutation",
+      "output_tokens_ollama": 659,
+      "output_tokens_tiktoken": 43,
+      "input_tokens_ollama": 148,
+      "elapsed_sec": 15.76068663597107,
+      "text": "Issue (line 2): Modifying a dictionary while iterating over it using `for key in d:` is unsafe and can lead to runtime errors or skipped elements.\nFix: `for key in list(d):`"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "t6_clean_code",
+      "output_tokens_ollama": 406,
+      "output_tokens_tiktoken": 3,
+      "input_tokens_ollama": 168,
+      "elapsed_sec": 9.790127277374268,
+      "text": "NO_ISSUE"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c1_factorial",
+      "output_tokens_ollama": 785,
+      "output_tokens_tiktoken": 62,
+      "input_tokens_ollama": 141,
+      "elapsed_sec": 18.46555495262146,
+      "text": "Issue (line 4): The loop iterates from 0 up to n-1, causing the result to be multiplied by 0 in the first iteration (for n >= 1), leading to an incorrect result of 0.\nFix: for i in range(1, n + 1):"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c2_counter_race",
+      "output_tokens_ollama": 384,
+      "output_tokens_tiktoken": 83,
+      "input_tokens_ollama": 154,
+      "elapsed_sec": 9.115546464920044,
+      "text": "Issue (line 1): The `increment` method is not thread-safe because the read-modify-write operation on `self.count` is susceptible to race conditions.\nFix:\n```python\nimport threading\n\nclass Counter:\n    def __init__(self):\n        self.count = 0\n        self.lock = threading.Lock()\n\n    def increment(self):\n        with self.lock:\n            self.count += 1\n```"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c3_sql_injection",
+      "output_tokens_ollama": 285,
+      "output_tokens_tiktoken": 36,
+      "input_tokens_ollama": 142,
+      "elapsed_sec": 6.924911022186279,
+      "text": "Issue (line 1): SQL Injection vulnerability due to string concatenation of user input.\nFix: cursor.execute(\"SELECT * FROM users WHERE name = ?\", (user_input,))"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c4_file_leak",
+      "output_tokens_ollama": 298,
+      "output_tokens_tiktoken": 48,
+      "input_tokens_ollama": 140,
+      "elapsed_sec": 7.2067530155181885,
+      "text": "Issue (line 2): File handle 'f' is opened but not guaranteed to be closed if an exception occurs.\nFix: def process_file(path):\n    with open(path) as f:\n        data = f.read()\n        return data"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c5_n_plus_1",
+      "output_tokens_ollama": 968,
+      "output_tokens_tiktoken": 112,
+      "input_tokens_ollama": 173,
+      "elapsed_sec": 22.823294162750244,
+      "text": "Issue (line 3): Using f-strings to construct SQL queries is vulnerable to SQL Injection.\nFix: Use parameterized queries instead of string formatting. (e.g., `db.query(\"SELECT * FROM posts WHERE user_id = ?\", (u.id,))`)\n\n*Self-Correction/Note: While the primary fix is security, note that executing a separate database query for every user (N queries) is highly inefficient. For better performance, consider fetching all posts for all users in a single query using `WHERE user_id IN (...)`.*"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c6_ordered_check",
+      "output_tokens_ollama": 1004,
+      "output_tokens_tiktoken": 78,
+      "input_tokens_ollama": 153,
+      "elapsed_sec": 23.702776193618774,
+      "text": "Issue (line 2): Using `assert` for input validation is incorrect because assertions can be disabled in optimized Python runs (`python -O`), meaning the validation logic can be bypassed in production, leading to incorrect behavior.\nFix: Replace `assert` statements with explicit `if` checks that raise `ValueError` or `TypeError` to ensure validation runs regardless of optimization flags."
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c7_concat_loop",
+      "output_tokens_ollama": 556,
+      "output_tokens_tiktoken": 41,
+      "input_tokens_ollama": 147,
+      "elapsed_sec": 13.231112003326416,
+      "text": "Issue (line 3): Repeated string concatenation using `+=` inside a loop is inefficient (O(N^2)).\nFix: return \"\".join(line + '\\n' for line in lines)"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c8_mutable_default",
+      "output_tokens_ollama": 477,
+      "output_tokens_tiktoken": 82,
+      "input_tokens_ollama": 143,
+      "elapsed_sec": 11.400201082229614,
+      "text": "Issue (line 1): Using a mutable default argument (`log: list = []`) causes the list to retain state across function calls, leading to incorrect results if the function is called multiple times without explicitly passing a log list.\nFix: def add_event(event: str, log: list = None) -> list:\n    if log is None:\n        log = []\n    log.append(event)\n    return log"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c9_late_binding",
+      "output_tokens_ollama": 698,
+      "output_tokens_tiktoken": 56,
+      "input_tokens_ollama": 176,
+      "elapsed_sec": 16.48423933982849,
+      "text": "Issue (line 4): The lambda function captures the loop variable `v` by reference, meaning all callbacks will print the value of `v` from the last iteration instead of the intended value for each iteration.\nFix: callbacks.append(lambda v_val=v: print(v_val))"
+    },
+    {
+      "variant_idx": 4,
+      "item_id": "c10_clean_code",
+      "output_tokens_ollama": 264,
+      "output_tokens_tiktoken": 3,
+      "input_tokens_ollama": 152,
+      "elapsed_sec": 6.4465343952178955,
+      "text": "NO_ISSUE"
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+{
+  "task": "refactoring",
+  "config": {
+    "method": "opus_subagent_simulation",
+    "n_items": 8,
+    "n_variants": 5
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 132.125,
+      "sum": 1057,
+      "min": 14,
+      "max": 306
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 76.875,
+      "sum": 615,
+      "min": 36,
+      "max": 115
+    },
+    {
+      "variant": "V2_format",
+      "mean": 51.75,
+      "sum": 414,
+      "min": 27,
+      "max": 86
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 51.25,
+      "sum": 410,
+      "min": 25,
+      "max": 88
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 45.5,
+      "sum": 364,
+      "min": 3,
+      "max": 87
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf1_nested_if",
+      "tokens": 68,
+      "text": "```python\nif user is None or not user.is_active or not user.has_permission('read'):\n    return None\nreturn data\n```\n\nUsing guard clauses flattens the nested conditionals into a single early-return check. This reduces indentation, makes the failure conditions explicit, and keeps the happy path at the base level of the function."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf2_loop_to_comprehension",
+      "tokens": 14,
+      "text": "```python\nreturn [n * n for n in numbers]\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf3_string_concat_loop",
+      "tokens": 99,
+      "text": "The original code is O(n²) because each `+=` on a string creates a new string object, copying all previously accumulated characters. Use `str.join()` instead, which is O(n):\n\n```python\nreturn '\\n'.join(lines) + '\\n'\n```\n\nIf a trailing newline isn't required, simplify further: `return '\\n'.join(lines)`.\n\nThe `'\\n'.join(lines) + '\\n'` form is typically the most idiomatic and fastest."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf4_dict_setdefault",
+      "tokens": 91,
+      "text": "```python\nd.setdefault(key, []).append(value)\n```\n\nOr, if you're building this dict from scratch and want even cleaner semantics, use `collections.defaultdict`:\n\n```python\nfrom collections import defaultdict\nd = defaultdict(list)\nd[key].append(value)\n```\n\nUse `setdefault` when you can't change the dict's type. Use `defaultdict` when you control the dict's construction — faster and reads more naturally."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf5_multiple_returns",
+      "tokens": 306,
+      "text": "A few options, depending on what you value:\n\n**Option 1 — Table-driven (most maintainable):**\n```python\ndef grade(score):\n    thresholds = [(90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')]\n    for cutoff, letter in thresholds:\n        if score >= cutoff:\n            return letter\n    return 'F'\n```\n\n**Option 2 — Single return via `next()`:**\n```python\ndef grade(score):\n    thresholds = [(90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')]\n    return next((letter for cutoff, letter in thresholds if score >= cutoff), 'F')\n```\n\n**Option 3 — `bisect` (O(log n), useful for many bands):**\n```python\nfrom bisect import bisect_right\n\ndef grade(score):\n    cutoffs = [60, 70, 80, 90]\n    letters = ['F', 'D', 'C', 'B', 'A']\n    return letters[bisect_right(cutoffs, score)]\n```\n\nA note: the original five-return version is widely considered idiomatic Python and is arguably *clearer* than any of the above for a fixed, small set of bands. \"Single return\" is a stylistic preference, not a correctness or performance win. I'd recommend Option 1 if the thresholds may change, and otherwise leaving the original as-is."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf6_long_function_extract",
+      "tokens": 208,
+      "text": "```python\ndef validate_order(order):\n    assert 'customer_id' in order, 'missing customer_id'\n    assert order['total'] > 0, 'invalid total'\n    assert order['items'], 'empty items'\n\n\ndef process_order(order):\n    validate_order(order)\n    # ... 20 lines of business logic ...\n```\n\nTwo further suggestions:\n\n1. **Replace `assert` with explicit exceptions.** `assert` statements are stripped when Python is run with `-O` (optimizations enabled), which would silently disable all your validation in production.\n   ```python\n   def validate_order(order):\n       if 'customer_id' not in order:\n           raise ValueError('missing customer_id')\n       if order['total'] <= 0:\n           raise ValueError('invalid total')\n       if not order['items']:\n           raise ValueError('empty items')\n   ```\n\n2. **Consider a dedicated exception type** (e.g., `class InvalidOrderError(ValueError): ...`) so callers can catch validation failures distinctly from other errors."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf7_already_clean",
+      "tokens": 123,
+      "text": "This function is already clean — it has a clear signature, type annotations, an explicit precondition check with an informative error message, and a concise idiomatic implementation. There's nothing meaningful to refactor.\n\nA few minor, optional polish ideas:\n\n1. **Use a guard-style docstring** so the contract is discoverable.\n2. **Generalize the type** if you want to support `int` and other ordered numerics — use a `TypeVar` bound to `SupportsRichComparison`, or just `numbers.Real`.\n\nMy recommendation: leave it as-is. Refactoring clean code adds risk without benefit."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf8_replace_lambda_with_def",
+      "tokens": 148,
+      "text": "Use `operator.attrgetter` — it's the idiomatic replacement for a lambda that just pulls attributes, and it's also faster (implemented in C):\n\n```python\nfrom operator import attrgetter\nvalidators = sorted(items, key=attrgetter('priority', 'created_at', 'id'))\n```\n\nIf the sort key needs any logic beyond attribute access (e.g., reversing one field, applying a transform), promote the lambda to a named function instead:\n\n```python\ndef _sort_key(x):\n    return (x.priority, x.created_at, x.id)\nvalidators = sorted(items, key=_sort_key)\n```\n\nFor this exact case — a tuple of plain attribute lookups — `attrgetter` is the better refactor."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf1_nested_if",
+      "tokens": 80,
+      "text": "```python\nif user is None or not user.is_active or not user.has_permission('read'):\n    return None\nreturn data\n```\n\nCombined the three nested checks into a single guard clause using `or`, returning `None` early. Behavior is preserved (short-circuit evaluation handles the `None` case before attribute access), and the happy path is no longer indented three levels deep."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf2_loop_to_comprehension",
+      "tokens": 36,
+      "text": "```python\nreturn [n * n for n in numbers]\n```\n\nReplaced the explicit accumulator loop with a list comprehension. Same output, but more concise and slightly faster."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf3_string_concat_loop",
+      "tokens": 64,
+      "text": "```python\nreturn '\\n'.join(lines) + '\\n'\n```\n\nReplaced the `+=` loop (O(n^2)) with `str.join` which preallocates the result in O(n). The trailing `+ '\\n'` preserves the original behavior of appending a newline after every line."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf4_dict_setdefault",
+      "tokens": 52,
+      "text": "```python\nd.setdefault(key, []).append(value)\n```\n\nReplaced the explicit membership check with `dict.setdefault`, which returns the existing list or inserts a new empty list in one call. Identical behavior, one line, avoids the double key lookup."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf5_multiple_returns",
+      "tokens": 93,
+      "text": "```python\ndef grade(score):\n    for threshold, letter in ((90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')):\n        if score >= threshold:\n            return letter\n    return 'F'\n```\n\nReplaced the chain of early returns with a single loop over a (threshold, letter) table. Behavior preserved, and adding/adjusting a grade band is now a one-line data change."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf6_long_function_extract",
+      "tokens": 115,
+      "text": "```python\ndef _validate_order(order):\n    assert 'customer_id' in order, 'missing customer_id'\n    assert order['total'] > 0, 'invalid total'\n    assert order['items'], 'empty items'\n\ndef process_order(order):\n    _validate_order(order)\n    # ... 20 lines of business logic ...\n```\n\nExtracted the three precondition asserts into a private `_validate_order` helper. `process_order` now reads as \"validate, then do the work,\" and the validation rules can be unit-tested or reused independently. Behavior unchanged."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf7_already_clean",
+      "tokens": 81,
+      "text": "This function is already clean: clear signature with type hints, validates its precondition with an informative error, and the one-line body is a well-known idiomatic clamp. I would leave it as is — any further \"refactor\" would add lines or reduce clarity without changing behavior.\n\nIf a change is required, the only minor tweak I would consider is making the bound inclusivity explicit in the docstring."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf8_replace_lambda_with_def",
+      "tokens": 94,
+      "text": "```python\nfrom operator import attrgetter\nvalidators = sorted(items, key=attrgetter('priority', 'created_at', 'id'))\n```\n\nReplaced the lambda with `operator.attrgetter`, which directly returns the same `(priority, created_at, id)` tuple. Touch faster (implemented in C, no Python-level call per element) and reads as \"sort by these three attributes\" without lambda boilerplate. Behavior — including tie-breaking and stability — identical."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf1_nested_if",
+      "tokens": 42,
+      "text": "```python\nif user is None or not user.is_active or not user.has_permission('read'):\n    return None\nreturn data\n```\nWhat changed: Inverted conditions with early return to flatten nesting."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf2_loop_to_comprehension",
+      "tokens": 27,
+      "text": "```python\nreturn [n * n for n in numbers]\n```\nWhat changed: Replaced explicit loop with a list comprehension."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf3_string_concat_loop",
+      "tokens": 38,
+      "text": "```python\nreturn '\\n'.join(lines) + '\\n'\n```\nWhat changed: Replaced O(n^2) string concatenation with str.join for O(n) performance."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf4_dict_setdefault",
+      "tokens": 29,
+      "text": "```python\nd.setdefault(key, []).append(value)\n```\nWhat changed: Collapsed conditional insert/append into a single setdefault call."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf5_multiple_returns",
+      "tokens": 68,
+      "text": "```python\ndef grade(score):\n    for threshold, letter in ((90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')):\n        if score >= threshold:\n            return letter\n    return 'F'\n```\nWhat changed: Replaced repeated returns with a data-driven threshold table."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf6_long_function_extract",
+      "tokens": 86,
+      "text": "```python\ndef _validate_order(order):\n    assert 'customer_id' in order, 'missing customer_id'\n    assert order['total'] > 0, 'invalid total'\n    assert order['items'], 'empty items'\n\n\ndef process_order(order):\n    _validate_order(order)\n    # ... 20 lines of business logic ...\n```\nWhat changed: Extracted the assertion block into a dedicated _validate_order helper."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf7_already_clean",
+      "tokens": 74,
+      "text": "```python\ndef clamp(value: float, lo: float, hi: float) -> float:\n    if lo > hi:\n        raise ValueError(f'lo ({lo}) must not exceed hi ({hi})')\n    return max(lo, min(value, hi))\n```\nWhat changed: No changes — the function is already clean, correctly typed, and idiomatic."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf8_replace_lambda_with_def",
+      "tokens": 50,
+      "text": "```python\ndef _sort_key(x):\n    return (x.priority, x.created_at, x.id)\n\nvalidators = sorted(items, key=_sort_key)\n```\nWhat changed: Promoted the lambda to a named function for readability and reuse."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf1_nested_if",
+      "tokens": 43,
+      "text": "```python\nif user is None or not user.is_active or not user.has_permission('read'):\n    return None\nreturn data\n```\nWhat changed: Inverted guard clauses to flatten nesting; behavior preserved."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf2_loop_to_comprehension",
+      "tokens": 28,
+      "text": "```python\nreturn [n * n for n in numbers]\n```\nWhat changed: Replaced explicit append loop with a list comprehension."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf3_string_concat_loop",
+      "tokens": 38,
+      "text": "```python\nreturn '\\n'.join(lines) + '\\n'\n```\nWhat changed: Replaced O(n^2) string concatenation with str.join, preserving the trailing newline."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf4_dict_setdefault",
+      "tokens": 25,
+      "text": "```python\nd.setdefault(key, []).append(value)\n```\nWhat changed: Replaced if/else with dict.setdefault."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf5_multiple_returns",
+      "tokens": 67,
+      "text": "```python\ndef grade(score):\n    for threshold, letter in ((90, 'A'), (80, 'B'), (70, 'C'), (60, 'D')):\n        if score >= threshold:\n            return letter\n    return 'F'\n```\nWhat changed: Collapsed repeated returns into a threshold table iteration."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf6_long_function_extract",
+      "tokens": 88,
+      "text": "```python\ndef _validate_order(order):\n    assert 'customer_id' in order, 'missing customer_id'\n    assert order['total'] > 0, 'invalid total'\n    assert order['items'], 'empty items'\n\ndef process_order(order):\n    _validate_order(order)\n    # ... 20 lines of business logic ...\n```\nWhat changed: Extracted the three assertion checks into a private `_validate_order` helper."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf7_already_clean",
+      "tokens": 72,
+      "text": "```python\ndef clamp(value: float, lo: float, hi: float) -> float:\n    if lo > hi:\n        raise ValueError(f'lo ({lo}) must not exceed hi ({hi})')\n    return max(lo, min(value, hi))\n```\nWhat changed: Nothing — function is already clean and idiomatic; no refactor warranted."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf8_replace_lambda_with_def",
+      "tokens": 49,
+      "text": "```python\ndef _sort_key(x):\n    return (x.priority, x.created_at, x.id)\n\nvalidators = sorted(items, key=_sort_key)\n```\nWhat changed: Promoted the key lambda to a named function for readability."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf1_nested_if",
+      "tokens": 43,
+      "text": "```python\nif user is None or not user.is_active or not user.has_permission('read'):\n    return None\nreturn data\n```\nWhat changed: Inverted conditions and used early return to flatten nesting."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf2_loop_to_comprehension",
+      "tokens": 26,
+      "text": "```python\nreturn [n * n for n in numbers]\n```\nWhat changed: Replaced explicit loop with list comprehension."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf3_string_concat_loop",
+      "tokens": 36,
+      "text": "```python\nreturn '\\n'.join(lines) + '\\n'\n```\nWhat changed: Replaced O(n^2) string concatenation with O(n) str.join."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf4_dict_setdefault",
+      "tokens": 32,
+      "text": "```python\nd.setdefault(key, []).append(value)\n```\nWhat changed: Replaced if/else with dict.setdefault for the append-to-list idiom."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf5_multiple_returns",
+      "tokens": 84,
+      "text": "```python\ndef grade(score):\n    thresholds = (\n        (90, 'A'),\n        (80, 'B'),\n        (70, 'C'),\n        (60, 'D'),\n    )\n    for cutoff, letter in thresholds:\n        if score >= cutoff:\n            return letter\n    return 'F'\n```\nWhat changed: Replaced the chain of if-returns with a data-driven lookup table."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf6_long_function_extract",
+      "tokens": 87,
+      "text": "```python\ndef _validate_order(order):\n    assert 'customer_id' in order, 'missing customer_id'\n    assert order['total'] > 0, 'invalid total'\n    assert order['items'], 'empty items'\n\n\ndef process_order(order):\n    _validate_order(order)\n    # ... 20 lines of business logic ...\n```\nWhat changed: Extracted the assertion block into a dedicated `_validate_order` helper."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf7_already_clean",
+      "tokens": 3,
+      "text": "ALREADY_CLEAN"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf8_replace_lambda_with_def",
+      "tokens": 53,
+      "text": "```python\ndef _sort_key(x):\n    return (x.priority, x.created_at, x.id)\n\n\nvalidators = sorted(items, key=_sort_key)\n```\nWhat changed: Replaced multi-field lambda with a named `_sort_key` function for readability."
+    }
+  ]
+}

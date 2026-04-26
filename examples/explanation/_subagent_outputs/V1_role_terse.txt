@@ -1,0 +1,158 @@
+ex1_what_is_async_BEGIN
+`async def` defines a coroutine function — calling it doesn't run the body, it returns a coroutine object that must be awaited (or scheduled on an event loop). Inside, you can use `await` to suspend execution while waiting on I/O, letting the event loop run other tasks concurrently on a single thread.
+
+```python
+import asyncio
+
+async def fetch(n):
+    await asyncio.sleep(1)
+    return n * 2
+
+async def main():
+    results = await asyncio.gather(fetch(1), fetch(2))
+    print(results)  # [2, 4]
+
+asyncio.run(main())
+```
+
+Note: `fetch(1)` alone does nothing useful — you must `await` it or pass it to the loop.
+ex1_what_is_async_END
+
+ex2_difference_is_vs_eq_BEGIN
+`==` checks **value equality** (calls `__eq__`). `is` checks **identity** — whether two names point to the exact same object.
+
+Use `==` for comparing values; use `is` only for singletons like `None`, `True`, `False`.
+
+```python
+a = [1, 2, 3]
+b = [1, 2, 3]
+c = a
+
+a == b   # True  — same contents
+a is b   # False — different list objects
+a is c   # True  — same object
+
+x = None
+x is None    # Correct idiom
+x == None    # Works but discouraged
+```
+
+Gotcha: small ints (-5..256) and interned strings are cached, so `is` may *accidentally* return `True` — never rely on it for value comparison.
+ex2_difference_is_vs_eq_END
+
+ex3_what_is_gil_BEGIN
+The **Global Interpreter Lock** is a mutex in CPython that allows only one thread to execute Python bytecode at a time. It exists because CPython's memory management isn't thread-safe.
+
+**When it matters:**
+- **CPU-bound** Python code: threads don't give you parallelism. Use `multiprocessing` or native extensions.
+- **I/O-bound** code: GIL is released during I/O syscalls, so threads work fine.
+
+```python
+import threading, time
+
+def cpu_burn():
+    x = 0
+    for _ in range(10_000_000):
+        x += 1
+
+t0 = time.time()
+ts = [threading.Thread(target=cpu_burn) for _ in range(2)]
+[t.start() for t in ts]; [t.join() for t in ts]
+print(f"threads: {time.time()-t0:.2f}s")
+# multiprocessing.Process instead → true parallelism
+```
+
+PEP 703 (free-threaded CPython, 3.13+ experimental) is gradually removing the GIL.
+ex3_what_is_gil_END
+
+ex4_explain_for_loop_BEGIN
+A `for` loop iterates over the items of any **iterable** (list, tuple, string, dict, generator, file, range), binding each item to a variable and running the body once per item. Python's `for` is a *foreach* — it calls `iter()` on the iterable and repeatedly calls `next()` until `StopIteration`.
+
+```python
+for word in ["apple", "banana", "cherry"]:
+    print(len(word), word)
+
+for i, word in enumerate(["apple", "banana"], start=1):
+    print(i, word)
+```
+
+Use `range(n)` if you really need a counter: `for i in range(10): ...`.
+ex4_explain_for_loop_END
+
+ex5_explain_closure_BEGIN
+A **closure** is an inner function that "remembers" variables from its enclosing scope, even after that outer scope has finished executing. The inner function captures references (not copies) to those names.
+
+```python
+def make_counter(start=0):
+    count = start
+    def increment():
+        nonlocal count
+        count += 1
+        return count
+    return increment
+
+c1 = make_counter()
+c1(); c1(); c1()   # 1, 2, 3 — `count` lives on inside c1
+
+c2 = make_counter(100)
+c2()               # 101 — c2 has its own independent `count`
+```
+
+Closures give you lightweight stateful functions without writing a class. Common uses: decorators, callbacks, partial application, factory functions.
+ex5_explain_closure_END
+
+ex6_explain_dunder_init_vs_new_BEGIN
+`__new__` **creates** the instance (returns a new object); `__init__` **initializes** it (sets attributes on the already-created object, returns `None`). Python calls `__new__` first, then `__init__` on its result.
+
+You almost never override `__new__` — only when subclassing **immutable** types (`int`, `str`, `tuple`, `frozenset`), implementing singletons, or controlling instance creation itself.
+
+```python
+class Distance(float):              # immutable base — must use __new__
+    def __new__(cls, value, unit):
+        instance = super().__new__(cls, value)
+        return instance
+    def __init__(self, value, unit):
+        self.unit = unit
+
+d = Distance(3.2, "km")
+print(d, d.unit, d * 2)   # 3.2 km 6.4
+```
+
+For ordinary mutable classes, just use `__init__`.
+ex6_explain_dunder_init_vs_new_END
+
+ex7_explain_slots_BEGIN
+`__slots__` declares a fixed set of attribute names for a class. Instances then store attributes in a compact array-like structure instead of a per-instance `__dict__`. Two wins: **less memory** (often 40-50% smaller instances) and **faster attribute access**. Trade-offs: can't add unlisted attributes, no weak references by default.
+
+```python
+class Point:
+    __slots__ = ("x", "y")
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+p = Point(1, 2)
+p.x = 10           # OK
+p.z = 3            # AttributeError: 'Point' object has no attribute 'z'
+
+# Memory: 1M Point instances ≈ ~56 MB with __slots__ vs ~152 MB without
+```
+
+Use it when you create many instances of the same small class.
+ex7_explain_slots_END
+
+ex8_explain_yield_BEGIN
+`yield` turns a function into a **generator**. Each `yield` produces a value to the caller and pauses the function's state; the next `next()` call resumes right after the `yield`. This gives you lazy, memory-efficient iteration.
+
+```python
+def fibonacci(limit):
+    a, b = 0, 1
+    while a < limit:
+        yield a
+        a, b = b, a + b
+
+for n in fibonacci(50):
+    print(n, end=" ")        # 0 1 1 2 3 5 8 13 21 34
+```
+
+Even a billion-element fibonacci stream uses constant memory — only one number is alive at a time.
+ex8_explain_yield_END

@@ -1,0 +1,90 @@
+db1_zero_division_BEGIN
+The bug: `average([])` is called with an empty list. `len(xs)` returns `0`, and `sum([]) / 0` raises `ZeroDivisionError`.
+
+Fix: Handle the empty-list case explicitly.
+
+```python
+def average(xs):
+    if not xs:
+        raise ValueError("average() arg is an empty sequence")
+    return sum(xs) / len(xs)
+```
+
+Pick the empty-input behavior that fits your domain (raise, return `None`, `0`, or `nan`).
+db1_zero_division_END
+
+db2_keyerror_BEGIN
+The bug: the parsed JSON object has no `'email'` key. Either the payload is missing the field, the field is named differently, or it's nested.
+
+Fix:
+```python
+email = user_data.get('email')
+if email is None:
+    raise ValueError("payload missing 'email'")
+return email.lower()
+```
+db2_keyerror_END
+
+db3_typerror_concat_BEGIN
+The bug: `age` is `int`, can't be concatenated with `+` to a `str`. Convert `age`.
+
+Fix (idiomatic):
+```python
+def greet(name, age):
+    return f'Hello {name}, you are {age}'
+```
+db3_typerror_concat_END
+
+db4_late_binding_loop_BEGIN
+The bug: Python closures capture variables by reference. Each lambda closes over the same `i`; after the loop `i == 3`, so all return `3`.
+
+Fix: bind `i` at definition time via default argument.
+```python
+fns = []
+for i in range(1, 4):
+    fns.append(lambda i=i: i)
+```
+db4_late_binding_loop_END
+
+db5_off_by_one_range_BEGIN
+The bug: `range(start, stop)` is half-open — excludes `stop`. So `range(1, 10)` yields 1..9.
+
+Fix: `range(1, 11)`.
+db5_off_by_one_range_END
+
+db6_mutating_during_iter_BEGIN
+The bug: can't add or remove keys from a dict while iterating — raises RuntimeError.
+
+Fix: iterate over a snapshot of the keys.
+```python
+for k in list(d):
+    if d[k] is None:
+        del d[k]
+```
+Or rebuild: `d = {k: v for k, v in d.items() if v is not None}`.
+db6_mutating_during_iter_END
+
+db7_async_no_await_BEGIN
+The bug: `httpx.AsyncClient().get(...)` is a coroutine, not a Response. Never awaited, so `result` is a coroutine object — no `.json()`, hence AttributeError.
+
+Two fixes needed: `await` the call, and use `AsyncClient` as a context manager.
+```python
+async with httpx.AsyncClient() as client:
+    response = await client.get('/api/x')
+    return response.json()
+```
+For sync, use `httpx.Client` or `httpx.get`.
+db7_async_no_await_END
+
+db8_ambiguous_no_repro_BEGIN
+"Slow sometimes" without repro is not debuggable as-is. Need data:
+1. What "slow" means (latency p50/p95/p99, throughput?)
+2. When it happens (load? time of day? specific input?)
+3. Reproducer (smallest input/sequence that triggers it)
+4. Profile (cProfile / py-spy) for slow vs fast runs
+5. Environment (runtime, hardware, neighbors)
+
+Common culprits: GC pauses, GIL contention, N+1 queries, cold caches, I/O variance, swap, quadratic algorithms, hot-path logging.
+
+Send a profile from one slow run vs one fast run.
+db8_ambiguous_no_repro_END

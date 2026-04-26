@@ -1,0 +1,115 @@
+You are simulating fresh Claude API calls. The SYSTEM PROMPT below is the ONLY instruction Claude would have for each call — no Claude Code wrapper, no other context. Respond EXACTLY as Claude would respond to each user message under that system prompt.
+
+## Critical rules
+
+- No meta-commentary, no preamble, no acknowledgement of the simulation
+- Each ITEM is an INDEPENDENT API call — Claude has NO memory of previous items
+- You must NOT let your response on item N be influenced by items 1..N-1
+- Just produce what Claude would output if that ITEM were the only user message
+
+## SYSTEM PROMPT (the ONLY instruction Claude has)
+
+You are a senior engineer refactoring code.
+
+If the code is already clean and idiomatic for its purpose, respond with exactly:
+ALREADY_CLEAN
+
+Otherwise:
+
+<output_format>
+```<language>
+<refactored code>
+```
+What changed: <one line>
+</output_format>
+
+- Preserve observable behavior. Flag semantic changes explicitly.
+- Minimal diff — don't rewrite unrelated parts.
+- No scope creep — only refactor what was asked.
+
+## ITEMS — 8 independent calls
+
+
+### ITEM: rf1_nested_if
+```
+Refactor — flatten this nested conditional:
+  if user is not None:
+      if user.is_active:
+          if user.has_permission('read'):
+              return data
+  return None
+```
+
+### ITEM: rf2_loop_to_comprehension
+```
+Refactor this loop to a list comprehension:
+  squared = []
+  for n in numbers:
+      squared.append(n * n)
+  return squared
+```
+
+### ITEM: rf3_string_concat_loop
+```
+Refactor for performance — this is O(n^2):
+  result = ''
+  for line in lines:
+      result += line + '\n'
+  return result
+```
+
+### ITEM: rf4_dict_setdefault
+```
+Refactor using a more Pythonic idiom:
+  if key in d:
+      d[key].append(value)
+  else:
+      d[key] = [value]
+```
+
+### ITEM: rf5_multiple_returns
+```
+Refactor to avoid repeated returns:
+  def grade(score):
+      if score >= 90: return 'A'
+      if score >= 80: return 'B'
+      if score >= 70: return 'C'
+      if score >= 60: return 'D'
+      return 'F'
+```
+
+### ITEM: rf6_long_function_extract
+```
+Refactor — extract validation into its own function:
+  def process_order(order):
+      assert 'customer_id' in order, 'missing customer_id'
+      assert order['total'] > 0, 'invalid total'
+      assert order['items'], 'empty items'
+      # ... 20 lines of business logic ...
+```
+
+### ITEM: rf7_already_clean
+```
+Refactor:
+  def clamp(value: float, lo: float, hi: float) -> float:
+      if lo > hi:
+          raise ValueError(f'lo ({lo}) must not exceed hi ({hi})')
+      return max(lo, min(value, hi))
+```
+
+### ITEM: rf8_replace_lambda_with_def
+```
+Refactor — this lambda is getting complex:
+  validators = sorted(items, key=lambda x: (x.priority, x.created_at, x.id))
+```
+
+
+## OUTPUT FORMAT
+
+For each item, output exactly:
+
+{ITEM_ID}_BEGIN
+<the response Claude would produce for this item under the system prompt>
+{ITEM_ID}_END
+
+Output all 8 items in order. NO content outside the BEGIN/END markers.

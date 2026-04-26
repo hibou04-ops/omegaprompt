@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "type_accuracy",
+      "description": "Does the commit type (feat/fix/refactor/perf/test/docs/chore/style) correctly classify the change? High = correct type. Low = wrong type (e.g., 'chore' for a feature, 'feat' for a bug fix).",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "subject_clarity",
+      "description": "Is the subject line clear, imperative, and ≤70 chars? High = a reader instantly knows what changed. Low = vague ('update code', 'misc'), wrong mood ('updated' instead of 'update'), too long.",
+      "weight": 0.4,
+      "scale": [1, 5]
+    },
+    {
+      "name": "body_appropriateness",
+      "description": "If a body is present, does it explain WHY (motivation, context) rather than just restating WHAT? Is body omitted when the change is trivial? High = body adds context the diff doesn't show, or is correctly omitted. Low = body restates the diff verbatim, or is missing for non-obvious changes.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must produce a commit message. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "imperative_mood",
+      "description": "The subject must use imperative mood ('add', 'fix', 'remove' — not 'added', 'adds', 'adding'). Past tense or gerund fails.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "breaking_change_flagged",
+      "description": "If the diff introduces a breaking change (e.g., changes a function signature in a public API), the message MUST include a BREAKING CHANGE marker (in body or footer per conventional commits). Silent breaking change without flag fails.",
+      "evaluator": "judge"
+    }
+  ]
+}

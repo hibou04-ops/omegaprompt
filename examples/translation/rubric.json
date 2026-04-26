@@ -1,0 +1,39 @@
+{
+  "dimensions": [
+    {
+      "name": "accuracy",
+      "description": "Does the translation preserve the meaning of the source? High = same meaning conveyed, no distortion. Low = wrong meaning, missed nuance, mistranslated terms.",
+      "weight": 0.5,
+      "scale": [1, 5]
+    },
+    {
+      "name": "naturalness",
+      "description": "Does the translation read as natural target-language text? High = a native speaker would write it this way. Low = literal word-for-word translation that sounds awkward, wrong word order, unnatural register.",
+      "weight": 0.3,
+      "scale": [1, 5]
+    },
+    {
+      "name": "preservation_discipline",
+      "description": "Does the translation preserve elements that should stay verbatim (proper nouns, code, identifiers, numbers)? High = code blocks intact, names unchanged. Low = translates `function_name` into target language, changes 'GitHub' to a translation.",
+      "weight": 0.2,
+      "scale": [1, 5]
+    }
+  ],
+  "hard_gates": [
+    {
+      "name": "no_refusal",
+      "description": "The model must attempt the translation or explicitly say NO_TRANSLATION_NEEDED. Empty or off-topic responses fail.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "code_preservation",
+      "description": "Code blocks, code identifiers, file paths, and shell commands must appear verbatim. Translating them fails this gate.",
+      "evaluator": "judge"
+    },
+    {
+      "name": "no_added_commentary",
+      "description": "The output must contain only the translation (or NO_TRANSLATION_NEEDED), not commentary like 'Here is the translation:' or notes about ambiguity outside the inline `(original)` convention.",
+      "evaluator": "judge"
+    }
+  ]
+}

@@ -1,0 +1,286 @@
+{
+  "task": "test_writing",
+  "config": {
+    "method": "opus_subagent",
+    "n_items": 8
+  },
+  "summary": [
+    {
+      "variant": "V0_baseline",
+      "mean": 265.5,
+      "sum": 2124,
+      "min": 134,
+      "max": 511
+    },
+    {
+      "variant": "V1_role_terse",
+      "mean": 194.875,
+      "sum": 1559,
+      "min": 58,
+      "max": 308
+    },
+    {
+      "variant": "V2_format",
+      "mean": 225.625,
+      "sum": 1805,
+      "min": 108,
+      "max": 339
+    },
+    {
+      "variant": "V3prime_rules",
+      "mean": 151.75,
+      "sum": 1214,
+      "min": 59,
+      "max": 224
+    },
+    {
+      "variant": "V4_guard",
+      "mean": 168.25,
+      "sum": 1346,
+      "min": 68,
+      "max": 243
+    }
+  ],
+  "raw": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw1_factorial",
+      "tokens": 243,
+      "text": "```python\nimport pytest\nfrom mymodule import factorial\n\n\ndef test_factorial_zero():\n    assert factorial(0) == 1\n\n\ndef test_factorial_one():\n    assert factorial(1) == 1\n\n\ndef test_factorial_small_positive():\n    assert factorial(2) == 2\n    assert factorial(3) == 6\n    assert factorial(4) == 24\n    assert factorial(5) == 120\n\n\ndef test_factorial_larger():\n    assert factorial(10) == 3628800\n\n\ndef test_factorial_negative_raises():\n    with pytest.raises(ValueError, match=\"n must be non-negative\"):\n        factorial(-1)\n\n\ndef test_factorial_large_negative_raises():\n    with pytest.raises(ValueError, match=\"n must be non-negative\"):\n        factorial(-100)\n\n\n@pytest.mark.parametrize(\"n,expected\", [\n    (0, 1), (1, 1), (2, 2), (3, 6), (4, 24), (5, 120), (6, 720), (7, 5040),\n])\ndef test_factorial_parametrized(n, expected):\n    assert factorial(n) == expected\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw2_clamp",
+      "tokens": 511,
+      "text": "```python\nimport pytest\nfrom mymodule import clamp\n\n\ndef test_clamp_value_within_range():\n    assert clamp(5, 0, 10) == 5\n\n\ndef test_clamp_value_below_lo():\n    assert clamp(-5, 0, 10) == 0\n\n\ndef test_clamp_value_above_hi():\n    assert clamp(15, 0, 10) == 10\n\n\ndef test_clamp_value_equals_lo():\n    assert clamp(0, 0, 10) == 0\n\n\ndef test_clamp_value_equals_hi():\n    assert clamp(10, 0, 10) == 10\n\n\ndef test_clamp_lo_equals_hi():\n    assert clamp(5, 7, 7) == 7\n    assert clamp(10, 7, 7) == 7\n    assert clamp(0, 7, 7) == 7\n\n\ndef test_clamp_lo_greater_than_hi_raises():\n    with pytest.raises(ValueError, match=\"lo must not exceed hi\"):\n        clamp(5, 10, 0)\n\n\ndef test_clamp_negative_range():\n    assert clamp(-5, -10, -1) == -5\n    assert clamp(-15, -10, -1) == -10\n    assert clamp(0, -10, -1) == -1\n\n\ndef test_clamp_floats():\n    assert clamp(1.5, 0.0, 2.0) == 1.5\n    assert clamp(-0.5, 0.0, 2.0) == 0.0\n    assert clamp(2.5, 0.0, 2.0) == 2.0\n\n\ndef test_clamp_with_infinity():\n    assert clamp(float('inf'), 0, 10) == 10\n    assert clamp(float('-inf'), 0, 10) == 0\n\n\n@pytest.mark.parametrize(\"value,lo,hi,expected\", [\n    (5, 0, 10, 5), (-1, 0, 10, 0), (11, 0, 10, 10),\n    (0.5, 0.0, 1.0, 0.5), (-100, -50, 50, -50),\n])\ndef test_clamp_parametrized(value, lo, hi, expected):\n    assert clamp(value, lo, hi) == expected\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw3_word_count",
+      "tokens": 311,
+      "text": "```python\nimport pytest\nfrom mymodule import word_count\n\n\ndef test_word_count_empty_string():\n    assert word_count(\"\") == {}\n\n\ndef test_word_count_single_word():\n    assert word_count(\"hello\") == {\"hello\": 1}\n\n\ndef test_word_count_multiple_unique_words():\n    assert word_count(\"the quick brown fox\") == {\"the\": 1, \"quick\": 1, \"brown\": 1, \"fox\": 1}\n\n\ndef test_word_count_repeated_words():\n    assert word_count(\"the cat and the dog\") == {\"the\": 2, \"cat\": 1, \"and\": 1, \"dog\": 1}\n\n\ndef test_word_count_case_insensitive():\n    assert word_count(\"Hello hello HELLO\") == {\"hello\": 3}\n\n\ndef test_word_count_mixed_case():\n    assert word_count(\"The THE the Cat cat\") == {\"the\": 3, \"cat\": 2}\n\n\ndef test_word_count_extra_whitespace():\n    assert word_count(\"  hello   world  \") == {\"hello\": 1, \"world\": 1}\n\n\ndef test_word_count_tabs_and_newlines():\n    assert word_count(\"hello\\tworld\\nfoo\") == {\"hello\": 1, \"world\": 1, \"foo\": 1}\n\n\ndef test_word_count_only_whitespace():\n    assert word_count(\"   \") == {}\n\n\ndef test_word_count_punctuation_attached():\n    assert word_count(\"hello, world!\") == {\"hello,\": 1, \"world!\": 1}\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw4_trivial_one_assert",
+      "tokens": 134,
+      "text": "```python\nimport pytest\nfrom mymodule import double\n\n\ndef test_double_positive():\n    assert double(2) == 4\n\n\ndef test_double_zero():\n    assert double(0) == 0\n\n\ndef test_double_negative():\n    assert double(-3) == -6\n\n\ndef test_double_large_number():\n    assert double(1000000) == 2000000\n\n\n@pytest.mark.parametrize(\"x,expected\", [(1, 2), (5, 10), (-1, -2), (0, 0), (100, 200)])\ndef test_double_parametrized(x, expected):\n    assert double(x) == expected\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw5_validate_email",
+      "tokens": 197,
+      "text": "```python\nimport pytest\nfrom mymodule import is_valid_email\n\n\ndef test_valid_simple_email():\n    assert is_valid_email(\"user@example.com\") is True\n\n\ndef test_valid_email_with_dot():\n    assert is_valid_email(\"first.last@example.com\") is True\n\n\ndef test_invalid_no_at_sign():\n    assert is_valid_email(\"userexample.com\") is False\n\n\ndef test_invalid_no_domain():\n    assert is_valid_email(\"user@\") is False\n\n\ndef test_invalid_empty_string():\n    assert is_valid_email(\"\") is False\n\n\n@pytest.mark.parametrize(\"email\", [\"test@test.com\", \"name+filter@gmail.com\", \"x@y.zz\"])\ndef test_valid_emails_parametrized(email):\n    assert is_valid_email(email) is True\n\n\n@pytest.mark.parametrize(\"email\", [\"plainaddress\", \"@missing.com\", \"missing@.com\", \"missing@domain\", \"\"])\ndef test_invalid_emails_parametrized(email):\n    assert is_valid_email(email) is False\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw6_remove_negatives",
+      "tokens": 258,
+      "text": "```python\nimport pytest\nfrom mymodule import remove_negatives\n\n\ndef test_remove_negatives_empty_dict():\n    assert remove_negatives({}) == {}\n\n\ndef test_remove_negatives_all_positive():\n    assert remove_negatives({\"a\": 1, \"b\": 2, \"c\": 3}) == {\"a\": 1, \"b\": 2, \"c\": 3}\n\n\ndef test_remove_negatives_all_negative():\n    assert remove_negatives({\"a\": -1, \"b\": -2, \"c\": -3}) == {}\n\n\ndef test_remove_negatives_mixed():\n    assert remove_negatives({\"a\": 1, \"b\": -2, \"c\": 3, \"d\": -4}) == {\"a\": 1, \"c\": 3}\n\n\ndef test_remove_negatives_keeps_zero():\n    assert remove_negatives({\"a\": 0, \"b\": -1}) == {\"a\": 0}\n\n\ndef test_remove_negatives_does_not_mutate_original():\n    original = {\"a\": 1, \"b\": -1}\n    result = remove_negatives(original)\n    assert original == {\"a\": 1, \"b\": -1}\n    assert result == {\"a\": 1}\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw7_async_fetch",
+      "tokens": 225,
+      "text": "```python\nimport pytest\nimport httpx\nfrom unittest.mock import AsyncMock, MagicMock\nfrom mymodule import fetch_user\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_success():\n    mock_response = MagicMock()\n    mock_response.json.return_value = {\"id\": 1, \"name\": \"Alice\"}\n    mock_response.raise_for_status = MagicMock()\n\n    mock_client = MagicMock(spec=httpx.AsyncClient)\n    mock_client.get = AsyncMock(return_value=mock_response)\n\n    result = await fetch_user(1, mock_client)\n    assert result == {\"id\": 1, \"name\": \"Alice\"}\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_raises_on_http_error():\n    mock_response = MagicMock()\n    mock_response.raise_for_status = MagicMock(\n        side_effect=httpx.HTTPStatusError(\"404 Not Found\", request=MagicMock(), response=MagicMock())\n    )\n    mock_client = MagicMock(spec=httpx.AsyncClient)\n    mock_client.get = AsyncMock(return_value=mock_response)\n\n    with pytest.raises(httpx.HTTPStatusError):\n        await fetch_user(999, mock_client)\n```"
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "tw8_sort_stable",
+      "tokens": 245,
+      "text": "```python\nimport pytest\nfrom mymodule import sort_by_priority\n\n\ndef test_sort_empty_list():\n    assert sort_by_priority([]) == []\n\n\ndef test_sort_already_sorted():\n    items = [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n    assert sort_by_priority(items) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_reverse_order():\n    items = [(3, \"c\"), (2, \"b\"), (1, \"a\")]\n    assert sort_by_priority(items) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_stable_equal_priorities():\n    items = [(1, \"first\"), (1, \"second\"), (1, \"third\")]\n    assert sort_by_priority(items) == [(1, \"first\"), (1, \"second\"), (1, \"third\")]\n\n\ndef test_sort_does_not_mutate_original():\n    original = [(3, \"c\"), (1, \"a\"), (2, \"b\")]\n    original_copy = original.copy()\n    sort_by_priority(original)\n    assert original == original_copy\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw1_factorial",
+      "tokens": 106,
+      "text": "```python\nimport pytest\nfrom mymodule import factorial\n\n\ndef test_factorial_zero():\n    assert factorial(0) == 1\n\n\ndef test_factorial_one():\n    assert factorial(1) == 1\n\n\ndef test_factorial_small():\n    assert factorial(5) == 120\n\n\ndef test_factorial_larger():\n    assert factorial(10) == 3628800\n\n\ndef test_factorial_negative_raises():\n    with pytest.raises(ValueError, match=\"n must be non-negative\"):\n        factorial(-1)\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw2_clamp",
+      "tokens": 241,
+      "text": "```python\nimport pytest\nfrom mymodule import clamp\n\n\ndef test_clamp_within_range():\n    assert clamp(5.0, 0.0, 10.0) == 5.0\n\n\ndef test_clamp_below_lo():\n    assert clamp(-1.0, 0.0, 10.0) == 0.0\n\n\ndef test_clamp_above_hi():\n    assert clamp(15.0, 0.0, 10.0) == 10.0\n\n\ndef test_clamp_equal_to_lo():\n    assert clamp(0.0, 0.0, 10.0) == 0.0\n\n\ndef test_clamp_equal_to_hi():\n    assert clamp(10.0, 0.0, 10.0) == 10.0\n\n\ndef test_clamp_lo_equals_hi():\n    assert clamp(5.0, 3.0, 3.0) == 3.0\n\n\ndef test_clamp_invalid_range_raises():\n    with pytest.raises(ValueError, match=\"lo must not exceed hi\"):\n        clamp(5.0, 10.0, 0.0)\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw3_word_count",
+      "tokens": 171,
+      "text": "```python\nimport pytest\nfrom mymodule import word_count\n\n\ndef test_word_count_simple():\n    assert word_count(\"hello world\") == {\"hello\": 1, \"world\": 1}\n\n\ndef test_word_count_repeated_words():\n    assert word_count(\"foo bar foo\") == {\"foo\": 2, \"bar\": 1}\n\n\ndef test_word_count_case_insensitive():\n    assert word_count(\"Hello HELLO hello\") == {\"hello\": 3}\n\n\ndef test_word_count_empty_string():\n    assert word_count(\"\") == {}\n\n\ndef test_word_count_whitespace_only():\n    assert word_count(\"   \") == {}\n\n\ndef test_word_count_multiple_whitespace():\n    assert word_count(\"a  b\\tc\\nd\") == {\"a\": 1, \"b\": 1, \"c\": 1, \"d\": 1}\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw4_trivial_one_assert",
+      "tokens": 58,
+      "text": "```python\nimport pytest\nfrom mymodule import double\n\n\ndef test_double_positive():\n    assert double(3) == 6\n\n\ndef test_double_zero():\n    assert double(0) == 0\n\n\ndef test_double_negative():\n    assert double(-4) == -8\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw5_validate_email",
+      "tokens": 152,
+      "text": "```python\nimport pytest\nfrom mymodule import is_valid_email\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"user@example.com\",\n    \"first.last@example.co.uk\",\n    \"user+tag@example.com\",\n    \"user_name@sub.example.org\",\n    \"a1b2@test.io\",\n])\ndef test_valid_emails(email):\n    assert is_valid_email(email) is True\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"\",\n    \"plainaddress\",\n    \"@example.com\",\n    \"user@\",\n    \"user@.com\",\n    \"user@example\",\n    \"user@example.c\",\n    \"user @example.com\",\n    \"user@example .com\",\n])\ndef test_invalid_emails(email):\n    assert is_valid_email(email) is False\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw6_remove_negatives",
+      "tokens": 233,
+      "text": "```python\nimport pytest\nfrom mymodule import remove_negatives\n\n\ndef test_remove_negatives_mixed():\n    assert remove_negatives({\"a\": 1, \"b\": -1, \"c\": 2, \"d\": -5}) == {\"a\": 1, \"c\": 2}\n\n\ndef test_remove_negatives_all_positive():\n    assert remove_negatives({\"a\": 1, \"b\": 2}) == {\"a\": 1, \"b\": 2}\n\n\ndef test_remove_negatives_all_negative():\n    assert remove_negatives({\"a\": -1, \"b\": -2}) == {}\n\n\ndef test_remove_negatives_empty():\n    assert remove_negatives({}) == {}\n\n\ndef test_remove_negatives_zero_kept():\n    assert remove_negatives({\"a\": 0, \"b\": -1}) == {\"a\": 0}\n\n\ndef test_remove_negatives_floats():\n    assert remove_negatives({\"a\": 1.5, \"b\": -0.1, \"c\": 0.0}) == {\"a\": 1.5, \"c\": 0.0}\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw7_async_fetch",
+      "tokens": 308,
+      "text": "```python\nimport pytest\nimport httpx\nfrom mymodule import fetch_user\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_success():\n    def handler(request: httpx.Request) -> httpx.Response:\n        assert request.url.path == \"/users/42\"\n        return httpx.Response(200, json={\"id\": 42, \"name\": \"Alice\"})\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        result = await fetch_user(42, client)\n    assert result == {\"id\": 42, \"name\": \"Alice\"}\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_404_raises():\n    def handler(request: httpx.Request) -> httpx.Response:\n        return httpx.Response(404)\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        with pytest.raises(httpx.HTTPStatusError):\n            await fetch_user(1, client)\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_500_raises():\n    def handler(request: httpx.Request) -> httpx.Response:\n        return httpx.Response(500)\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        with pytest.raises(httpx.HTTPStatusError):\n            await fetch_user(1, client)\n```"
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "tw8_sort_stable",
+      "tokens": 290,
+      "text": "```python\nimport pytest\nfrom mymodule import sort_by_priority\n\n\ndef test_sort_by_priority_basic():\n    assert sort_by_priority([(3, \"c\"), (1, \"a\"), (2, \"b\")]) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_by_priority_empty():\n    assert sort_by_priority([]) == []\n\n\ndef test_sort_by_priority_single():\n    assert sort_by_priority([(5, \"x\")]) == [(5, \"x\")]\n\n\ndef test_sort_by_priority_stable():\n    items = [(1, \"first\"), (2, \"a\"), (1, \"second\"), (2, \"b\"), (1, \"third\")]\n    result = sort_by_priority(items)\n    assert result == [(1, \"first\"), (1, \"second\"), (1, \"third\"), (2, \"a\"), (2, \"b\")]\n\n\ndef test_sort_by_priority_negative_priorities():\n    assert sort_by_priority([(0, \"z\"), (-1, \"y\"), (1, \"x\")]) == [(-1, \"y\"), (0, \"z\"), (1, \"x\")]\n\n\ndef test_sort_by_priority_does_not_mutate():\n    items = [(2, \"b\"), (1, \"a\")]\n    original = list(items)\n    sort_by_priority(items)\n    assert items == original\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw1_factorial",
+      "tokens": 171,
+      "text": "```python\nimport pytest\nfrom mymodule import factorial\n\n\ndef test_factorial_zero():\n    assert factorial(0) == 1\n\n\ndef test_factorial_one():\n    assert factorial(1) == 1\n\n\ndef test_factorial_small_positive():\n    assert factorial(5) == 120\n\n\ndef test_factorial_larger():\n    assert factorial(10) == 3628800\n\n\ndef test_factorial_negative_raises():\n    with pytest.raises(ValueError, match='n must be non-negative'):\n        factorial(-1)\n\n\n@pytest.mark.parametrize(\"n,expected\", [(0, 1), (1, 1), (2, 2), (3, 6), (6, 720), (7, 5040)])\ndef test_factorial_parametrized(n, expected):\n    assert factorial(n) == expected\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw2_clamp",
+      "tokens": 339,
+      "text": "```python\nimport math\nimport pytest\nfrom mymodule import clamp\n\n\ndef test_clamp_value_within_range():\n    assert clamp(5.0, 0.0, 10.0) == 5.0\n\n\ndef test_clamp_value_below_lo():\n    assert clamp(-5.0, 0.0, 10.0) == 0.0\n\n\ndef test_clamp_value_above_hi():\n    assert clamp(15.0, 0.0, 10.0) == 10.0\n\n\ndef test_clamp_lo_equals_hi():\n    assert clamp(5.0, 3.0, 3.0) == 3.0\n\n\ndef test_clamp_lo_greater_than_hi_raises():\n    with pytest.raises(ValueError, match='lo must not exceed hi'):\n        clamp(5.0, 10.0, 0.0)\n\n\ndef test_clamp_infinity():\n    assert clamp(math.inf, 0.0, 100.0) == 100.0\n    assert clamp(-math.inf, 0.0, 100.0) == 0.0\n\n\n@pytest.mark.parametrize(\"value,lo,hi,expected\", [\n    (5.0, 0.0, 10.0, 5.0), (-1.0, 0.0, 10.0, 0.0), (11.0, 0.0, 10.0, 10.0),\n])\ndef test_clamp_parametrized(value, lo, hi, expected):\n    assert clamp(value, lo, hi) == expected\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw3_word_count",
+      "tokens": 217,
+      "text": "```python\nimport pytest\nfrom mymodule import word_count\n\n\ndef test_word_count_empty_string():\n    assert word_count(\"\") == {}\n\n\ndef test_word_count_single_word():\n    assert word_count(\"hello\") == {\"hello\": 1}\n\n\ndef test_word_count_multiple_unique_words():\n    assert word_count(\"the quick brown fox\") == {\"the\": 1, \"quick\": 1, \"brown\": 1, \"fox\": 1}\n\n\ndef test_word_count_repeated_words():\n    assert word_count(\"hello hello world\") == {\"hello\": 2, \"world\": 1}\n\n\ndef test_word_count_case_insensitive():\n    assert word_count(\"Hello HELLO hello\") == {\"hello\": 3}\n\n\ndef test_word_count_extra_whitespace():\n    assert word_count(\"  hello   world  \") == {\"hello\": 1, \"world\": 1}\n\n\ndef test_word_count_tabs_and_newlines():\n    assert word_count(\"hello\\tworld\\nfoo\") == {\"hello\": 1, \"world\": 1, \"foo\": 1}\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw4_trivial_one_assert",
+      "tokens": 108,
+      "text": "```python\nimport pytest\nfrom mymodule import double\n\n\ndef test_double_positive():\n    assert double(3) == 6\n\n\ndef test_double_zero():\n    assert double(0) == 0\n\n\ndef test_double_negative():\n    assert double(-4) == -8\n\n\n@pytest.mark.parametrize(\"x,expected\", [(1, 2), (0, 0), (-1, -2), (100, 200)])\ndef test_double_parametrized(x, expected):\n    assert double(x) == expected\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw5_validate_email",
+      "tokens": 146,
+      "text": "```python\nimport pytest\nfrom mymodule import is_valid_email\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"user@example.com\",\n    \"first.last@example.com\",\n    \"user+tag@example.co.uk\",\n    \"user_name@example.com\",\n])\ndef test_valid_emails(email):\n    assert is_valid_email(email) is True\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"\",\n    \"plainaddress\",\n    \"@example.com\",\n    \"user@\",\n    \"user@example\",\n    \"user@.com\",\n    \"user@example.c\",\n])\ndef test_invalid_emails(email):\n    assert is_valid_email(email) is False\n\n\ndef test_returns_bool():\n    assert isinstance(is_valid_email(\"a@b.co\"), bool)\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw6_remove_negatives",
+      "tokens": 247,
+      "text": "```python\nimport pytest\nfrom mymodule import remove_negatives\n\n\ndef test_remove_negatives_empty_dict():\n    assert remove_negatives({}) == {}\n\n\ndef test_remove_negatives_all_positive():\n    d = {\"a\": 1, \"b\": 2, \"c\": 3}\n    assert remove_negatives(d) == {\"a\": 1, \"b\": 2, \"c\": 3}\n\n\ndef test_remove_negatives_all_negative():\n    assert remove_negatives({\"a\": -1, \"b\": -2}) == {}\n\n\ndef test_remove_negatives_mixed():\n    assert remove_negatives({\"a\": 1, \"b\": -1, \"c\": 2}) == {\"a\": 1, \"c\": 2}\n\n\ndef test_remove_negatives_keeps_zero():\n    assert remove_negatives({\"a\": 0, \"b\": -1, \"c\": 1}) == {\"a\": 0, \"c\": 1}\n\n\ndef test_remove_negatives_does_not_mutate_input():\n    d = {\"a\": 1, \"b\": -1}\n    original = dict(d)\n    remove_negatives(d)\n    assert d == original\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw7_async_fetch",
+      "tokens": 308,
+      "text": "```python\nimport pytest\nimport httpx\nfrom mymodule import fetch_user\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_success():\n    def handler(request: httpx.Request) -> httpx.Response:\n        assert request.url.path == \"/users/42\"\n        return httpx.Response(200, json={\"id\": 42, \"name\": \"Alice\"})\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        result = await fetch_user(42, client)\n    assert result == {\"id\": 42, \"name\": \"Alice\"}\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_404_raises():\n    def handler(request: httpx.Request) -> httpx.Response:\n        return httpx.Response(404)\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        with pytest.raises(httpx.HTTPStatusError):\n            await fetch_user(999, client)\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_500_raises():\n    def handler(request: httpx.Request) -> httpx.Response:\n        return httpx.Response(500)\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        with pytest.raises(httpx.HTTPStatusError):\n            await fetch_user(1, client)\n```"
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "tw8_sort_stable",
+      "tokens": 269,
+      "text": "```python\nimport pytest\nfrom mymodule import sort_by_priority\n\n\ndef test_sort_empty_list():\n    assert sort_by_priority([]) == []\n\n\ndef test_sort_single_item():\n    assert sort_by_priority([(1, \"a\")]) == [(1, \"a\")]\n\n\ndef test_sort_already_sorted():\n    items = [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n    assert sort_by_priority(items) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_reverse_order():\n    items = [(3, \"c\"), (2, \"b\"), (1, \"a\")]\n    assert sort_by_priority(items) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_stability_equal_priorities():\n    items = [(1, \"first\"), (1, \"second\"), (1, \"third\")]\n    assert sort_by_priority(items) == [(1, \"first\"), (1, \"second\"), (1, \"third\")]\n\n\ndef test_sort_does_not_mutate_input():\n    items = [(3, \"c\"), (1, \"a\"), (2, \"b\")]\n    original = list(items)\n    sort_by_priority(items)\n    assert items == original\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw1_factorial",
+      "tokens": 108,
+      "text": "```python\nimport pytest\nfrom mymodule import factorial\n\n\ndef test_factorial_zero():\n    assert factorial(0) == 1\n\n\ndef test_factorial_one():\n    assert factorial(1) == 1\n\n\ndef test_factorial_small_positive():\n    assert factorial(5) == 120\n\n\ndef test_factorial_larger_value():\n    assert factorial(10) == 3628800\n\n\ndef test_factorial_negative_raises():\n    with pytest.raises(ValueError, match='n must be non-negative'):\n        factorial(-1)\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw2_clamp",
+      "tokens": 178,
+      "text": "```python\nimport pytest\nfrom mymodule import clamp\n\n\ndef test_clamp_within_range():\n    assert clamp(5.0, 0.0, 10.0) == 5.0\n\n\ndef test_clamp_below_low_bound():\n    assert clamp(-3.0, 0.0, 10.0) == 0.0\n\n\ndef test_clamp_above_high_bound():\n    assert clamp(15.0, 0.0, 10.0) == 10.0\n\n\ndef test_clamp_equal_bounds():\n    assert clamp(7.5, 5.0, 5.0) == 5.0\n\n\ndef test_clamp_invalid_bounds_raises():\n    with pytest.raises(ValueError, match='lo must not exceed hi'):\n        clamp(5.0, 10.0, 0.0)\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw3_word_count",
+      "tokens": 170,
+      "text": "```python\nfrom mymodule import word_count\n\n\ndef test_word_count_basic():\n    assert word_count(\"the quick brown fox\") == {\"the\": 1, \"quick\": 1, \"brown\": 1, \"fox\": 1}\n\n\ndef test_word_count_repeated_words():\n    assert word_count(\"foo bar foo baz foo\") == {\"foo\": 3, \"bar\": 1, \"baz\": 1}\n\n\ndef test_word_count_case_insensitive():\n    assert word_count(\"Hello hello HELLO\") == {\"hello\": 3}\n\n\ndef test_word_count_empty_string():\n    assert word_count(\"\") == {}\n\n\ndef test_word_count_collapses_whitespace():\n    assert word_count(\"  spaced   out   words  \") == {\"spaced\": 1, \"out\": 1, \"words\": 1}\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw4_trivial_one_assert",
+      "tokens": 59,
+      "text": "```python\nimport pytest\nfrom mymodule import double\n\n\n@pytest.mark.parametrize(\"x,expected\", [\n    (0, 0),\n    (3, 6),\n    (-4, -8),\n])\ndef test_double(x, expected):\n    assert double(x) == expected\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw5_validate_email",
+      "tokens": 137,
+      "text": "```python\nimport pytest\nfrom mymodule import is_valid_email\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"user@example.com\",\n    \"first.last@example.co\",\n    \"name+tag@sub.example.org\",\n    \"a_b-c%d@example-host.io\",\n])\ndef test_valid_emails(email):\n    assert is_valid_email(email) is True\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"\",\n    \"plainaddress\",\n    \"missing@tld\",\n    \"@no-local.com\",\n    \"no-at-symbol.com\",\n    \"spaces in@example.com\",\n    \"trailing@example.c\",\n])\ndef test_invalid_emails(email):\n    assert is_valid_email(email) is False\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw6_remove_negatives",
+      "tokens": 156,
+      "text": "```python\nfrom mymodule import remove_negatives\n\n\ndef test_remove_negatives_filters_negative_values():\n    assert remove_negatives({\"a\": 1, \"b\": -2, \"c\": 3, \"d\": -4}) == {\"a\": 1, \"c\": 3}\n\n\ndef test_remove_negatives_keeps_zero():\n    assert remove_negatives({\"a\": 0, \"b\": -1}) == {\"a\": 0}\n\n\ndef test_remove_negatives_empty_dict():\n    assert remove_negatives({}) == {}\n\n\ndef test_remove_negatives_all_non_negative_unchanged():\n    d = {\"a\": 1, \"b\": 2, \"c\": 0}\n    assert remove_negatives(d) == d\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw7_async_fetch",
+      "tokens": 224,
+      "text": "```python\nimport httpx\nimport pytest\nfrom mymodule import fetch_user\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_returns_json():\n    def handler(request: httpx.Request) -> httpx.Response:\n        assert request.url.path == \"/users/42\"\n        return httpx.Response(200, json={\"id\": 42, \"name\": \"Ada\"})\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        result = await fetch_user(42, client)\n\n    assert result == {\"id\": 42, \"name\": \"Ada\"}\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_raises_on_http_error():\n    def handler(request: httpx.Request) -> httpx.Response:\n        return httpx.Response(404)\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        with pytest.raises(httpx.HTTPStatusError):\n            await fetch_user(99, client)\n```"
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "tw8_sort_stable",
+      "tokens": 182,
+      "text": "```python\nfrom mymodule import sort_by_priority\n\n\ndef test_sort_by_priority_orders_by_first_element():\n    assert sort_by_priority([(3, \"c\"), (1, \"a\"), (2, \"b\")]) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_by_priority_is_stable_for_equal_keys():\n    items = [(1, \"a\"), (1, \"b\"), (1, \"c\"), (0, \"z\")]\n    assert sort_by_priority(items) == [(0, \"z\"), (1, \"a\"), (1, \"b\"), (1, \"c\")]\n\n\ndef test_sort_by_priority_empty_list():\n    assert sort_by_priority([]) == []\n\n\ndef test_sort_by_priority_single_element():\n    assert sort_by_priority([(5, \"only\")]) == [(5, \"only\")]\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw1_factorial",
+      "tokens": 104,
+      "text": "```python\nimport pytest\nfrom mymodule import factorial\n\n\n@pytest.mark.parametrize(\"n,expected\", [\n    (0, 1),\n    (1, 1),\n    (2, 2),\n    (5, 120),\n    (10, 3628800),\n])\ndef test_factorial_returns_expected(n, expected):\n    assert factorial(n) == expected\n\n\ndef test_factorial_negative_raises():\n    with pytest.raises(ValueError, match=\"n must be non-negative\"):\n        factorial(-1)\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw2_clamp",
+      "tokens": 172,
+      "text": "```python\nimport pytest\nfrom mymodule import clamp\n\n\n@pytest.mark.parametrize(\"value,lo,hi,expected\", [\n    (5, 0, 10, 5),\n    (-1, 0, 10, 0),\n    (11, 0, 10, 10),\n    (0, 0, 10, 0),\n    (10, 0, 10, 10),\n    (3.5, 1.0, 5.0, 3.5),\n])\ndef test_clamp_returns_expected(value, lo, hi, expected):\n    assert clamp(value, lo, hi) == expected\n\n\ndef test_clamp_invalid_bounds_raises():\n    with pytest.raises(ValueError, match=\"lo must not exceed hi\"):\n        clamp(5, 10, 0)\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw3_word_count",
+      "tokens": 193,
+      "text": "```python\nimport pytest\nfrom mymodule import word_count\n\n\ndef test_word_count_basic():\n    assert word_count(\"the quick brown fox\") == {\"the\": 1, \"quick\": 1, \"brown\": 1, \"fox\": 1}\n\n\ndef test_word_count_repeated_words():\n    assert word_count(\"the cat and the dog and the bird\") == {\"the\": 3, \"cat\": 1, \"and\": 2, \"dog\": 1, \"bird\": 1}\n\n\ndef test_word_count_case_insensitive():\n    assert word_count(\"Hello HELLO hello\") == {\"hello\": 3}\n\n\ndef test_word_count_empty_string():\n    assert word_count(\"\") == {}\n\n\ndef test_word_count_collapses_whitespace():\n    assert word_count(\"a   b\\tc\\nd\") == {\"a\": 1, \"b\": 1, \"c\": 1, \"d\": 1}\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw4_trivial_one_assert",
+      "tokens": 68,
+      "text": "```python\nimport pytest\nfrom mymodule import double\n\n\n@pytest.mark.parametrize(\"x,expected\", [\n    (0, 0),\n    (1, 2),\n    (-3, -6),\n    (1000, 2000),\n])\ndef test_double(x, expected):\n    assert double(x) == expected\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw5_validate_email",
+      "tokens": 147,
+      "text": "```python\nimport pytest\nfrom mymodule import is_valid_email\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"user@example.com\",\n    \"first.last@example.com\",\n    \"user+tag@example.co.uk\",\n    \"user_name@sub.example.com\",\n    \"a1b2@x-y.io\",\n])\ndef test_valid_emails(email):\n    assert is_valid_email(email) is True\n\n\n@pytest.mark.parametrize(\"email\", [\n    \"\",\n    \"plainaddress\",\n    \"@example.com\",\n    \"user@\",\n    \"user@example\",\n    \"user@.com\",\n    \"user@example.c\",\n    \"user name@example.com\",\n])\ndef test_invalid_emails(email):\n    assert is_valid_email(email) is False\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw6_remove_negatives",
+      "tokens": 195,
+      "text": "```python\nimport pytest\nfrom mymodule import remove_negatives\n\n\ndef test_remove_negatives_filters_negative_values():\n    assert remove_negatives({\"a\": 1, \"b\": -2, \"c\": 3, \"d\": -4}) == {\"a\": 1, \"c\": 3}\n\n\ndef test_remove_negatives_keeps_zero():\n    assert remove_negatives({\"a\": 0, \"b\": -1, \"c\": 5}) == {\"a\": 0, \"c\": 5}\n\n\ndef test_remove_negatives_empty_dict():\n    assert remove_negatives({}) == {}\n\n\ndef test_remove_negatives_all_negative():\n    assert remove_negatives({\"a\": -1, \"b\": -2}) == {}\n\n\ndef test_remove_negatives_all_non_negative():\n    d = {\"a\": 1, \"b\": 2, \"c\": 0}\n    assert remove_negatives(d) == d\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw7_async_fetch",
+      "tokens": 224,
+      "text": "```python\nimport pytest\nimport httpx\nfrom mymodule import fetch_user\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_returns_json():\n    def handler(request: httpx.Request) -> httpx.Response:\n        assert request.url.path == \"/users/42\"\n        return httpx.Response(200, json={\"id\": 42, \"name\": \"Alice\"})\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        result = await fetch_user(42, client)\n    assert result == {\"id\": 42, \"name\": \"Alice\"}\n\n\n@pytest.mark.asyncio\nasync def test_fetch_user_raises_on_http_error():\n    def handler(request: httpx.Request) -> httpx.Response:\n        return httpx.Response(404)\n\n    transport = httpx.MockTransport(handler)\n    async with httpx.AsyncClient(transport=transport, base_url=\"http://test\") as client:\n        with pytest.raises(httpx.HTTPStatusError):\n            await fetch_user(99, client)\n```"
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "tw8_sort_stable",
+      "tokens": 243,
+      "text": "```python\nimport pytest\nfrom mymodule import sort_by_priority\n\n\ndef test_sort_by_priority_orders_by_first_element():\n    assert sort_by_priority([(3, \"c\"), (1, \"a\"), (2, \"b\")]) == [(1, \"a\"), (2, \"b\"), (3, \"c\")]\n\n\ndef test_sort_by_priority_is_stable_for_equal_keys():\n    items = [(1, \"first\"), (1, \"second\"), (1, \"third\")]\n    assert sort_by_priority(items) == [(1, \"first\"), (1, \"second\"), (1, \"third\")]\n\n\ndef test_sort_by_priority_stable_mixed():\n    items = [(2, \"a\"), (1, \"b\"), (2, \"c\"), (1, \"d\")]\n    assert sort_by_priority(items) == [(1, \"b\"), (1, \"d\"), (2, \"a\"), (2, \"c\")]\n\n\ndef test_sort_by_priority_empty_list():\n    assert sort_by_priority([]) == []\n\n\ndef test_sort_by_priority_single_element():\n    assert sort_by_priority([(5, \"x\")]) == [(5, \"x\")]\n```"
+    }
+  ]
+}

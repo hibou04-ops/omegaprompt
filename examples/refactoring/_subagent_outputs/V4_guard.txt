@@ -1,0 +1,69 @@
+rf1_nested_if_BEGIN
+```python
+if user is None or not user.is_active or not user.has_permission('read'):
+    return None
+return data
+```
+What changed: Inverted conditions and used early return to flatten nesting.
+rf1_nested_if_END
+rf2_loop_to_comprehension_BEGIN
+```python
+return [n * n for n in numbers]
+```
+What changed: Replaced explicit loop with list comprehension.
+rf2_loop_to_comprehension_END
+rf3_string_concat_loop_BEGIN
+```python
+return '\n'.join(lines) + '\n'
+```
+What changed: Replaced O(n^2) string concatenation with O(n) str.join.
+rf3_string_concat_loop_END
+rf4_dict_setdefault_BEGIN
+```python
+d.setdefault(key, []).append(value)
+```
+What changed: Replaced if/else with dict.setdefault for the append-to-list idiom.
+rf4_dict_setdefault_END
+rf5_multiple_returns_BEGIN
+```python
+def grade(score):
+    thresholds = (
+        (90, 'A'),
+        (80, 'B'),
+        (70, 'C'),
+        (60, 'D'),
+    )
+    for cutoff, letter in thresholds:
+        if score >= cutoff:
+            return letter
+    return 'F'
+```
+What changed: Replaced the chain of if-returns with a data-driven lookup table.
+rf5_multiple_returns_END
+rf6_long_function_extract_BEGIN
+```python
+def _validate_order(order):
+    assert 'customer_id' in order, 'missing customer_id'
+    assert order['total'] > 0, 'invalid total'
+    assert order['items'], 'empty items'
+
+
+def process_order(order):
+    _validate_order(order)
+    # ... 20 lines of business logic ...
+```
+What changed: Extracted the assertion block into a dedicated `_validate_order` helper.
+rf6_long_function_extract_END
+rf7_already_clean_BEGIN
+ALREADY_CLEAN
+rf7_already_clean_END
+rf8_replace_lambda_with_def_BEGIN
+```python
+def _sort_key(x):
+    return (x.priority, x.created_at, x.id)
+
+
+validators = sorted(items, key=_sort_key)
+```
+What changed: Replaced multi-field lambda with a named `_sort_key` function for readability.
+rf8_replace_lambda_with_def_END

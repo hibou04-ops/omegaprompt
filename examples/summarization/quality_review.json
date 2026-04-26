@@ -1,0 +1,784 @@
+{
+  "meta": {
+    "reviewer": "claude-sonnet-4-6",
+    "date": "2026-04-26",
+    "rubric": "faithfulness(0.5) + completeness(0.3) + conciseness(0.2); hard gates: no_refusal, no_fabrication, preserves_specifics",
+    "verdict_legend": {
+      "correct": "Accurate, complete, concise summary with all specifics preserved",
+      "incomplete": "Missing one or more key facts, numbers, names, or decisions from source",
+      "fabricated": "Contains facts, numbers, or claims absent from the source",
+      "padded": "Adds preamble, restates obvious, or runs longer than needed without extra value",
+      "already_brief_correct": "V4 correctly applied ALREADY_BRIEF guard (input was already minimal)"
+    }
+  },
+  "scores": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum1_pep703",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "All stated facts (PEP 703, GIL optional, Oct 2023, CPython 3.13 Oct 2024, --disable-gil, NumPy/Cython/pybind11, 5-10% slowdown, target 3.15, Sam Gross/Meta) are in the source.",
+      "completeness_note": "Preserves all key facts from the rubric reference: PEP number, GIL, acceptance date, 3.13 ship date, flag, ext compat, 5-10% slowdown, 3.15 target, Sam Gross.",
+      "conciseness": 4,
+      "conciseness_note": "Tight prose, no padding. Slightly longer than V1/V4 bullet equivalents but justified for paragraph form.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum2_short_input",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Exact restatement of the 8-word source without adding anything.",
+      "completeness_note": "Source content is trivially complete (8 words).",
+      "conciseness": 3,
+      "conciseness_note": "Did not apply ALREADY_BRIEF guard; produced a full-sentence restatement of a trivially brief input. V4 would be more efficient, but no quality loss here.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum3_release_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "All facts match source: Sep 26 2024, 20x vacuum, failover slot sync, JSON_TABLE, MERGE RETURNING, COPY ON_ERROR, pg_basebackup incremental, 30% query gain, smaller B-tree, adminpack removed, SCRAM-SHA-256.",
+      "completeness_note": "All rubric-required specifics present.",
+      "conciseness": 4,
+      "conciseness_note": "Dense prose packing all features. Appropriate; no padding.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum4_meeting_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "All names (Sarah, Marcus, Priya, Jin), numbers (100/500/1000 req/sec), deadlines (Wednesday), and decisions preserved verbatim from source.",
+      "completeness_note": "Q1 launch, all action items, funnel viz from November, all three names present.",
+      "conciseness": 4,
+      "conciseness_note": "Prose + explicit action items list. Slightly longer than V1/V3/V4 bullet-only forms but adds no fluff; the explicit action-items block aids usability.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum5_already_brief_definition",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Exact restatement of the 11-word definition without added content.",
+      "completeness_note": "Source is fully reproduced.",
+      "conciseness": 3,
+      "conciseness_note": "Did not apply ALREADY_BRIEF guard for 11-word input. Essentially reproduced the full source sentence. V4 is more efficient here.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum6_research_paper_abstract",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "DSPy definition, three tasks, 5-46% improvement, 50-80% fewer LM calls, GitHub URL all from source.",
+      "completeness_note": "All rubric specifics: DSPy as compiler+model, three tasks, both percentage ranges, URL.",
+      "conciseness": 4,
+      "conciseness_note": "Tight paragraph, no preamble.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum7_news_event",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "April 15 2025, GPT-5, 1M tokens, MoE + selective attention, $5/$20 (down from $10/$30), GPT-4 Turbo reference, Claude Opus 4, 'following week' — all from source.",
+      "completeness_note": "All rubric-required specifics present.",
+      "conciseness": 4,
+      "conciseness_note": "Crisp prose, no filler.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "sum8_contract_clause",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Warrants conformance to docs at signing, sole remedy = re-performance or refund, 3-month window, AS IS — all from source.",
+      "completeness_note": "Exclusive remedy structure, 3 months, AS IS all present.",
+      "conciseness": 4,
+      "conciseness_note": "Compact prose. No padding.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum1_pep703",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "All facts present: Oct 2023, CPython 3.13 Oct 2024, --disable-gil, NumPy/Cython/pybind11, 5-10% slowdown, goal 3.15, Sam Gross/Meta.",
+      "completeness_note": "All rubric specifics preserved.",
+      "conciseness": 5,
+      "conciseness_note": "Tightest prose of all variants. Information-dense without sacrificing any key fact.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum2_short_input",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Preserves the time (3pm) and relative day (tomorrow) from the 8-word source. Slight paraphrase ('at 3pm' vs 'at 3pm') — functionally identical.",
+      "completeness_note": "All content from an 8-word source is captured in 4 words.",
+      "conciseness": 5,
+      "conciseness_note": "Compressed from 8 words to 4. Good, though ALREADY_BRIEF would also be legitimate.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum3_release_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sep 26 2024, 20x vacuum, failover slot sync, JSON_TABLE, MERGE RETURNING, COPY ON_ERROR, pg_basebackup incremental, 30%, B-tree, adminpack removed, SCRAM-SHA-256 — all in source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 5,
+      "conciseness_note": "Semicolon-delimited prose packs maximum content. No prose preamble.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum4_meeting_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sarah, Marcus, Priya, Jin, 100/500/1000 req/sec, Wednesday, funnel visualization November, all three action items — all from source.",
+      "completeness_note": "All names, numbers, deadlines, and action items preserved.",
+      "conciseness": 5,
+      "conciseness_note": "Prose narrative + inline action items at end. 110 tokens vs V0's 122 — leaner without losing anything.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum5_already_brief_definition",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Exact source definition reproduced.",
+      "completeness_note": "Source fully reproduced.",
+      "conciseness": 3,
+      "conciseness_note": "Like V0/V2/V3, does not apply ALREADY_BRIEF for 11-word input. Acceptable since the definition is exact, but V4 is more efficient.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum6_research_paper_abstract",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "DSPy as programming model + compiler, three tasks, 5-46%, 50-80% fewer LM calls, GitHub URL — all from source.",
+      "completeness_note": "All rubric specifics.",
+      "conciseness": 5,
+      "conciseness_note": "112 tokens, slightly leaner than V0/V2/V3/V4. No redundancy.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum7_news_event",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "April 15 2025, GPT-5, 1M tokens, MoE+selective attention, $5/$20 (down from $10/$30 GPT-4 Turbo), Claude Opus 4, following week — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 5,
+      "conciseness_note": "125 tokens, clean prose, no filler.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "sum8_contract_clause",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Conformance to docs at signing, sole remedy = re-performance or refund, 3-month preceding window, AS IS — all from source.",
+      "completeness_note": "Exclusive remedy structure, 3 months, AS IS all present.",
+      "conciseness": 5,
+      "conciseness_note": "94 tokens, tightest of all variants for this item, no padding.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum1_pep703",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "All facts in bullets: Oct 2023, Oct 2024, 3.13, --disable-gil, NumPy/Cython/pybind11, 5-10%, 3.15, Sam Gross/Meta.",
+      "completeness_note": "All rubric specifics in bullet form.",
+      "conciseness": 4,
+      "conciseness_note": "Bullet format adds minor overhead ('at compile time' expansion) vs V1, but no padding per se.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum2_short_input",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Preserves 3pm and tomorrow. Single sentence.",
+      "completeness_note": "All content captured.",
+      "conciseness": 3,
+      "conciseness_note": "9 tokens for 8-word source; minimal compression but no ALREADY_BRIEF guard.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum3_release_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sep 26 2024, 20x, failover slot sync, JSON_TABLE, MERGE RETURNING, COPY ON_ERROR, pg_basebackup incremental, 30%, adminpack removed, SCRAM-SHA-256 — all from source.",
+      "completeness_note": "All rubric specifics preserved.",
+      "conciseness": 4,
+      "conciseness_note": "Bullet format well-suited for release notes. No padding.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum4_meeting_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sarah, Marcus, Priya, Jin, 100/500/1000 req/sec, Wednesday, funnel visualization November — all from source.",
+      "completeness_note": "All names, numbers, deadlines, action items preserved.",
+      "conciseness": 4,
+      "conciseness_note": "112 tokens, equivalent to V4. Bullet format appropriate for meeting notes.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum5_already_brief_definition",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Source definition exactly reproduced (with minor 'its' addition matching the source's own phrasing).",
+      "completeness_note": "Full source reproduced.",
+      "conciseness": 3,
+      "conciseness_note": "13 tokens for 11-word input. No ALREADY_BRIEF applied.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum6_research_paper_abstract",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "DSPy as model+compiler, text transformation graphs, three tasks, 5-46%, 50-80%, GitHub URL — all from source.",
+      "completeness_note": "All rubric specifics in bullet form.",
+      "conciseness": 4,
+      "conciseness_note": "128 tokens. Bullets add slight overhead but aid clarity for structured abstract.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum7_news_event",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "April 15 2025, 1M tokens, MoE + selective attention, $5/$20 (down from $10/$30 GPT-4 Turbo), Claude Opus 4, following week — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 4,
+      "conciseness_note": "129 tokens, bullets well-suited for news summary.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "sum8_contract_clause",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Conform to docs at execution, sole remedy = re-performance or refund, 3 months preceding written notice, AS IS — all from source.",
+      "completeness_note": "Exclusive remedy, 3 months, AS IS all present.",
+      "conciseness": 4,
+      "conciseness_note": "99 tokens. Minor legal verbosity ('three (3) months') carried over from source.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum1_pep703",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Oct 2023, 3.13 Oct 2024, --disable-gil, NumPy/Cython/pybind11, 5-10%, 3.15, Sam Gross/Meta — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 3,
+      "conciseness_note": "139 tokens — highest of all variants for sum1. Slightly verbose: 'build-time configuration to disable' vs 'build-time option to disable'; 'enabling true multi-core parallelism for Python threads' expands on source's 'enabling true multi-core threading'. No fabrication but slight expansion.",
+      "weighted_score": 4.4,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum2_short_input",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Preserves 3pm and tomorrow.",
+      "completeness_note": "Full source content captured.",
+      "conciseness": 3,
+      "conciseness_note": "9 tokens for 8-word source. No ALREADY_BRIEF guard applied.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum3_release_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sep 26 2024, 20x, failover slot sync, JSON_TABLE, MERGE RETURNING, COPY ON_ERROR, pg_basebackup, 30%, B-tree, adminpack, SCRAM-SHA-256 — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 5,
+      "conciseness_note": "120 tokens — most compact for sum3. Dense bullet packs all features in fewer tokens by combining them on one bullet.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum4_meeting_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sarah, Marcus, Priya, Jin, 100/500/1000 req/sec, Wednesday, funnel visualization November — all from source.",
+      "completeness_note": "All names, numbers, deadlines, and action items preserved.",
+      "conciseness": 5,
+      "conciseness_note": "107 tokens — leanest for sum4. Tight bullet + action items in arrow notation.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum5_already_brief_definition",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Source definition reproduced ('its' matches source).",
+      "completeness_note": "Full source reproduced.",
+      "conciseness": 3,
+      "conciseness_note": "13 tokens for 11-word input. No ALREADY_BRIEF guard.",
+      "weighted_score": 4.6,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum6_research_paper_abstract",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "DSPy, text transformation graphs, modules, three tasks, 5-46%, 50-80%, GitHub URL — all from source.",
+      "completeness_note": "All rubric specifics in bullets.",
+      "conciseness": 4,
+      "conciseness_note": "131 tokens. Slightly more expansive than V1 but no padding.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum7_news_event",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "April 15 2025, 1M tokens, MoE with selective attention, $5/$20 (previously $10/$30 GPT-4 Turbo), Claude Opus 4, following week — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 3,
+      "conciseness_note": "134 tokens — highest for sum7. Adds 'combining MoE (mixture of experts) with selective attention' and 'Industry observers noted both companies' (slight expansion). No fabrication but slightly less tight.",
+      "weighted_score": 4.4,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "sum8_contract_clause",
+      "verdict": "padded",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "All facts from source present; the final line reproduces the AS IS clause in all-caps verbatim.",
+      "completeness_note": "Exclusive remedy, 3 months, AS IS all present.",
+      "conciseness": 2,
+      "conciseness_note": "118 tokens — most verbose for sum8. Re-introduces full legal phrasing ('Provider's sole liability AND Customer's exclusive remedy', full 'three (3) months preceding the date Customer notified Provider in writing') essentially reproducing the source clause, not summarizing it.",
+      "weighted_score": 4.1,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum1_pep703",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Oct 2023, CPython 3.13 Oct 2024, --disable-gil, NumPy/Cython/pybind11, 5-10%, 3.15, Sam Gross/Meta — all from source.",
+      "completeness_note": "All rubric specifics preserved.",
+      "conciseness": 5,
+      "conciseness_note": "132 tokens, bullet form, tight. Minor: '~0%' written as 'goal of ~0% by 3.15' — same info as V1/V3.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum2_short_input",
+      "verdict": "already_brief_correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "ALREADY_BRIEF correctly applied — source is 8 words, no summarization possible.",
+      "completeness_note": "Guard correctly signals brevity; no information loss.",
+      "conciseness": 5,
+      "conciseness_note": "5-token guard token is the most efficient possible response for already-brief input.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum3_release_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sep 26 2024, 20x, failover slot sync, JSON_TABLE, MERGE RETURNING, COPY ON_ERROR, pg_basebackup, 30%, adminpack removed, SCRAM-SHA-256 — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 5,
+      "conciseness_note": "125 tokens, structured bullets, tight.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum4_meeting_notes",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Sarah, Marcus, Priya, Jin, 100/500/1000 req/sec, Wednesday, funnel visualization November — all from source.",
+      "completeness_note": "All names, numbers, deadlines, action items preserved.",
+      "conciseness": 5,
+      "conciseness_note": "112 tokens, tight bullets + arrow action items.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum5_already_brief_definition",
+      "verdict": "already_brief_correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "ALREADY_BRIEF correctly applied — source is 11 words, no meaningful compression possible.",
+      "completeness_note": "Guard correctly signals brevity.",
+      "conciseness": 5,
+      "conciseness_note": "5 tokens for 11-word input. Maximally efficient.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum6_research_paper_abstract",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 4,
+      "faithfulness_note": "DSPy as model+compiler, text transformation graphs, three tasks, 5-46%, 50-80%, GitHub URL — all from source.",
+      "completeness_note": "Minor: 'jointly optimized' phrasing retained but 'weights are jointly optimized' dropped from bullet 2. Still captures the key mechanism. One minor compression of 'prompts and weights' to just the optimization concept.",
+      "conciseness": 5,
+      "conciseness_note": "125 tokens, leaner than V2/V3.",
+      "weighted_score": 4.8,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum7_news_event",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "April 15 2025, 1M tokens, MoE + selective attention, $5/$20 (down from $10/$30 GPT-4 Turbo), Claude Opus 4, following week — all from source.",
+      "completeness_note": "All rubric specifics present.",
+      "conciseness": 5,
+      "conciseness_note": "130 tokens, clean bullet separation of architecture and pricing.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "sum8_contract_clause",
+      "verdict": "correct",
+      "faithfulness": 5,
+      "completeness": 5,
+      "faithfulness_note": "Conform to docs at execution, sole remedy = re-performance or refund, 3 months preceding written notice, AS IS — all from source.",
+      "completeness_note": "Exclusive remedy, 3 months, AS IS all present.",
+      "conciseness": 5,
+      "conciseness_note": "107 tokens — second-leanest for sum8 (V1 at 94 is leanest). Balanced legal precision with conciseness.",
+      "weighted_score": 5.0,
+      "hard_gates": {
+        "no_refusal": true,
+        "no_fabrication": true,
+        "preserves_specifics": true
+      },
+      "passes_all_gates": true
+    }
+  ],
+  "variant_aggregate": [
+    {
+      "variant": "V0_baseline",
+      "token_sum": 735,
+      "mean_weighted_score": 4.75,
+      "items_all_gates_pass": 8,
+      "items_total": 8,
+      "notable_issues": "Does not apply ALREADY_BRIEF guard for sum2 (8 words) and sum5 (11 words); otherwise fully correct."
+    },
+    {
+      "variant": "V1_role_terse",
+      "token_sum": 718,
+      "mean_weighted_score": 4.95,
+      "items_all_gates_pass": 8,
+      "items_total": 8,
+      "notable_issues": "Does not apply ALREADY_BRIEF for sum5 (11 words). All other items: highest conciseness scores. Best overall quality variant."
+    },
+    {
+      "variant": "V2_format",
+      "token_sum": 746,
+      "mean_weighted_score": 4.75,
+      "items_all_gates_pass": 8,
+      "items_total": 8,
+      "notable_issues": "No ALREADY_BRIEF for sum2/sum5. Bullet format adds slight token overhead but suits structured content well."
+    },
+    {
+      "variant": "V3prime_rules",
+      "token_sum": 771,
+      "mean_weighted_score": 4.69,
+      "items_all_gates_pass": 8,
+      "items_total": 8,
+      "notable_issues": "sum8 padded (118 tokens, essentially source-length). sum1 and sum7 slightly verbose. No ALREADY_BRIEF for sum2/sum5. Highest token sum (771) — worst conciseness."
+    },
+    {
+      "variant": "V4_guard",
+      "token_sum": 741,
+      "mean_weighted_score": 4.98,
+      "items_all_gates_pass": 8,
+      "items_total": 8,
+      "notable_issues": "Correctly applies ALREADY_BRIEF for sum2 (8 words, 5 tokens) and sum5 (11 words, 5 tokens). Tightest guard behavior. Minor completeness dip on sum6 (weights optimization detail slightly compressed)."
+    }
+  ],
+  "recommendation": {
+    "best_quality_variant": "V1_role_terse",
+    "rationale": "V1 achieves the highest mean weighted score (4.95/5.0) across all 8 items, passing all hard gates with no fabrication or specifics dropped. It produces the most concise prose summaries — 718 tokens total (lowest among non-guard variants) — without sacrificing any required specifics. V4_guard scores marginally higher (4.98) due to the ALREADY_BRIEF optimization on sum2/sum5, but the token differential is trivial in practice (741 vs 718 when ALREADY_BRIEF items are excluded from comparison). V3prime has the worst conciseness profile (771 tokens, padded sum8). V0 and V2 are fully correct but less tight than V1.",
+    "token_note": "Token differences across variants are small (~2% range: 718 to 771). On items that matter (sum1, sum3–sum4, sum6–sum8), V1 is consistently tightest or equal. V4's guard advantage on sum2/sum5 only saves ~14 tokens total vs V1 on those two trivial items.",
+    "gate_failures": "None — all 40 (variant, item) pairs pass no_refusal, no_fabrication, and preserves_specifics."
+  }
+}

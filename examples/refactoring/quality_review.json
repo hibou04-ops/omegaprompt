@@ -1,0 +1,761 @@
+{
+  "meta": {
+    "reviewer": "claude-sonnet-4-6",
+    "review_date": "2026-04-26",
+    "rubric": "rubric.json",
+    "verdicts": [
+      "correct",
+      "silent_semantic_change",
+      "over_refactored",
+      "partial",
+      "no_change_needed_correct"
+    ],
+    "notes": {
+      "rf5_multiple_returns": "Reference says ALREADY_CLEAN — early-return chain is idiomatic for a small fixed set. V1-V4 all push a threshold-table refactor; behavior is preserved but it is a lateral stylistic move on already-clean code, therefore over_refactored. V0 explicitly recommends leaving the original as-is.",
+      "rf7_already_clean": "All variants correctly identify the function needs no change. V4 emits bare ALREADY_CLEAN (3 tokens). V0-V3' write prose explanations but reach the same verdict.",
+      "rf8_replace_lambda_with_def": "Reference notes attrgetter is defensible but so is the named-function approach. V0/V1 use attrgetter; V2/V3'/V4 use named function. Both are correct refactors within scope.",
+      "rf6_assert": "V0 additionally recommends replacing assert with explicit exceptions — reference explicitly endorses this as a 'side benefit'. Scored correct, not over_refactored.",
+      "rf1_short_circuit": "Flattened `or` form is semantically equivalent due to short-circuit evaluation; user is None check still happens first. No silent semantic change."
+    }
+  },
+  "rows": [
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf1_nested_if",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Single combined guard clause, short-circuit safe. Explanation is thorough."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf2_loop_to_comprehension",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Minimal correct one-liner. No explanation needed but none provided beyond code."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf3_string_concat_loop",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct join idiom with trailing newline preserved. Explains O(n^2) root cause."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf4_dict_setdefault",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Both setdefault and defaultdict alternatives given with clear guidance on when to use each."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf5_multiple_returns",
+      "verdict": "no_change_needed_correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "V0 is the only variant aligned with the reference: it offers alternatives but explicitly recommends leaving the original as-is, matching ALREADY_CLEAN intent."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf6_long_function_extract",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Extracts validation correctly, then adds the assert-to-raise suggestion endorsed by the reference. Adds dedicated exception type idea — minor scope widening but additive, not harmful."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf7_already_clean",
+      "verdict": "no_change_needed_correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correctly identifies clean function. Recommends leaving as-is. Verbose (123 tokens) but quality is sound."
+    },
+    {
+      "variant": "V0_baseline",
+      "item_id": "rf8_replace_lambda_with_def",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 4,
+        "scope_discipline": 5
+      },
+      "weighted_score": 4.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Chooses attrgetter over named function — marginally better than requested but reference says both are valid. improvement_actually_helps docked 1 point: attrgetter is a different idiom, not obviously 'more correct' than named def for this use case."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf1_nested_if",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Compact, correct. Explicitly notes short-circuit evaluation handles None safety."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf2_loop_to_comprehension",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct, brief. Notes slight performance advantage."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf3_string_concat_loop",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Explicitly flags trailing newline preservation — good behavior-preservation note."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf4_dict_setdefault",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Avoids double key lookup — accurate performance point."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf5_multiple_returns",
+      "verdict": "over_refactored",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 2,
+        "scope_discipline": 4
+      },
+      "weighted_score": 3.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Reference says ALREADY_CLEAN. V1 pushes a threshold-table loop — behavior preserved, code parses, but this is a lateral stylistic move on already-idiomatic code. improvement_actually_helps = 2."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf6_long_function_extract",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 4,
+        "scope_discipline": 5
+      },
+      "weighted_score": 4.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct extraction. Keeps assert statements without flagging the -O stripping risk that the reference notes. Docked 1 on improvement_actually_helps — missed the assert-to-raise fix."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf7_already_clean",
+      "verdict": "no_change_needed_correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correctly leaves as-is. Terse but substantive reasoning."
+    },
+    {
+      "variant": "V1_role_terse",
+      "item_id": "rf8_replace_lambda_with_def",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 4,
+        "scope_discipline": 5
+      },
+      "weighted_score": 4.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Uses attrgetter — valid and correct. Same note as V0 re: reference defensibility of both options."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf1_nested_if",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Terse What-changed summary adequate."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf2_loop_to_comprehension",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct, minimal."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf3_string_concat_loop",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Concise performance note."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf4_dict_setdefault",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct single-liner."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf5_multiple_returns",
+      "verdict": "over_refactored",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 2,
+        "scope_discipline": 4
+      },
+      "weighted_score": 3.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Same as V1: pushes table refactor on ALREADY_CLEAN code. No disclaimer that original is idiomatic."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf6_long_function_extract",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 4,
+        "scope_discipline": 5
+      },
+      "weighted_score": 4.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct extraction. Assert left intact — same miss as V1."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf7_already_clean",
+      "verdict": "no_change_needed_correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Returns full code unchanged with 'What changed: No changes' note. Correct verdict, slightly verbose for no-op (74 tokens)."
+    },
+    {
+      "variant": "V2_format",
+      "item_id": "rf8_replace_lambda_with_def",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Uses named function (requested idiom). Directly matches reference suggestion."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf1_nested_if",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Explicitly states 'behavior preserved' in summary."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf2_loop_to_comprehension",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf3_string_concat_loop",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Notes trailing newline preservation — good."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf4_dict_setdefault",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf5_multiple_returns",
+      "verdict": "over_refactored",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 2,
+        "scope_discipline": 4
+      },
+      "weighted_score": 3.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Same over_refactored call as V1/V2. Reference = ALREADY_CLEAN."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf6_long_function_extract",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 4,
+        "scope_discipline": 5
+      },
+      "weighted_score": 4.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct extraction, assert not upgraded — same partial miss as V1/V2."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf7_already_clean",
+      "verdict": "no_change_needed_correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Returns full code with 'What changed: Nothing' note. Correct verdict. 72 tokens for a no-op."
+    },
+    {
+      "variant": "V3prime_rules",
+      "item_id": "rf8_replace_lambda_with_def",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Named function approach, matching reference. Correct."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf1_nested_if",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct. Minimal and clean."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf2_loop_to_comprehension",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf3_string_concat_loop",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf4_dict_setdefault",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf5_multiple_returns",
+      "verdict": "over_refactored",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 2,
+        "scope_discipline": 4
+      },
+      "weighted_score": 3.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "V4 guard fires on rf7 but not rf5. Reference marks rf5 ALREADY_CLEAN. V4 pushes a larger threshold table with extra blank lines — more verbose than V1-V3' versions of the same over_refactor."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf6_long_function_extract",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 4,
+        "scope_discipline": 5
+      },
+      "weighted_score": 4.7,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Correct extraction. Assert not upgraded — same partial miss as V1-V3'."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf7_already_clean",
+      "verdict": "no_change_needed_correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "ALREADY_CLEAN fires correctly. 3 tokens — the highest efficiency win in the entire dataset."
+    },
+    {
+      "variant": "V4_guard",
+      "item_id": "rf8_replace_lambda_with_def",
+      "verdict": "correct",
+      "scores": {
+        "behavior_preservation": 5,
+        "improvement_actually_helps": 5,
+        "scope_discipline": 5
+      },
+      "weighted_score": 5.0,
+      "hard_gate": {
+        "no_refusal": true,
+        "syntactically_valid": true,
+        "no_silent_semantic_change": true
+      },
+      "notes": "Named function, correct. Matches reference."
+    }
+  ],
+  "aggregate": {
+    "by_variant": [
+      {
+        "variant": "V0_baseline",
+        "mean_weighted_score": 4.975,
+        "over_refactored_count": 0,
+        "no_change_needed_correct_count": 2,
+        "hard_gate_failures": 0,
+        "tokens_sum": 1057,
+        "quality_notes": "Only variant to correctly catch both clean cases (rf5 + rf7). Highest quality, worst token economy."
+      },
+      {
+        "variant": "V1_role_terse",
+        "mean_weighted_score": 4.8,
+        "over_refactored_count": 1,
+        "no_change_needed_correct_count": 1,
+        "hard_gate_failures": 0,
+        "tokens_sum": 615,
+        "quality_notes": "Misses rf5 ALREADY_CLEAN. Otherwise solid. -41.8% tokens vs V0."
+      },
+      {
+        "variant": "V2_format",
+        "mean_weighted_score": 4.8,
+        "over_refactored_count": 1,
+        "no_change_needed_correct_count": 1,
+        "hard_gate_failures": 0,
+        "tokens_sum": 414,
+        "quality_notes": "Misses rf5. rf7 is verbose (74 tokens returning unchanged code). -60.8% tokens vs V0."
+      },
+      {
+        "variant": "V3prime_rules",
+        "mean_weighted_score": 4.8,
+        "over_refactored_count": 1,
+        "no_change_needed_correct_count": 1,
+        "hard_gate_failures": 0,
+        "tokens_sum": 410,
+        "quality_notes": "Virtually identical to V2 in quality and tokens. rf7 still 72 tokens for a no-op. -61.2% tokens vs V0."
+      },
+      {
+        "variant": "V4_guard",
+        "mean_weighted_score": 4.8,
+        "over_refactored_count": 1,
+        "no_change_needed_correct_count": 1,
+        "hard_gate_failures": 0,
+        "tokens_sum": 364,
+        "quality_notes": "ALREADY_CLEAN fires correctly on rf7 (3 tokens). Misses rf5 — same quality as V1-V3'. -65.6% tokens vs V0. Best token efficiency."
+      }
+    ],
+    "guard_precision_recall": {
+      "description": "ALREADY_CLEAN guard in V4 evaluated against reference ALREADY_CLEAN cases (rf5, rf7)",
+      "true_positives": ["rf7_already_clean"],
+      "false_negatives": ["rf5_multiple_returns"],
+      "false_positives": [],
+      "precision": 1.0,
+      "recall": 0.5,
+      "conclusion": "Guard is high-precision (no false ALREADY_CLEAN) but incomplete recall. rf5 is borderline — reference says ALREADY_CLEAN but the function is less obviously canonical than rf7's clamp."
+    }
+  }
+}

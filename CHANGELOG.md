@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-04-27
+
+PyPI metadata alignment + 9-task calibration suite + 60s demo. The package itself was already Apache 2.0 in `LICENSE` from earlier in the week; this release synchronises the PyPI license classifier, ships the validated calibration suite, and pins a verbatim 60-second walkthrough that anyone can replay.
+
+### Added
+
+- **9-task prompt calibration suite** (`examples/`) covering `code_review`, `code_writing`, `debugging`, `refactoring`, `explanation`, `summarization`, `translation`, `test_writing`, `commit_message`. Each task ships:
+  - `variants.json` (5 prompt variants per task: baseline → role+terse → format → rules+format → guard)
+  - `train.jsonl` (8-16 representative items with reference solutions)
+  - `rubric.json` (3 dimensions + 3 hard_gates)
+  - `_subagent_outputs/` and `claude_results.json` (Opus 4.7 simulation outputs + tokenised comparison + winner)
+  - `quality_review.json` (independent Sonnet scoring on 8 of 9 tasks)
+- **Validated winners with measured token savings vs verbose baseline** (token-only ranking on Opus 4.7 subagent simulation):
+  - `code_review`: V5 NO_ISSUE guard, **−57.5%**, 16/16 perfect quality
+  - `code_writing`: V3' rules+format, 8/8 correct
+  - `debugging`: V4 INSUFFICIENT_INFO guard, 8/8 correct
+  - `refactoring`: V4 ALREADY_CLEAN guard, **−65.6%**
+  - `explanation`: V4 ALREADY_OBVIOUS guard
+  - `summarization`: V4 ALREADY_BRIEF guard
+  - `translation`: V4 NO_TRANSLATION_NEEDED guard
+  - `test_writing`: V4 PARAMETRIZE
+  - `commit_message`: V2 conventional commits, **−52.3%**
+- **5 winner reassignments** after independent Sonnet quality reviews overrode pure-token ranking on `code_writing`, `debugging`, `explanation`, `summarization`, `test_writing`. Rationale: token-only winners had hard-gate violations or coverage gaps that quality scoring caught.
+- **60-second demo walkthrough** (`examples/demo_calibration.py`, `examples/demo_replay.py`, `docs/demo/omegaprompt-demo.en.srt`). Reproducible via `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`. README embeds the inline video.
+- **Reusable backtest CLI** (`backtest.py`) usable with Ollama + tiktoken for offline calibration validation.
+- **Cross-model 7B validation** for `code_review` (exaone3.5:7.8b, gemma4:e4b) showing 7B gives directional signal but unreliable absolute quality numbers.
+
+### Fixed
+
+- **PyPI license classifier**: 1.1.0 was published with `License :: OSI Approved :: MIT License` because the relicense to Apache 2.0 happened after the 1.1.0 PyPI upload. 1.2.0 publishes with the correct `License :: OSI Approved :: Apache Software License` classifier, matching the `LICENSE` file already in the repository.
+
+### Methodology Note
+
+Token-only ranking turned out wrong on 5 of 9 tasks once independent Sonnet quality scoring ran — V4 USE_STDLIB missed `@wraps` in `cw6`, V2 debugging format failed `db8` fix_executable, V2 explanation lacked guard, V1 summarization lost to V4 by 0.03 quality but V4 fires the brevity guard correctly, V3' test_writing had two coverage gaps. **Quality scoring is mandatory for production deployment decisions** — see `examples/code_review/validation_archive.json` for the full 8-backtest + 5-quality-review audit trail on the most validated task.
+
 ## [1.0.0] - 2026-04-22
 
 v1.0 is a provider-neutral redesign. The calibration discipline (sensitivity-driven coordinate descent, `hard_gate × soft_score` fitness, walk-forward ship gate with KC-4 Pearson threshold, machine-readable artifacts) is preserved intact; the *contract* around it is restructured so omegaprompt is no longer implicitly Claude-shaped.

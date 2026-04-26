@@ -22,14 +22,7 @@ The main package is self-contained. Two optional sub-tools (`mini-omega-lock`, `
 
 ## Demo (60s)
 
-<!--
-After uploading the demo MP4 to a GitHub issue (drag-drop, then close the page
-without submitting), GitHub returns a URL like
-https://github.com/user-attachments/assets/<hash>. Paste that URL on its own
-line below — GitHub renders mp4 attachment URLs as inline video automatically.
--->
-
-https://github.com/user-attachments/assets/REPLACE_WITH_HASH.mp4
+https://github.com/user-attachments/assets/d4308cc3-b8c1-4bb7-b67d-f763e6c26f11
 
 > 60-second walkthrough of `examples/demo_calibration.py`: 3 inputs (dataset, rubric, variants) → cross-vendor providers (target on `gpt-4o`, judge on Claude) → sensitivity probe over 6 meta-axes (3 carry signal, 3 dead) → grid 9 combinations → walk-forward replay (`train ≈ test`) → baseline `0.4250` → calibrated `0.9250` (+117% uplift) → schema v2.0 artifact → preflight via mini-omega-lock + mini-antemortem-cli. Reproducible with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`.
 

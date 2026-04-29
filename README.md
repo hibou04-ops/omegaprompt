@@ -710,6 +710,13 @@ The MCP server is the substrate the rest of this README documents — every tool
 is a thin wrapper around a runtime entrypoint, which in turn is a thin wrapper
 around the calibration kernel.
 
+For the canonical *when* — which trigger fires which tool flow across the four
+MCP servers in the toolkit (omegaprompt, antemortem, mini-omega-lock,
+mini-antemortem-cli, 18 tools total) — see [AGENT_TRIGGERS.md](AGENT_TRIGGERS.md).
+That document maps real agent situations (non-trivial code change, prompt PR,
+production regression suspected, agent self-verifying its output, etc.) to
+the recommended cost-minimising tool sequence.
+
 ---
 
 ## 11. Worked examples

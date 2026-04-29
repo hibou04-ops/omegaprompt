@@ -50,6 +50,9 @@ dev = [
 # includes both so `pip install omegaprompt` works out of the box.
 anthropic = ["anthropic>=0.40.0"]
 openai = ["openai>=1.50.0"]
+# MCP server: exposes the eight runtime entrypoints to MCP clients
+# (Claude Code, Cursor, etc). Pulls the official MCP Python SDK.
+mcp = ["mcp>=1.0.0"]
 
 [project.urls]
 Homepage = "https://github.com/hibou04-ops/omegaprompt"
@@ -61,6 +64,7 @@ Issues = "https://github.com/hibou04-ops/omegaprompt/issues"
 [project.scripts]
 omegacal = "omegacal.cli:app"
 omegaprompt = "omegaprompt.cli:app"
+omegaprompt-mcp = "omegaprompt.mcp.__main__:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omegaprompt", "src/omegacal"]

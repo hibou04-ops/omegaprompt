@@ -91,6 +91,15 @@ from omegaprompt.preflight import (
     derive_adaptation_plan,
 )
 from omegaprompt.targets import CalibrableTarget, PromptTarget
+from omegaprompt.runtime import (
+    ArtifactDiff,
+    CalibrateTuning,
+    ProviderSpec,
+    calibrate,
+    diff,
+    evaluate,
+    report,
+)
 
 __version__ = "1.1.0"
 
@@ -156,6 +165,14 @@ __all__ = [
     # target
     "CalibrableTarget",
     "PromptTarget",
+    # runtime — high-level Tier 1 entrypoints (agent-callable surface)
+    "ArtifactDiff",
+    "CalibrateTuning",
+    "ProviderSpec",
+    "calibrate",
+    "diff",
+    "evaluate",
+    "report",
     # preflight (plugin interface for optional mini-* sub-tools)
     "AdaptationPlan",
     "AnalyticalFinding",

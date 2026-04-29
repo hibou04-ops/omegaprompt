@@ -10,7 +10,7 @@
 [![Schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
-> **Abstract.** `omegaprompt` is a provider-neutral calibration engine for LLM prompts. It takes the machine-learning defenses against overfitting — train/test split with a pre-declared gate, sensitivity-driven axis unlock, hard-gate × soft-score fitness — and applies them to prompt engineering without coupling to any single vendor's API surface. The public contract is expressed as semantic *meta-axes* (reasoning profile, output budget, response schema mode, tool policy) that each adapter translates to its vendor's native parameters. Adapters declare their capabilities up front; runtime degradations are recorded as `CapabilityEvent`s in the calibration artifact. Two execution profiles (`guarded` / `expedition`) make the trade between validation strength and exploratory reach explicit. The `CalibrationArtifact` (schema v2.0) records the neutral-baseline and calibrated runs side by side, so a reviewer can see not only *what* shipped but *how much* calibration earned over doing nothing.
+> **Abstract.** `omegaprompt` is a provider-neutral calibration engine for LLM prompts. It takes the machine-learning defenses against overfitting — train/test split with a pre-declared gate, sensitivity-driven axis unlock, hard-gate × soft-score fitness — and applies them to prompt engineering without coupling to any single vendor's API surface. The public contract is expressed as semantic *meta-axes* (reasoning profile, output budget, response schema mode, tool policy) that each adapter translates to its vendor's native parameters. Adapters declare their capabilities up front; runtime degradations are recorded as `CapabilityEvent`s in the calibration artifact. Two execution profiles (`guarded` / `expedition`) make the trade between validation strength and exploratory reach explicit. The `CalibrationArtifact` (schema v2.0) records the neutral-baseline and calibrated runs side by side, so a reviewer can see not only *what* shipped but *how much* calibration earned over doing nothing. Eight one-call runtime entrypoints (`calibrate`, `evaluate`, `report`, `diff`, `measure_sensitivity`, `grade`, `preflight`, `classify_traps`) are exposed at package level and as MCP tools (`pip install "omegaprompt[mcp]"`), so the same calibration discipline plugs into Python scripts, CI gates, and agent runtimes (Claude Code, Cursor) over a single contract.
 
 ```bash
 pip install omegaprompt
@@ -41,6 +41,9 @@ https://github.com/user-attachments/assets/d4308cc3-b8c1-4bb7-b67d-f763e6c26f11
 - [8. The CalibrationArtifact (schema v2.0)](#8-the-calibrationartifact-schema-v20)
 - [9. CLI surface](#9-cli-surface)
 - [10. Quick start](#10-quick-start)
+  - [10.1 Python (high-level API)](#101-python-high-level-api)
+  - [10.2 CLI](#102-cli)
+  - [10.3 MCP server (Claude Code, Cursor)](#103-mcp-server-claude-code-cursor)
 - [11. Worked example](#11-worked-example)
 - [12. Validation](#12-validation)
 - [13. Comparative positioning](#13-comparative-positioning)
@@ -562,12 +565,77 @@ The `omegaprompt` CLI binary remains as a compatibility alias during migration.
 ## 10. Quick start
 
 ```bash
-pip install omegaprompt
+pip install omegaprompt              # core (CLI + runtime entrypoints)
+pip install "omegaprompt[mcp]"       # adds the MCP server for Claude Code / Cursor
 ```
 
-A minimal run (Anthropic target + Anthropic judge, guarded profile):
+omegaprompt exposes three calling surfaces over the same calibration kernel: a
+**Python high-level API** (one call per operation, agent-callable), a **CLI**
+(human-driven, scriptable from any shell), and an **MCP server** (Claude Code,
+Cursor, and other MCP clients invoke the same operations as tools).
+
+### 10.1 Python (high-level API)
+
+Eight one-call entrypoints in `omegaprompt.runtime`, re-exported at package level.
+Each accepts paths or inline objects and returns a Pydantic-modeled result.
+
+```python
+from omegaprompt import calibrate, evaluate, diff, report
+
+artifact = calibrate(
+    train="train.jsonl",
+    test="test.jsonl",
+    rubric="rubric.json",
+    variants="variants.json",
+    target="anthropic",                  # or {"name": "openai", "model": "gpt-4o"}
+    judge="openai",                      # cross-vendor breaks self-agreement
+    output="artifact.json",              # opt-in disk write
+)
+print(artifact.status, artifact.calibrated_fitness)
+
+# Re-score the same config on a fresh dataset (regression check).
+result = evaluate(
+    dataset="canary.jsonl",
+    rubric="rubric.json", variants="variants.json",
+    params=artifact,                     # extracts artifact.calibrated_params automatically
+    target="anthropic", judge="openai",
+)
+
+# Compare two artifacts (CI regression detection).
+delta = diff("baseline.json", "candidate.json")
+if delta.regressed:
+    raise SystemExit("\n".join(delta.regression_reasons))
+
+# Render for a PR description.
+print(report("artifact.json"))
+```
+
+The four Tier 2 entrypoints — `measure_sensitivity`, `grade`, `preflight`,
+`classify_traps` — cover diagnostic and per-response use cases. See
+`omegaprompt/runtime.py` docstrings for the full surface.
+
+Three input-coercion conveniences worth flagging:
+
+- `target` and `judge` accept a string (`"anthropic"`), a `ProviderSpec` dict
+  (`{"name": ..., "model": ..., "base_url": ...}`), or a pre-built `LLMProvider`
+  instance. Use the string form for defaults; the dict form for non-default
+  models or local endpoints; the instance form when you've already configured
+  caching, retries, etc.
+- Datasets, rubrics, and variants accept either a filesystem path or an
+  in-memory Pydantic / dict instance. Agents typically pass dicts; humans
+  typically pass paths.
+- `params=` on `evaluate()` accepts a `CalibrationArtifact` directly. The
+  common "evaluate the previous best on a new dataset" flow is one call.
+
+Low-frequency knobs (search method, unlock-K, walk-forward thresholds, axis
+space) are grouped under `tuning=CalibrateTuning(...)` rather than flat
+parameters; the agent surface stays minimal while power users keep full
+control.
+
+### 10.2 CLI
 
 ```bash
+# Anthropic target + Anthropic judge, guarded profile.
 omegaprompt calibrate examples/sample_dataset.jsonl \
   --rubric examples/rubric_example.json \
   --variants examples/variants_example.json \
@@ -575,21 +643,15 @@ omegaprompt calibrate examples/sample_dataset.jsonl \
   --judge-provider anthropic \
   --profile guarded \
   --output artifact.json
-```
 
-Cross-vendor (OpenAI target, Anthropic judge) to break self-agreement:
-
-```bash
+# Cross-vendor (OpenAI target, Anthropic judge) to break self-agreement.
 omegaprompt calibrate train.jsonl \
   --rubric rubric.json --variants variants.json --test test.jsonl \
   --target-provider openai   --target-model gpt-4o \
   --judge-provider anthropic --judge-model claude-opus-4-7 \
   --output artifact.json
-```
 
-Local target (Ollama) + cloud judge:
-
-```bash
+# Local target (Ollama) + cloud judge.
 omegaprompt calibrate train.jsonl \
   --rubric rubric.json --variants variants.json --test test.jsonl \
   --target-provider ollama \
@@ -598,14 +660,55 @@ omegaprompt calibrate train.jsonl \
   --judge-provider openai --judge-model gpt-4o \
   --profile guarded \
   --output artifact.json
-```
 
-Render and diff:
-
-```bash
+# Render and diff.
 omegaprompt report artifact.json
 omegaprompt diff previous.json artifact.json
 ```
+
+### 10.3 MCP server (Claude Code, Cursor)
+
+The MCP server exposes all eight runtime entrypoints as agent-callable tools.
+Inputs are JSON-friendly (paths, dicts, primitives); outputs are Pydantic models
+serialized as dicts. Schema is auto-derived from type hints.
+
+Run the server (stdio is the default; Claude Code spawns it as a subprocess):
+
+```bash
+pip install "omegaprompt[mcp]"
+python -m omegaprompt.mcp           # stdio transport (recommended)
+python -m omegaprompt.mcp --http    # streamable-http transport
+```
+
+Wire it into Claude Code's `mcpServers` configuration:
+
+```json
+{
+  "mcpServers": {
+    "omegaprompt": {
+      "command": "python",
+      "args": ["-m", "omegaprompt.mcp"]
+    }
+  }
+}
+```
+
+Once the server is connected, the agent can call any of the eight tools by name
+(`calibrate`, `evaluate`, `report`, `diff`, `measure_sensitivity`, `grade`,
+`preflight`, `classify_traps`) with the documented argument shape. A typical
+agent flow before shipping a prompt:
+
+```
+classify_traps(...)   →  catch self-agreement bias, small-sample power, etc.
+preflight(...)         →  verify provider tiers, surface vendor-vendor warnings
+calibrate(...)         →  run the full pipeline; produce a CalibrationArtifact
+report(...)            →  render the artifact as Markdown for the user
+diff(prev, new)        →  CI regression check on the next iteration
+```
+
+The MCP server is the substrate the rest of this README documents — every tool
+is a thin wrapper around a runtime entrypoint, which in turn is a thin wrapper
+around the calibration kernel.
 
 ---
 

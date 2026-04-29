@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-04-29
+
+Eight one-call runtime entrypoints + MCP server. The calibration kernel is unchanged; the change is the *agent-callable surface* layered on top of it. The same eight operations are now reachable from Python (one call each), the CLI (existing surface, preserved), and an MCP server that Claude Code / Cursor can spawn over stdio.
+
+### Added
+
+- **`omegaprompt.runtime` module** with eight high-level entrypoints, re-exported at package level (`from omegaprompt import calibrate, evaluate, ...`):
+  - **Tier 1** (most-used): `calibrate` (full pipeline), `evaluate` (single-config eval, no search), `report` (artifact → markdown), `diff` (compare two artifacts).
+  - **Tier 2** (less-frequent but distinct): `measure_sensitivity` (cheap axis-stress probe, no grid), `grade` (score one response, rule / llm / ensemble strategy), `preflight` (capability-only env sanity check), `classify_traps` (deterministic trap classification, requires `mini-antemortem-cli`).
+  - Each entrypoint accepts paths or in-memory objects. Provider arguments accept `str | ProviderSpec | LLMProvider`. `evaluate(params=...)` accepts a `CalibrationArtifact` directly and auto-extracts `calibrated_params`.
+- **Five new Pydantic types** for the agent-callable contract: `ProviderSpec`, `CalibrateTuning`, `SensitivityTuning`, `SensitivityResult`, `ArtifactDiff`. All declare `extra="forbid"` so MCP clients receive strict JSON schemas.
+- **`omegaprompt.mcp` package** — FastMCP server exposing all eight runtime entrypoints as agent-callable tools. Run with `python -m omegaprompt.mcp` (stdio, default for Claude Code) or `--http` (streamable-http). Console script `omegaprompt-mcp` registered.
+- **New optional dependency `[mcp]`** — `pip install "omegaprompt[mcp]"` pulls in the official MCP Python SDK (`mcp>=1.0.0`).
+- **35 new tests** — `test_runtime.py` (26 tests covering Tier 1 + Tier 2 pure functions and type coercion) and `test_mcp_server.py` (6 smoke tests verifying all eight tools register with input schemas and required-args contracts that match the runtime signatures). Total **181 tests passing**, zero network calls in CI.
+
+### Changed
+
+- **README section 10 (Quick start)** restructured into three subsections (10.1 Python high-level API, 10.2 CLI, 10.3 MCP server) so all three calling surfaces are visible to first-time readers.
+- **Abstract** updated to flag the eight runtime entrypoints and the MCP-substrate framing.
+
+### Rationale
+
+Up through 1.2.0, omegaprompt's agent-friendly surface was the CLI. That works for human-driven scripts and CI gates but forces an agent to either spawn a subprocess or compose six layers of the underlying API to do anything. 1.3.0 closes that gap: the same calibration kernel is now reachable through one Python call, one CLI command, or one MCP tool invocation. Sensitivity-driven input design (HIGH-frequency knobs flat, LOW-frequency grouped under `*Tuning` escape hatches) keeps the agent-facing surface small without giving up power-user control.
+
+The MCP server is the framing change. omegaprompt is positioned as the *substrate* agent runtimes plug into for prompt validation — calibrate-before-ship, regress-on-PR, classify-traps-before-acting — rather than a manual tool that a human has to remember to run.
+
 ## [1.2.0] - 2026-04-27
 
 PyPI metadata alignment + 9-task calibration suite + 60s demo. The package itself was already Apache 2.0 in `LICENSE` from earlier in the week; this release synchronises the PyPI license classifier, ships the validated calibration suite, and pins a verbatim 60-second walkthrough that anyone can replay.

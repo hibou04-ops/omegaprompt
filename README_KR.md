@@ -1,4 +1,4 @@
-# omegaprompt (한국어)
+# omegaprompt (한국어) 
 
 > **처음이신가요?** 먼저 보세요: [EASY_README_KR.md](EASY_README_KR.md) (한국어) · [EASY_README.md](EASY_README.md) (English). 아래 본 문서가 어렵게 느껴지는 분들을 위한 압축된 쉬운 소개.
 

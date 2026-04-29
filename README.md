@@ -1,24 +1,21 @@
 # omegaprompt
 
-> **New to this?** Start here: [EASY_README.md](EASY_README.md) (English) · [EASY_README_KR.md](EASY_README_KR.md) (한국어). Compressed plain-language introductions for readers who find the full doc below intimidating.
+> A **CI gate for prompt regressions** — block prompt changes that overfit your eval set before they reach production.
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
 [![PyPI](https://img.shields.io/badge/pypi-1.4.0-blue.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-181%20passing-brightgreen.svg)](tests/)
-[![Providers](https://img.shields.io/badge/providers-anthropic%20%7C%20openai%20%7C%20openai--compatible%20%7C%20local-informational.svg)](#7-provider-adapters)
-[![Schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
+[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
+[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
 > **Part of the omegaprompt toolkit** — [omegaprompt](https://github.com/hibou04-ops/omegaprompt) (calibration engine, this repo) · [omega-lock](https://github.com/hibou04-ops/omega-lock) (audit framework) · [antemortem-cli](https://github.com/hibou04-ops/antemortem-cli) (pre-implementation recon CLI) · [mini-omega-lock](https://github.com/hibou04-ops/mini-omega-lock) (empirical preflight) · [mini-antemortem-cli](https://github.com/hibou04-ops/mini-antemortem-cli) (analytical preflight) · [Antemortem](https://github.com/hibou04-ops/Antemortem) (methodology). Cross-toolkit cookbook (when-to-call-which-tool, 9 agent scenarios): [AGENT_TRIGGERS.md](AGENT_TRIGGERS.md).
 
-> **Abstract.** `omegaprompt` is a provider-neutral calibration engine for LLM prompts. It takes the machine-learning defenses against overfitting — train/test split with a pre-declared gate, sensitivity-driven axis unlock, hard-gate × soft-score fitness — and applies them to prompt engineering without coupling to any single vendor's API surface. The public contract is expressed as semantic *meta-axes* (reasoning profile, output budget, response schema mode, tool policy) that each adapter translates to its vendor's native parameters. Adapters declare their capabilities up front; runtime degradations are recorded as `CapabilityEvent`s in the calibration artifact. Two execution profiles (`guarded` / `expedition`) make the trade between validation strength and exploratory reach explicit. The `CalibrationArtifact` (schema v2.0) records the neutral-baseline and calibrated runs side by side, so a reviewer can see not only *what* shipped but *how much* calibration earned over doing nothing. Eight one-call runtime entrypoints (`calibrate`, `evaluate`, `report`, `diff`, `measure_sensitivity`, `grade`, `preflight`, `classify_traps`) are exposed at package level and as MCP tools (`pip install "omegaprompt[mcp]"`), so the same calibration discipline plugs into Python scripts, CI gates, and agent runtimes (Claude Code, Cursor) over a single contract.
-
 ```bash
-pip install omegaprompt
+pip install omegaprompt              # core
+pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
-
-The main package is self-contained. Two optional sub-tools (`mini-omega-lock`, `mini-antemortem-cli`) distribute **separately** and plug in via the `omegaprompt.preflight` interface to add empirical and analytical preflight measurements respectively. Standalone users do not need them — see §5.8. Korean README: [README_KR.md](README_KR.md).
 
 ---
 
@@ -27,6 +24,99 @@ The main package is self-contained. Two optional sub-tools (`mini-omega-lock`, `
 https://github.com/user-attachments/assets/d4308cc3-b8c1-4bb7-b67d-f763e6c26f11
 
 > 60-second walkthrough of `examples/demo_calibration.py`: 3 inputs (dataset, rubric, variants) → cross-vendor providers (target on `gpt-4o`, judge on Claude) → sensitivity probe over 6 meta-axes (3 carry signal, 3 dead) → grid 9 combinations → walk-forward replay (`train ≈ test`) → baseline `0.4250` → calibrated `0.9250` (+117% uplift) → schema v2.0 artifact → preflight via mini-omega-lock + mini-antemortem-cli. Reproducible with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`.
+
+---
+
+## TL;DR — what & why
+
+You tune a prompt against 50 examples, score 92%, ship. Two weeks later prod metrics drop 15%. **Most LLM eval tooling** tells you *which* prompt scores best — assuming your eval set is the ground truth. **`omegaprompt` tells you whether that score generalizes**, by enforcing the train/test discipline ML curricula have taught since the 1990s but prompt engineering routinely skips:
+
+- **Train/test split** with a pre-declared correlation gate (no post-hoc threshold lowering).
+- **Walk-forward validation** — `test_fitness` must hold up against `train_fitness`, or the run is flagged.
+- **Cross-vendor judge** — break self-agreement bias by grading Anthropic targets with OpenAI judges (or vice-versa).
+- **Provider-neutral meta-axes** — calibrate over semantic axes (reasoning profile, output budget, schema mode, tool policy), not vendor-specific knobs that break on migration.
+- **`CalibrationArtifact` schema v2.0** — JSON that diffs cleanly in PRs, fails CI on regression.
+
+---
+
+## Quick start
+
+### 0. Smoke test — no API keys, no network (deterministic)
+
+Try the full audit flow without any LLM calls — useful for CI sanity, first-time exploration, and reproducibility checks:
+
+```bash
+git clone https://github.com/hibou04-ops/omegaprompt.git
+cd omegaprompt && pip install -e .
+
+# Reproduce the reference artifact (in-memory target + judge, no network, no randomness)
+python examples/reference/reproduce_reference_artifact.py
+
+# Render the audit report from the included reference artifact
+omegaprompt report examples/reference/reference_artifact.json
+```
+
+This path is fully deterministic — every run produces the same `CalibrationArtifact`. Use it to wire CI before adding API keys.
+
+### 1. Real calibration — cloud target + cross-vendor judge
+
+Set API keys for the providers you want to use, then run end-to-end:
+
+```bash
+export ANTHROPIC_API_KEY=...
+export OPENAI_API_KEY=...
+
+omegaprompt calibrate examples/sample_dataset.jsonl \
+  --rubric examples/rubric_example.json \
+  --variants examples/variants_example.json \
+  --target-provider anthropic \
+  --judge-provider openai \
+  --output artifact.json
+```
+
+### 2. Render an audit report (for PR descriptions, CI logs, human review)
+
+```bash
+omegaprompt report artifact.json > report.md
+```
+
+### 3. CI regression gate
+
+`omegaprompt diff` exits non-zero when the new run regresses on `calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, cost/latency frontiers, or guarded-mode boundary compliance:
+
+```bash
+omegaprompt diff previous.json artifact.json
+```
+
+Drop into your pipeline:
+
+```yaml
+# .github/workflows/prompt-audit.yml
+- run: omegaprompt diff previous.json artifact.json
+```
+
+---
+
+## How is this different?
+
+| Capability | omegaprompt | Typical eval runners | Optimizers | Vendor dashboards |
+|---|:-:|:-:|:-:|:-:|
+| Eval execution | ✓ | ✓ | ✓ | ✓ |
+| **Walk-forward ship gate** | ✓ | usually manual | usually manual | ✗ |
+| **Pre-declared kill criteria** | ✓ | usually manual | partial | ✗ |
+| **Cross-vendor judge discipline** | ✓ | configurable | manual | ✗ |
+| Provider-neutral calibration axes | ✓ | varies | partial | ✗ |
+| JSON-diff audit artifact | ✓ | logs | varies | ✗ |
+| MCP tool surface (Claude Code / Cursor) | ✓ | varies | ✗ | ✗ |
+
+> **Position**: `omegaprompt` is **audit-first**, not search-first. It assumes you already picked candidates — often from an eval runner or optimizer — and asks "did you actually generalize?" — the question downstream of search. Existing tools' outputs plug in *as inputs* (assertion-style checks as `RuleJudge`, optimizer outputs as `PromptVariants`).
+
+---
+
+📖 **Want depth?** Full architecture, schema, validation, worked examples, and 4 appendices below — paper-grade reference for serious adopters.
+👋 **Want simpler?** [EASY_README.md](EASY_README.md) (English) · [EASY_README_KR.md](EASY_README_KR.md)
+
+> **Note**: Two optional sub-tools (`mini-omega-lock`, `mini-antemortem-cli`) distribute **separately** and plug in via `omegaprompt.preflight` to add empirical and analytical preflight measurements. Standalone users do not need them — see §5.8.
 
 ---
 

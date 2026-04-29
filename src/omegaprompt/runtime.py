@@ -29,14 +29,22 @@ from omegaprompt.core import (
 from omegaprompt.domain import (
     CalibrationArtifact,
     Dataset,
+    DatasetItem,
     EvalResult,
     ExecutionProfile,
+    JudgeResult,
     JudgeRubric,
     MetaAxisSpace,
     PromptVariants,
     ResolvedPromptParams,
 )
-from omegaprompt.judges import LLMJudge
+from omegaprompt.judges import EnsembleJudge, Judge, LLMJudge, RuleJudge
+from omegaprompt.judges.rule_judge import default_no_refusal, default_non_empty
+from omegaprompt.preflight.contracts import (
+    AnalyticalFinding,
+    PreflightReport,
+    PreflightStatus,
+)
 from omegaprompt.providers import (
     LLMProvider,
     make_provider,
@@ -98,6 +106,29 @@ class ArtifactDiff(BaseModel):
     quality_per_latency_delta: float
     regressed: bool
     regression_reasons: list[str] = Field(default_factory=list)
+
+    model_config = {"extra": "forbid"}
+
+
+class SensitivityTuning(BaseModel):
+    """Low-frequency tuning knobs for measure_sensitivity()."""
+
+    space: MetaAxisSpace | None = None
+    profile: ExecutionProfile = ExecutionProfile.GUARDED
+
+    model_config = {"extra": "forbid"}
+
+
+class SensitivityResult(BaseModel):
+    """Per-axis sensitivity ranking from a stress probe.
+
+    Each ``rows`` entry has ``axis``, ``normalized_stress``, ``raw_stress``,
+    and ``rank`` (0 = most sensitive). Ordered by descending sensitivity.
+    """
+
+    rows: list[dict] = Field(default_factory=list)
+    baseline_fitness: float
+    n_probes: int
 
     model_config = {"extra": "forbid"}
 
@@ -558,6 +589,255 @@ def diff(
 
 
 # ----------------------------------------------------------------------
+# Tier 2 entrypoints
+# ----------------------------------------------------------------------
+
+
+def measure_sensitivity(
+    dataset: Dataset | Path | str,
+    *,
+    rubric: JudgeRubric | Path | str | dict,
+    variants: PromptVariants | Path | str | dict,
+    target: LLMProvider | ProviderSpec | str | dict,
+    judge: LLMProvider | ProviderSpec | str | dict | None = None,
+    tuning: SensitivityTuning | None = None,
+) -> SensitivityResult:
+    """Cheap axis-ranking probe — no grid search, no walk-forward.
+
+    Use case: agent or developer deciding whether full calibration is
+    worth the cost. If no axis carries signal (all near-zero stress),
+    skip calibrate. If 2-3 axes dominate, calibrate is cheap and worth
+    running.
+
+    Roughly costs ``axes × probe_size`` LLM calls (typically 6-30 calls
+    against a small dataset slice).
+    """
+    try:
+        from omega_lock import measure_stress
+    except ImportError as exc:
+        raise ImportError(
+            "omegaprompt.measure_sensitivity requires omega-lock. "
+            "Install with `pip install omega-lock`."
+        ) from exc
+
+    tuning = tuning or SensitivityTuning()
+    profile = (
+        tuning.profile
+        if isinstance(tuning.profile, ExecutionProfile)
+        else ExecutionProfile(tuning.profile)
+    )
+
+    dataset_obj = _resolve_dataset(dataset)
+    rubric_obj = _resolve_rubric(rubric)
+    variants_obj = _resolve_variants(variants)
+    target_provider = _resolve_provider(target)
+    judge_provider = (
+        _resolve_provider(judge) if judge is not None else target_provider
+    )
+
+    judge_obj = LLMJudge(provider=judge_provider, execution_profile=profile)
+    target_obj = PromptTarget(
+        target_provider=target_provider,
+        judge=judge_obj,
+        dataset=dataset_obj,
+        rubric=rubric_obj,
+        variants=variants_obj,
+        space=tuning.space,
+        execution_profile=profile,
+    )
+
+    baseline_params = target_obj.neutral_params()
+    baseline_result = target_obj.evaluate(baseline_params)
+    stress_results = measure_stress(target_obj, baseline_params, baseline_result)
+
+    rows: list[dict] = []
+    ranked = sorted(
+        stress_results,
+        key=lambda s: float(getattr(s, "normalized_stress", 0.0) or 0.0),
+        reverse=True,
+    )
+    for rank, s in enumerate(ranked):
+        rows.append(
+            {
+                "axis": getattr(s, "axis", None) or getattr(s, "name", None),
+                "normalized_stress": getattr(s, "normalized_stress", None),
+                "raw_stress": getattr(s, "raw_stress", None),
+                "rank": rank,
+            }
+        )
+
+    return SensitivityResult(
+        rows=rows,
+        baseline_fitness=baseline_result.fitness,
+        n_probes=len(stress_results),
+    )
+
+
+def grade(
+    *,
+    rubric: JudgeRubric | Path | str | dict,
+    item: DatasetItem | dict,
+    response: str,
+    provider: LLMProvider | ProviderSpec | str | dict,
+    strategy: Literal["rule", "llm", "ensemble"] = "ensemble",
+) -> JudgeResult:
+    """Score a single response against a rubric.
+
+    Use case: agent self-grading its own output before returning it; or
+    spot-checking a candidate response without running a full evaluation.
+
+    ``strategy`` selects the judge: ``rule`` for zero-API deterministic
+    gate checks, ``llm`` for LLM scoring, ``ensemble`` (default) runs
+    rule first and short-circuits if hard gates fail.
+
+    Named ``grade`` (not ``judge``) to avoid shadowing the legacy
+    ``omegaprompt.judge`` shim module at package level.
+    """
+    rubric_obj = _resolve_rubric(rubric)
+    if isinstance(item, DatasetItem):
+        item_obj = item
+    elif isinstance(item, dict):
+        item_obj = DatasetItem.model_validate(item)
+    else:
+        raise TypeError(f"Unsupported item input: {type(item).__name__}")
+
+    default_checks = [default_no_refusal(), default_non_empty()]
+    if strategy == "rule":
+        judge_obj: Judge = RuleJudge(checks=default_checks)
+    elif strategy == "llm":
+        provider_obj = _resolve_provider(provider)
+        judge_obj = LLMJudge(provider=provider_obj)
+    else:  # ensemble
+        provider_obj = _resolve_provider(provider)
+        judge_obj = EnsembleJudge(
+            rule_judge=RuleJudge(checks=default_checks),
+            fallback=LLMJudge(provider=provider_obj),
+        )
+
+    return judge_obj.score(
+        rubric=rubric_obj, item=item_obj, target_response=response
+    )
+
+
+def preflight(
+    *,
+    target: LLMProvider | ProviderSpec | str | dict,
+    judge: LLMProvider | ProviderSpec | str | dict,
+    profile: ExecutionProfile | str = ExecutionProfile.GUARDED,
+) -> PreflightReport:
+    """Sanity-check the target / judge environment before calibrating.
+
+    Capability-only check by default: examines provider tiers and known
+    placeholder/experimental flags, surfaces self-agreement-bias warnings
+    when target and judge are the same vendor.
+
+    If ``mini-omega-lock`` is installed, this entrypoint will also be the
+    plug point for empirical probes (judge consistency, endpoint reliability,
+    latency) once those are wired through. Standalone callers receive the
+    capability-only report.
+    """
+    profile_obj = (
+        profile
+        if isinstance(profile, ExecutionProfile)
+        else ExecutionProfile(profile)
+    )
+    target_provider = _resolve_provider(target)
+    judge_provider = _resolve_provider(judge)
+    target_caps = provider_capabilities(target_provider)
+    judge_caps = provider_capabilities(judge_provider)
+
+    warnings: list[str] = []
+    blocker_reasons: list[str] = []
+
+    if target_provider.name == judge_provider.name:
+        warnings.append(
+            f"target and judge share vendor '{target_provider.name}' — "
+            "self-agreement bias possible. Cross-vendor judge recommended."
+        )
+    if getattr(target_caps, "is_placeholder", False):
+        blocker_reasons.append(
+            f"target provider '{target_provider.name}' is a placeholder; "
+            "real provider needed before ship."
+        )
+    if getattr(judge_caps, "is_placeholder", False):
+        blocker_reasons.append(
+            f"judge provider '{judge_provider.name}' is a placeholder; "
+            "real provider needed before ship."
+        )
+    if getattr(target_caps, "is_experimental", False):
+        warnings.append(
+            f"target provider '{target_provider.name}' is experimental — "
+            "interface may change."
+        )
+
+    if blocker_reasons:
+        status = (
+            PreflightStatus.ABORT
+            if profile_obj == ExecutionProfile.GUARDED
+            else PreflightStatus.ADAPT
+        )
+    elif warnings:
+        status = PreflightStatus.PROCEED
+    else:
+        status = PreflightStatus.PROCEED
+
+    return PreflightReport(
+        analytical_findings=[],
+        judge_quality=None,
+        endpoint=None,
+        performance=None,
+        status=status,
+        blocker_reasons=blocker_reasons,
+        warnings=warnings,
+    )
+
+
+def classify_traps(
+    *,
+    rubric: JudgeRubric | Path | str | dict,
+    variants: PromptVariants | Path | str | dict,
+    target: LLMProvider | ProviderSpec | str | dict,
+    judge: LLMProvider | ProviderSpec | str | dict,
+    dataset: Dataset | Path | str,
+    test: Dataset | Path | str | None = None,
+) -> list[AnalyticalFinding]:
+    """Classify the calibration config against known trap patterns.
+
+    Deterministic, zero-LLM-cost. Use case: pre-flight check before
+    calibrating — catch self-agreement bias, small-sample power loss,
+    variant homogeneity, rubric concentration, etc.
+
+    Requires ``mini-antemortem-cli`` to be installed (the analytical
+    sub-tool that ships the trap-pattern classifier).
+    """
+    try:
+        from mini_antemortem_cli import analytical_preflight
+    except ImportError as exc:
+        raise ImportError(
+            "omegaprompt.classify_traps requires mini-antemortem-cli. "
+            "Install with `pip install mini-antemortem-cli`."
+        ) from exc
+
+    rubric_obj = _resolve_rubric(rubric)
+    variants_obj = _resolve_variants(variants)
+    target_provider = _resolve_provider(target)
+    judge_provider = _resolve_provider(judge)
+    train_dataset = _resolve_dataset(dataset)
+    test_dataset = _resolve_dataset(test) if test is not None else None
+
+    return analytical_preflight(
+        target_provider=target_provider.name,
+        target_model=target_provider.model,
+        judge_provider=judge_provider.name,
+        judge_model=judge_provider.model,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+        rubric=rubric_obj,
+        variants=variants_obj,
+    )
+
+
+# ----------------------------------------------------------------------
 # Internal helpers — extracted from commands/calibrate.py to keep the
 # pure pipeline orchestration free of typer/CLI concerns
 # ----------------------------------------------------------------------
@@ -608,6 +888,7 @@ def _merge_usage(left: dict[str, int], right: dict[str, int]) -> dict[str, int]:
 
 
 __all__ = [
+    # Tier 1 types + entrypoints
     "ProviderSpec",
     "CalibrateTuning",
     "ArtifactDiff",
@@ -615,4 +896,11 @@ __all__ = [
     "evaluate",
     "report",
     "diff",
+    # Tier 2 types + entrypoints
+    "SensitivityTuning",
+    "SensitivityResult",
+    "measure_sensitivity",
+    "grade",
+    "preflight",
+    "classify_traps",
 ]

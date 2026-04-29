@@ -14,9 +14,20 @@ from omegaprompt import (
     ArtifactDiff,
     CalibrateTuning,
     CalibrationArtifact,
+    Dataset,
+    DatasetItem,
+    Dimension,
     ExecutionProfile,
+    HardGate,
+    JudgeRubric,
+    PreflightReport,
+    PreflightStatus,
     ProviderSpec,
+    SensitivityResult,
+    SensitivityTuning,
     diff,
+    grade,
+    preflight,
     report,
 )
 from omegaprompt.runtime import _resolve_artifact, _resolve_provider
@@ -186,3 +197,154 @@ class TestDiff:
         md = diff(old, new, format="markdown")
         assert "## REGRESSION" in md
         assert "calibrated_fitness regressed" in md
+
+
+# ----- Tier 2 Pydantic types -----
+
+
+class TestSensitivityTuning:
+    def test_defaults(self):
+        t = SensitivityTuning()
+        assert t.profile == ExecutionProfile.GUARDED
+        assert t.space is None
+
+    def test_extra_keys_rejected(self):
+        with pytest.raises(ValidationError):
+            SensitivityTuning(unknown_key=42)
+
+
+class TestSensitivityResult:
+    def test_minimal(self):
+        r = SensitivityResult(rows=[], baseline_fitness=0.5, n_probes=0)
+        assert r.baseline_fitness == 0.5
+        assert r.n_probes == 0
+
+    def test_extra_keys_rejected(self):
+        with pytest.raises(ValidationError):
+            SensitivityResult(
+                rows=[], baseline_fitness=0.5, n_probes=0, bogus=1
+            )
+
+
+# ----- grade() — strategy=rule path is pure-deterministic, testable -----
+
+
+def _simple_rubric() -> JudgeRubric:
+    return JudgeRubric(
+        dimensions=[
+            Dimension(name="accuracy", description="is it correct?", weight=1.0),
+        ],
+        hard_gates=[
+            HardGate(
+                name="no_refusal",
+                description="model must try",
+                evaluator="rule",
+            ),
+        ],
+    )
+
+
+class TestGradeRule:
+    def test_rule_strategy_passes_substantive_response(self):
+        rubric = _simple_rubric()
+        item = DatasetItem(id="t1", input="ping", reference="pong")
+        result = grade(
+            rubric=rubric,
+            item=item,
+            response="This is a substantive answer that goes well past any refusal threshold.",
+            provider="anthropic",  # not used by rule strategy
+            strategy="rule",
+        )
+        assert result is not None
+
+    def test_dict_item_coerced(self):
+        rubric = _simple_rubric()
+        result = grade(
+            rubric=rubric,
+            item={"id": "t2", "input": "ping", "reference": "pong"},
+            response="A perfectly substantive response that satisfies length checks.",
+            provider="anthropic",
+            strategy="rule",
+        )
+        assert result is not None
+
+
+# ----- preflight() — capability-only mode, no network calls -----
+
+
+class TestPreflightCapabilityOnly:
+    def test_self_agreement_warning_when_same_vendor(self, monkeypatch):
+        # Stub the provider factory to return objects with predictable .name
+        class StubProvider:
+            def __init__(self, name):
+                self.name = name
+                self.model = "stub-model"
+
+        def fake_make_provider(name, model=None, base_url=None):
+            return StubProvider(name)
+
+        class StubCaps:
+            is_placeholder = False
+            is_experimental = False
+
+        def fake_caps(_):
+            return StubCaps()
+
+        monkeypatch.setattr(
+            "omegaprompt.runtime.make_provider", fake_make_provider
+        )
+        monkeypatch.setattr(
+            "omegaprompt.runtime.provider_capabilities", fake_caps
+        )
+
+        report_obj = preflight(target="anthropic", judge="anthropic")
+        assert isinstance(report_obj, PreflightReport)
+        assert report_obj.status == PreflightStatus.PROCEED
+        assert any("self-agreement" in w for w in report_obj.warnings)
+
+    def test_cross_vendor_no_warning(self, monkeypatch):
+        class StubProvider:
+            def __init__(self, name):
+                self.name = name
+                self.model = "stub"
+
+        class StubCaps:
+            is_placeholder = False
+            is_experimental = False
+
+        monkeypatch.setattr(
+            "omegaprompt.runtime.make_provider",
+            lambda n, model=None, base_url=None: StubProvider(n),
+        )
+        monkeypatch.setattr(
+            "omegaprompt.runtime.provider_capabilities", lambda _: StubCaps()
+        )
+
+        report_obj = preflight(target="anthropic", judge="openai")
+        assert report_obj.status == PreflightStatus.PROCEED
+        assert not any("self-agreement" in w for w in report_obj.warnings)
+
+    def test_placeholder_provider_blocks_under_guarded(self, monkeypatch):
+        class StubProvider:
+            def __init__(self, name):
+                self.name = name
+                self.model = "stub"
+
+        class PlaceholderCaps:
+            is_placeholder = True
+            is_experimental = False
+
+        monkeypatch.setattr(
+            "omegaprompt.runtime.make_provider",
+            lambda n, model=None, base_url=None: StubProvider(n),
+        )
+        monkeypatch.setattr(
+            "omegaprompt.runtime.provider_capabilities",
+            lambda _: PlaceholderCaps(),
+        )
+
+        report_obj = preflight(
+            target="anthropic", judge="openai", profile="guarded"
+        )
+        assert report_obj.status == PreflightStatus.ABORT
+        assert len(report_obj.blocker_reasons) >= 1

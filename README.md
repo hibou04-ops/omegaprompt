@@ -1259,6 +1259,8 @@ BibTeX:
 
 Apache 2.0. See [LICENSE](LICENSE).
 
+**License history.** PyPI distributions of versions 1.1.0 and earlier were shipped with an MIT `LICENSE` file. The repository was relicensed to Apache 2.0 between the 1.1.0 and 1.2.0 PyPI uploads; 1.2.0 (2026-04-27) and all later versions ship under Apache 2.0. Anyone who installed 1.1.0 or earlier holds an MIT license to that copy — license changes do not apply retroactively.
+
 ## Colophon
 
 Designed, implemented, and shipped solo. Adapter layer over `omega-lock`; zero calibration-engine reimplementation. Every non-trivial change is pre-authored through `antemortem-cli`'s recon discipline. Tests run offline; no live API calls in CI.

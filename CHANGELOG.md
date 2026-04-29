@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-04-29
+
+IP defense package + cross-toolkit AGENT_TRIGGERS guide. Same eight runtime entrypoints + MCP server as 1.3.0; this release ships the previously-out-of-tree authorship and trigger artefacts inside the PyPI sdist for parity with the rest of the toolkit and adds the canonical agent-trigger cookbook.
+
+### Added
+
+- **IP defense package shipped in sdist**: `NOTICE` (with explicit Kyunghoon Gwak / 곽경훈 author binding), `AUTHORS.md`, `PRE_EXISTING_IP.md`, `IP_DEFENSE_CHECKLIST.md`. Same pattern as omega-lock / Antemortem / antemortem-cli / mini-omega-lock / mini-antemortem-cli — six-repo toolkit now consistent.
+- **`AGENT_TRIGGERS.md`** at repo root — canonical *when-to-call-which-tool* cookbook spanning the four MCP servers in the toolkit (omegaprompt, antemortem, mini-omega-lock, mini-antemortem-cli; 18 tools total). Maps nine agent scenarios (pre-implementation reconnaissance, pre-calibration sanity, pre-ship validation, PR regression check, production canary, agent self-grading, "is calibrate worth it?", performance projection, new vendor onboarding) to recommended tool sequences with cost-conscious orderings. README's MCP section links to it.
+- **Sdist `include` extended** to ship `NOTICE`, `AUTHORS.md`, `PRE_EXISTING_IP.md` (matching the discipline applied across the rest of the toolkit during the 2026-04-29 IP-package consolidation).
+
+### Fixed
+
+- **Author email attribution clarified.** Earlier docs claimed `hibou04@gmail.com` was a verified personal account of the Primary Author; this was incorrect. `hibouaile04@gmail.com` is the only verified personal email; `hibou04@gmail.com` was an unintended local git client misconfiguration that put a non-author email in some commit `author` fields prior to 2026-04-29. AUTHORS.md and PRE_EXISTING_IP.md now state this explicitly. Author *name* `Hibou04-ops` remains the unambiguous identifier across the repository's history. From 2026-04-29 onwards every repo's local git config commits as `hibouaile04@gmail.com`.
+
+### Rationale
+
+1.3.0 shipped the eight runtime entrypoints + MCP server but was tagged before the toolkit-wide IP-defense alignment landed and before the cross-server agent-trigger cookbook was written. 1.4.0 closes that gap so the GitHub HEAD and the PyPI sdist contain the same artefacts. No code-path changes from 1.3.0 — same runtime, same MCP tools, same test suite (181 tests passing).
+
 ## [1.3.0] - 2026-04-29
 
 Eight one-call runtime entrypoints + MCP server. The calibration kernel is unchanged; the change is the *agent-callable surface* layered on top of it. The same eight operations are now reachable from Python (one call each), the CLI (existing surface, preserved), and an MCP server that Claude Code / Cursor can spawn over stdio.

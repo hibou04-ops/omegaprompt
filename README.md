@@ -1,6 +1,6 @@
 # omegaprompt
 
-> A **CI gate for prompt regressions** — block prompt changes that overfit your eval set before they reach production.
+> **omegaprompt is Prompt CI.** It adds train/test split, pre-declared gates, holdout correlation checks, and CI-failing artifacts to prompt engineering. If a prompt overfits the calibration set, the build fails.
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
@@ -29,13 +29,15 @@ https://github.com/user-attachments/assets/d4308cc3-b8c1-4bb7-b67d-f763e6c26f11
 
 ## TL;DR — what & why
 
-You tune a prompt against 50 examples, score 92%, ship. Two weeks later prod metrics drop 15%. **Most LLM eval tooling** tells you *which* prompt scores best — assuming your eval set is the ground truth. **`omegaprompt` tells you whether that score generalizes**, by enforcing the train/test discipline ML curricula have taught since the 1990s but prompt engineering routinely skips:
+You tune a prompt against 50 examples, score 92%, ship. Two weeks later prod metrics drop 15%. **Most LLM eval tooling** tells you *which* prompt scores best — assuming your eval set is the ground truth. **`omegaprompt` tells you whether that score generalizes**, by enforcing the train/test discipline ML curricula have taught since the 1990s but many prompt workflows still ship without:
 
 - **Train/test split** with a pre-declared correlation gate (no post-hoc threshold lowering).
 - **Walk-forward validation** — `test_fitness` must hold up against `train_fitness`, or the run is flagged.
 - **Cross-vendor judge** — break self-agreement bias by grading Anthropic targets with OpenAI judges (or vice-versa).
 - **Provider-neutral meta-axes** — calibrate over semantic axes (reasoning profile, output budget, schema mode, tool policy), not vendor-specific knobs that break on migration.
 - **`CalibrationArtifact` schema v2.0** — JSON that diffs cleanly in PRs, fails CI on regression.
+
+> **What's KC4?** The holdout correlation gate. It fails when train performance looks good but test no longer tracks the declared target — the prompt overfit the calibration set. Thresholds are declared *before* scoring (`--min-kc4`, `--max-gap`), not adjusted after seeing results. `status = FAIL_KC4_GATE` is a ship-blocker by construction.
 
 ---
 

@@ -1,142 +1,192 @@
-# omegaprompt (한국어) 
+# omegaprompt (한국어)
 
-> **처음이신가요?** 먼저 보세요: [EASY_README_KR.md](EASY_README_KR.md) (한국어) · [EASY_README.md](EASY_README.md) (English). 아래 본 문서가 어렵게 느껴지는 분들을 위한 압축된 쉬운 소개.
+> **요약이 먼저 필요하면**: [EASY_README_KR.md](EASY_README_KR.md). 본 문서는 architecture·schema·검증까지 다루는 reference입니다.
+> English: [README.md](README.md) · [EASY_README.md](EASY_README.md)
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-0.2.0-blue.svg)](https://pypi.org/project/omegaprompt/)
-[![Status](https://img.shields.io/badge/status-alpha-orange.svg)](#상태--로드맵)
-[![Providers](https://img.shields.io/badge/providers-anthropic%20%7C%20openai%20%7C%20openai--compatible-informational.svg)](#provider-지원)
+[![PyPI](https://img.shields.io/badge/pypi-1.4.0-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![Tests](https://img.shields.io/badge/tests-181%20passing-brightgreen.svg)](tests/)
+[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#calibrationartifact-schema-v20)
+[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#mcp-서버)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
-> **당신의 prompt 가 당신이 고른 예시들에서 4.8/5 를 받습니다. 프로덕션 2일차에 무너집니다.**
->
-> 이 실패는 ML 에서 이름이 있습니다 — *overfitting* — 그리고 LLM 보다도 오래된 해결책도 있습니다: 사전 선언된 gate 가 있는 train/test split. omegaprompt 는 prompt engineering 을 위한 그 gate, **설계상 model-agnostic**. Target 과 judge 각각이 pluggable `LLMProvider` 와 통신 (Anthropic, OpenAI, 또는 로컬 Ollama 포함 OpenAI-호환 endpoint). Training-best prompt 가 held-out 데이터에서 랭크되지 않으면 KC-4 에 실패하고 어떤 것도 ship 되지 않음.
+> **omegaprompt toolkit의 한 부분** — [omegaprompt](https://github.com/hibou04-ops/omegaprompt) (calibration engine, 본 repo) · [omega-lock](https://github.com/hibou04-ops/omega-lock) (audit framework) · [antemortem-cli](https://github.com/hibou04-ops/antemortem-cli) (pre-implementation recon CLI) · [mini-omega-lock](https://github.com/hibou04-ops/mini-omega-lock) (empirical preflight) · [mini-antemortem-cli](https://github.com/hibou04-ops/mini-antemortem-cli) (analytical preflight) · [Antemortem](https://github.com/hibou04-ops/Antemortem) (방법론). agent 시나리오 9개를 정리한 cross-toolkit cookbook: [AGENT_TRIGGERS.md](AGENT_TRIGGERS.md).
+
+---
+
+## 한 줄 정의
+
+**omegaprompt는 prompt engineering을 위한 CI입니다.** train/test split, 사전 선언된 gate, holdout 상관 검증, regression 시 빌드를 깨뜨리는 audit artifact — *calibration set에 overfit한 prompt는 ship되지 않습니다.*
 
 ```bash
-pip install omegaprompt
+pip install omegaprompt              # core
+pip install "omegaprompt[mcp]"       # + MCP server
 ```
-
-English README: [README.md](README.md)
 
 ---
 
 ## 목차
 
-- [이 도구가 해결하는 failure mode](#이-도구가-해결하는-failure-mode)
-- [Worked example: overfit 탐지](#worked-example-overfit-탐지)
-- [Calibratable 한 축들](#calibratable-한-축들)
-- [Provider 지원](#provider-지원)
-- [Cross-vendor 검증](#cross-vendor-검증)
-- [데이터 계약](#데이터-계약)
-- [아키텍처](#아키텍처)
-- [Non-trivial 한 설계 결정](#non-trivial-한-설계-결정)
-- [이것은 아닙니다](#이것은-아닙니다)
-- [비용 및 성능](#비용-및-성능)
-- [검증](#검증)
-- [3-layer stack](#3-layer-stack)
-- [인접 도구와의 관계](#인접-도구와의-관계)
-- [회의론자를 위한 FAQ](#회의론자를-위한-faq)
-- [선행 연구 및 credit](#선행-연구-및-credit)
-- [상태 & 로드맵](#상태--로드맵)
-- [기여](#기여)
-- [인용](#인용)
-- [라이선스](#라이선스)
+- [1. 해결 대상 — 왜 prompt에 CI가 필요한가](#1-해결-대상--왜-prompt에-ci가-필요한가)
+- [2. KC4 — holdout 상관 gate](#2-kc4--holdout-상관-gate)
+- [3. Quick start](#3-quick-start)
+- [4. 인접 도구와의 차이](#4-인접-도구와의-차이)
+- [5. Calibratable한 6 meta-axes](#5-calibratable한-6-meta-axes)
+- [6. Provider 지원 — 두 boundary](#6-provider-지원--두-boundary)
+- [7. Cross-vendor 검증](#7-cross-vendor-검증)
+- [8. Judge 3종 — Rule / LLM / Ensemble](#8-judge-3종--rule--llm--ensemble)
+- [9. 2개 profile — guarded vs expedition](#9-2개-profile--guarded-vs-expedition)
+- [10. CalibrationArtifact schema v2.0](#10-calibrationartifact-schema-v20)
+- [11. 데이터 계약](#11-데이터-계약)
+- [12. 아키텍처](#12-아키텍처)
+- [13. 비-trivial한 설계 결정](#13-비-trivial한-설계-결정)
+- [14. 이 도구가 *아닌* 것](#14-이-도구가-아닌-것)
+- [15. 비용 및 성능](#15-비용-및-성능)
+- [16. 검증](#16-검증)
+- [17. 3-layer stack](#17-3-layer-stack)
+- [18. MCP 서버](#18-mcp-서버)
+- [19. 회의론자를 위한 FAQ](#19-회의론자를-위한-faq)
+- [20. 선행 연구 및 credit](#20-선행-연구-및-credit)
+- [21. 상태 & 로드맵](#21-상태--로드맵)
+- [22. 라이선스](#22-라이선스)
 
 ---
 
-## 이 도구가 해결하는 failure mode
+## 1. 해결 대상 — 왜 prompt에 CI가 필요한가
 
-Prompt engineering 에는 예측 가능한 failure mode 가 있습니다. 직접 고른 몇 예시에 대해 iterate. 점수가 올라감. Prompt 가 좋아 보임. Ship 함. 이틀 뒤, 상상도 못 한 input 에서 무너짐.
+직접 고른 예제 50개에 prompt를 튜닝, 92% 점수, ship. 2주 뒤 production 지표 -15%. 이건 prompt 작성 실력 문제가 아니라 **검증되지 않은 generalization**의 문제입니다. ML 커리큘럼은 1990년대부터 똑같은 failure mode에 train/test split을 답으로 갖고 있었습니다 — 학습된 configuration은 학습한 데이터에서 검증되지 않습니다. 단지 prompt 워크플로 다수가 그 단계 없이 ship할 뿐.
 
-이건 prompt-engineering 실력 문제가 아닙니다. 1990년대에 전체 train/test/validate split 을 주류 ML 에 밀어넣은 그 실패와 똑같습니다: **학습된 configuration 은 학습한 데이터에서 검증될 수 없습니다.** 모든 ML 강의의 모든 튜토리얼이 여기서 시작. 모든 prompt-engineering 가이드가 이걸 건너뜀.
+omegaprompt가 강제하는 5개 layer:
 
-omegaprompt 는 sibling 프로젝트 [omega-lock](https://github.com/hibou04-ops/omega-lock) 을 통해 ML 방어를 prompt 설정으로 포팅. 세 아이디어가 그대로 transfer:
+- **train/test split + 사전 선언된 상관 gate.** score를 본 뒤 threshold를 낮출 수 없습니다.
+- **walk-forward 검증.** `test_fitness`가 `train_fitness`를 따라가지 못하면 run이 flagged.
+- **cross-vendor judge.** Anthropic target ↔ OpenAI judge로 self-agreement bias를 구조적으로 제거.
+- **provider-neutral meta-axes.** 벤더 고유 knob이 아닌 semantic 축에서 탐색 — 마이그레이션에서 깨지지 않음.
+- **`CalibrationArtifact` schema v2.0.** PR diff에 그대로 들어가는 JSON. regression이면 CI fail.
 
-1. **Sensitivity 측정.** 어떤 prompt 축이 실제로 중요한가? 각각을 neutral baseline 주변에서 perturb, fitness delta 의 Gini coefficient 로 랭크. 점수를 안 움직이는 축에 search budget 쓰지 않음.
-2. **Top-K unlock, 나머지 lock.** Fitness 를 움직이는 subspace 에서만 탐색. 나머지는 neutral 고정.
-3. **사전 선언된 gate 와 함께 하는 walk-forward.** Training slice 에서 탐색 완료 후, searcher 가 본 적 없는 held-out test slice 에서 재평가. 사전 선언된 threshold (`KC-4`) 이상의 Pearson correlation 을 요구. 사후에 threshold 건드리기 없음.
-
-두 가드레일이 omegaprompt 를 *"judge 에게 물어보고 최고 점수 고르기"* 와 구분짓습니다:
-
-1. **Hard gate 가 fitness 를 0 으로 collapse.** `no_refusal`, `format_valid`, `no_safety_violation` — 한 item 에서 한 gate 라도 실패하면, 그 item 은 0 기여. 10개 task 에서 5.0 받고 11번째에서 refuse 하는 prompt 가 refusal 없이 꾸준히 4.2 받는 prompt 보다 랭크 위 *안* 올라옴. Soft 감점은 *almost* refuse 하는 prompt 에 reward. Hard zero 는 안 함.
-2. **Walk-forward 가 ship gate.** omega-lock 의 KC-4 (train 과 test 랭킹 간 Pearson correlation) 는 config 에 사전 선언되고 mechanical 로 enforce. Borderline 후보를 구하려고 사후에 threshold 낮추기 불가.
+대부분의 LLM eval 도구가 답하는 질문은 *"어느 prompt가 best score인가?"* (eval set을 ground truth로 가정). omegaprompt가 답하는 질문은 그 *다음*에 옵니다 — *"그 score가 일반화되는가?"*
 
 ---
 
-## Worked example: overfit 탐지
+## 2. KC4 — holdout 상관 gate
 
-전형적 실패: 10-example training set 에 대해 prompt 를 iterate 하고 승자를 고름.
-
-```
-Candidate prompt A:  train_fitness = 0.923  (평균 4.6/5)
-Candidate prompt B:  train_fitness = 0.876  (평균 4.4/5)
-```
-
-Prompt A 가 training 에서 승리. Ship A? 10-example test slice 에서 walk-forward:
+KC4는 train에서는 좋아 보였는데 test에서는 declared target과 더 이상 상관 없는 경우 — 즉 calibration set에 overfit한 경우 — fail시키는 gate입니다.
 
 ```
-Candidate prompt A:  train = 0.923  test = 0.612  gen_gap = 33.7%
-Candidate prompt B:  train = 0.876  test = 0.841  gen_gap =  4.0%
+train_ranks  ─┐
+              ├─▶ Pearson(train_ranks, test_ranks) ≥ --min-kc4 ?
+test_ranks   ─┘                                   ─▶ PASS
+                                                  ─▶ FAIL_KC4_GATE  (ship-blocker)
 
-omega-lock run_p1 status: FAIL:KC-4
-이유: spearman(train_ranks, test_ranks) = 0.18 < 0.30 threshold
-Candidate A 의 train-랭킹이 test-랭킹과 uncorrelated. Ship 하지 말 것.
+|train_fitness − test_fitness| ≤ --max-gap ?
+   ─▶ PASS / FAIL
 ```
 
-Prompt A 가 training slice 에 overfit. 당신이 우연히 고른 10개 예시에 대해 judge 의 surface feature 에 flatter 한 style 을 찾음 — 정확히 ML failure mode 가 예측하는 것. omegaprompt 의 calibration 이 이를 mechanical 로 surface; prompt B 가 올바른 ship 결정.
+핵심은 **사전 선언**입니다. `--min-kc4`와 `--max-gap`은 score를 보기 *전*에 config에 적습니다. 결과를 본 뒤 완화하면 KC4는 gate가 아니라 사후 정당화가 됩니다. 여기에는 Winchester defense의 원칙을 적용합니다 — *사전 선언한 kill criterion은 결과를 본 뒤 조정할 수 없습니다.*
 
-KC-4 없이는 A 를 ship 하고 프로덕션에서 gap 발견. KC-4 있으면 calibration 이 loud fail, deploy 전에 gap 발견.
-
-Generalization gap 은 output artifact 에 기록:
-
-```json
-{
-  "best_params": {"system_prompt_idx": 2, "few_shot_count": 1, "effort_idx": 2},
-  "best_fitness": 0.876,
-  "test_fitness": 0.841,
-  "generalization_gap": 0.040,
-  "hard_gate_pass_rate": 1.00,
-  "method": "p1",
-  "status": "PASS"
-}
-```
-
-이 도구가 생성하는 모든 `CalibrationOutcome` 의 shape. Machine-readable, prompt 개정 간 diffable, CI 에서 gate 하기 trivial.
+`status = FAIL_KC4_GATE`는 설계상 ship-blocker. score가 아무리 높아도 status가 fail이면 artifact는 SHIP recommendation을 내지 않습니다.
 
 ---
 
-## Calibratable 한 축들
+## 3. Quick start
 
-`PromptTarget` 은 searcher 에게 5개 축을 노출:
+### 0. 스모크 테스트 — API 키 없이, 네트워크 없이
 
-| 축 | 타입 | 의미 |
+```bash
+git clone https://github.com/hibou04-ops/omegaprompt.git
+cd omegaprompt && pip install -e .
+
+# Reference artifact 재현 (in-memory target+judge, 결정론)
+python examples/reference/reproduce_reference_artifact.py
+
+# 포함된 reference artifact를 audit report로 렌더
+omegaprompt report examples/reference/reference_artifact.json
+```
+
+매 실행이 같은 `CalibrationArtifact`를 만듭니다. API 키를 붙이기 전에 CI를 wiring할 때 권장.
+
+### 1. 실제 calibration — cloud target + cross-vendor judge
+
+```bash
+export ANTHROPIC_API_KEY=...
+export OPENAI_API_KEY=...
+
+omegaprompt calibrate examples/sample_dataset.jsonl \
+  --rubric examples/rubric_example.json \
+  --variants examples/variants_example.json \
+  --target-provider anthropic \
+  --judge-provider openai \
+  --output artifact.json
+```
+
+### 2. Audit report 렌더 (PR description, CI 로그, 사람 리뷰용)
+
+```bash
+omegaprompt report artifact.json > report.md
+```
+
+### 3. CI regression gate
+
+`omegaprompt diff`는 `calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, cost/latency frontier, guarded-mode 위반 중 어느 하나라도 regression이면 non-zero로 종료합니다.
+
+```bash
+omegaprompt diff previous.json artifact.json
+```
+
+```yaml
+# .github/workflows/prompt-audit.yml
+- run: omegaprompt diff previous.json artifact.json
+```
+
+---
+
+## 4. 인접 도구와의 차이
+
+| Capability | omegaprompt | 일반 eval runner | optimizer | 벤더 dashboard |
+|---|:-:|:-:|:-:|:-:|
+| eval 실행 | ✓ | ✓ | ✓ | ✓ |
+| **walk-forward ship gate** | ✓ | 보통 수동 | 보통 수동 | ✗ |
+| **사전 선언 kill criteria** | ✓ | 보통 수동 | 부분 | ✗ |
+| **cross-vendor judge 규율** | ✓ | 설정 가능 | 수동 | ✗ |
+| provider-neutral 축 | ✓ | 다양 | 부분 | ✗ |
+| JSON-diff audit artifact | ✓ | 로그 | 다양 | ✗ |
+| MCP 도구 surface (Claude Code / Cursor) | ✓ | 다양 | ✗ | ✗ |
+
+> **포지셔닝**: omegaprompt는 **audit-first**입니다 — search-first가 아닙니다. 후보가 이미 있다고 가정하고 (eval runner나 optimizer 출력에서 흔히 옴) *"실제로 일반화됐는가?"* 라는 search 다음 질문에 답합니다. 기존 도구의 출력은 *입력으로* 꽂힙니다 — assertion 스타일 체크는 `RuleJudge`로, optimizer 출력은 `PromptVariants`로.
+
+---
+
+## 5. Calibratable한 6 meta-axes
+
+벤더별 parameter 이름이 아니라 semantic 카테고리로 탐색합니다. provider adapter가 내부에서 번역. 결과로 동일 artifact가 벤더 간 재생됩니다.
+
+| Axis | 값 | 통제 대상 |
 |---|---|---|
-| `system_prompt_idx` | int | 후보 system prompt 풀에 대한 인덱스 (`ParamVariants.system_prompts`). |
-| `few_shot_count` | int | `ParamVariants.few_shot_examples` 중 몇 개를 포함할지. 0 = zero-shot. |
-| `effort_idx` | int (0-2) | `effort: low / medium / high` 에 매핑. Thinking 이 켜졌을 때만 유의미. |
-| `thinking_enabled` | bool | Target call 에 adaptive thinking 을 켤지 여부. |
-| `max_tokens_bucket` | int (0-2) | `max_tokens: 1024 / 4096 / 16000` 에 매핑. Length-bound 편향 surface. |
+| `system_prompt_variant` | prompt 리스트 인덱스 | 어느 system prompt |
+| `few_shot_count` | 0, 1, 2, ... | 포함할 예제 개수 |
+| `reasoning_profile` | OFF / LIGHT / STANDARD / DEEP | extended thinking 깊이 |
+| `output_budget_bucket` | SMALL(1024) / MEDIUM(4096) / LARGE(16000) | max_tokens 버킷 |
+| `response_schema_mode` | FREEFORM / JSON_OBJECT / STRICT_SCHEMA | 출력 구조 강제 |
+| `tool_policy_variant` | NO_TOOLS / TOOL_OPTIONAL / TOOL_REQUIRED | tool-use 정책 (declared; wiring 일부) |
 
-`PromptSpace` dataclass 는 축을 잠글 수 있게 해줌 (`effort_min == effort_max`) — 일부 dimension 이 pre-decided 일 때. 전형적 calibration 은 3개 축을 열어두고 sensitivity 로 top-K 를 unlock. 모든 축을 단일 값으로 두면 사실상 judge 를 통한 고정 prompt benchmark 실행; prompt 개정 regression 테스트용 legitimate 모드.
+`PromptSpace`로 축을 잠글 수 있습니다 (`reasoning_profile_min == reasoning_profile_max`) — 일부 dimension이 pre-decided일 때. 전형적인 calibration은 3개 축을 열어두고, sensitivity 측정 결과에 따라 top-K를 unlock합니다. 모든 축을 단일 값으로 잠그면 사실상 *judge를 통한 고정 prompt 벤치마크*가 됩니다 — prompt 개정에 대한 regression test 모드로 정당한 사용.
 
-v0.1 의 축 목록은 의도적으로 보수적. `temperature`, `top_p`, reasoning budget 같은 knob 을 추가하면 릴리스 간 변하는 model-specific 동작에 coupling. 위 5개 축은 어떤 chat-style frontier 모델에서도 transfer.
+v0.1 시점의 축 셋이 의도적으로 보수적인 이유: `temperature` / `top_p`처럼 frontier 모델이 점진적으로 deprecate하는 knob을 축으로 두면 릴리스마다 의미가 바뀝니다. 위 6개는 어느 chat-style frontier 모델에서도 transfer합니다.
 
 ---
 
-## Provider 지원
+## 6. Provider 지원 — 두 boundary
 
-omegaprompt 는 두 개의 LLM-호출 경계를 가짐 — **target** (calibration 대상 prompt, free-form 출력) 과 **judge** (rubric 기반 스코어링, schema-enforced 출력). 둘 다 `LLMProvider` Protocol 을 통과. 각 adapter 는 vendor 의 가장 강한 네이티브 경로 사용 — 파이프라인 어디에도 클라이언트 측 JSON regex 파싱 없음.
+omegaprompt가 LLM을 호출하는 경계는 정확히 둘입니다 — **target** (calibration 대상 prompt, free-form 출력) 과 **judge** (rubric 기반 채점, schema-enforced 출력). 둘 다 `LLMProvider` Protocol을 통과. 각 adapter는 벤더의 가장 강한 native 경로를 사용합니다 — 파이프라인 어디에도 클라이언트 측 JSON regex 파싱은 없습니다.
 
-| Provider | Flag (target) | Flag (judge) | 기본 모델 | Env var | Native 경로 |
+| Provider | target flag | judge flag | 기본 모델 | env var | native 경로 |
 |---|---|---|---|---|---|
-| Anthropic | `--target-provider anthropic` | `--judge-provider anthropic` | `claude-opus-4-7` | `ANTHROPIC_API_KEY` | 명시적 `cache_control` 을 동반한 `messages.create` / `messages.parse` |
+| Anthropic | `--target-provider anthropic` | `--judge-provider anthropic` | `claude-opus-4-7` | `ANTHROPIC_API_KEY` | 명시적 `cache_control` 동반 `messages.create` / `messages.parse` |
 | OpenAI | `--target-provider openai` | `--judge-provider openai` | `gpt-4o` | `OPENAI_API_KEY` | `chat.completions.create` / `beta.chat.completions.parse` |
-| OpenAI-호환 | 위 + `--target-base-url <url>` | 위 + `--judge-base-url <url>` | `--*-model` 로 사용자 지정 | `OPENAI_API_KEY` (로컬 미인증 endpoint 는 임의 문자열) | OpenAI 와 동일 |
+| OpenAI-호환 | 위 + `--target-base-url` | 위 + `--judge-base-url` | `--*-model`로 지정 | `OPENAI_API_KEY` (로컬 미인증 endpoint는 임의 문자열) | OpenAI와 동일 |
 
-`--base-url` 로 커버되는 호환 endpoint: **Azure OpenAI**, **Groq**, **Together.ai**, **OpenRouter**, 그리고 **로컬 Ollama** (`http://localhost:11434/v1`). 새 provider 추가는 `LLMProvider` Protocol (두 메서드: `complete` + `structured_complete`) 을 만족하는 한 모듈 + factory registry 한 줄.
-
-**Protocol** (`src/omegaprompt/providers/base.py`):
+`--base-url`로 커버되는 호환 endpoint: **Azure OpenAI**, **Groq**, **Together.ai**, **OpenRouter**, **로컬 Ollama** (`http://localhost:11434/v1`), **vLLM**. 새 provider를 추가하려면 `LLMProvider` Protocol 두 메서드(`complete`, `structured_complete`)만 만족하면 됩니다 — 모듈 하나 + factory 한 줄.
 
 ```python
 class LLMProvider(Protocol):
@@ -154,19 +204,19 @@ class LLMProvider(Protocol):
     ) -> tuple[T, dict[str, int]]: ...
 ```
 
-두 메서드. SDK 누출 없음. 같은 prompt 가 모든 vendor 에서 작동.
+SDK 누출 없음. 동일 prompt가 모든 벤더에서 동일하게 동작.
 
 ---
 
-## Cross-vendor 검증
+## 7. Cross-vendor 검증
 
-이 도구가 enable 하는 가장 강력한 단일 구성: **target 은 한 provider, judge 는 다른 provider.**
+이 도구가 활용 가능하게 만드는 가장 강력한 단일 구성: **target은 한 provider, judge는 다른 provider.**
 
-이유: target 과 judge 가 같은 모델 (또는 같은 vendor) 이면 self-agreement bias 가 점수를 오염. OpenAI judge 로 평가된 약한 OpenAI 출력은 judge 가 target 의 bias 를 공유하므로 여전히 acceptable 해 보일 수 있음. 같은 출력을 Anthropic judge — 혹은 반대로 — 로 평가하면 구조적으로 bias 가 깨짐. Judge 가 더 이상 peer 가 아니라 disinterested second opinion.
+이유는 단순합니다. target과 judge가 동일 모델 (또는 동일 벤더) 이면 self-agreement bias가 점수를 오염시킵니다. OpenAI judge가 채점한 약한 OpenAI 출력은 — judge가 target의 bias를 공유하므로 — 여전히 acceptable해 보일 수 있습니다. 같은 출력을 Anthropic judge로 (또는 반대로) 채점하면 그 bias가 구조적으로 깨집니다. judge가 더 이상 peer가 아니라 *disinterested second opinion*.
 
 ```bash
-# Target: gpt-4o 에서 프로덕션 prompt.
-# Judge: 다른 vendor 의 higher-tier disinterested 모델.
+# Target: production prompt를 gpt-4o로 실행.
+# Judge: 다른 벤더의 higher-tier disinterested 모델.
 omegaprompt calibrate train.jsonl \
   --rubric rubric.json \
   --variants variants.json \
@@ -175,15 +225,14 @@ omegaprompt calibrate train.jsonl \
   --target-model gpt-4o \
   --judge-provider anthropic \
   --judge-model claude-opus-4-7 \
-  --output outcome.json
+  --output artifact.json
 ```
 
-`CalibrationOutcome` artifact 는 `target_provider`, `target_model`, `judge_provider`, `judge_model` 기록 — 재현성이 모든 run 의 machine-readable 속성.
+`CalibrationArtifact`는 `target_provider`, `target_model`, `judge_provider`, `judge_model`을 기록합니다 — 재현성이 모든 run의 machine-readable 속성.
 
-또 하나 유용한 조합: Ollama 로 로컬 target + 클라우드 judge 로 채점.
+또 하나 유용한 조합: 로컬 Ollama target + cloud judge로 채점.
 
 ```bash
-# Target: 로컬 Llama (무료 추론). Judge: 채점 품질을 위해 cloud-hosted.
 omegaprompt calibrate train.jsonl \
   --rubric rubric.json --variants variants.json --test test.jsonl \
   --target-provider openai \
@@ -195,12 +244,87 @@ omegaprompt calibrate train.jsonl \
 
 ---
 
-## 데이터 계약
+## 8. Judge 3종 — Rule / LLM / Ensemble
 
-이 도구가 생성하는 모든 artifact 는 Pydantic-validated. 데이터가 end-to-end 로 흐름:
+- **`RuleJudge`** — deterministic regex/predicate gate. `no_refusal`, JSON 유효성, 정규식 일치 등. **API 비용 0.** 이게 답할 수 있는 질문은 이것으로.
+- **`LLMJudge`** — capable LLM이 STRICT_SCHEMA로 dimension별 정수 점수 + binary gate를 산출. self-congratulation에 저항하는 calibration-hygiene 지시가 system prompt에 명시 ("midpoint anchor, full-range 사용, 자신과 agree"). Pydantic + 벤더 native structured-output로 schema enforce.
+- **`EnsembleJudge`** — `RuleJudge`를 먼저 돌리고, gate 하나라도 실패하면 **short-circuit** (LLM 호출 안 함). 통과한 응답만 LLM judge로 escalate. 깨진 응답에 들어가는 비용을 잘라냅니다 — 전형적인 calibration에서 LLM judge call의 30–60%가 절감.
+
+---
+
+## 9. 2개 profile — guarded vs expedition
+
+| | `guarded` (기본) | `expedition` |
+|---|---|---|
+| silent schema fallback | ❌ raise | ✅ 허용, `CapabilityEvent` 기록 |
+| placeholder provider | ❌ raise | ✅ 허용 |
+| non-ship-grade judge | ❌ raise | ✅ 허용 |
+| 기본 `--max-gap` | 0.25 | 0.35 |
+| 기본 `--min-kc4` | 0.5 | 0.3 |
+
+`expedition`에서 풀린 모든 가드는 artifact의 `relaxed_safeguards` 배열에 `RelaxedSafeguard` 항목으로 기록됩니다. *strict냐 reach냐*의 trade가 명시적이고 audit 가능하게 — 슬그머니 풀려서 잊히는 일이 구조적으로 막힙니다.
+
+production용 audit은 `guarded`로. 탐색·실험은 `expedition`으로. 두 모드 사이 차이가 artifact diff에 그대로 드러납니다.
+
+---
+
+## 10. CalibrationArtifact schema v2.0
+
+모든 run이 산출하는 단일 JSON. CI에서 diff 가능, PR review에 그대로, 시간에 따른 calibration 상태의 audit log.
+
+```json
+{
+  "schema_version": "2.0",
+  "status": "OK",
+  "ship_recommendation": "SHIP",
+  "neutral_baseline": {
+    "fitness": 0.4250,
+    "hard_gate_pass_rate": 1.00
+  },
+  "calibrated": {
+    "best_params": {
+      "system_prompt_variant": 2,
+      "few_shot_count": 1,
+      "reasoning_profile": "STANDARD",
+      "output_budget_bucket": "MEDIUM",
+      "response_schema_mode": "STRICT_SCHEMA",
+      "tool_policy_variant": "NO_TOOLS"
+    },
+    "fitness": 0.9250,
+    "uplift": 1.176
+  },
+  "walk_forward": {
+    "train_fitness": 0.9250,
+    "test_fitness": 0.9100,
+    "generalization_gap": 0.015,
+    "kc4_pearson": 0.87,
+    "min_kc4_threshold": 0.5,
+    "max_gap_threshold": 0.25
+  },
+  "providers": {
+    "target": {"name": "anthropic", "model": "claude-opus-4-7"},
+    "judge":  {"name": "openai", "model": "gpt-4o"}
+  },
+  "capability_events": [],
+  "relaxed_safeguards": [],
+  "usage_summary": {
+    "input_tokens": 124300,
+    "cache_read_input_tokens": 89200,
+    "output_tokens": 8210,
+    "total_api_calls": 1250
+  },
+  "profile": "guarded"
+}
+```
+
+`CalibrationArtifact`는 Pydantic v2 모델로 `extra="forbid"` — 알 수 없는 필드는 loud fail. malformed run이 silent하게 통과하지 못합니다. 모든 schema bump는 CHANGELOG의 *Schema revisions*에 추적됩니다.
+
+---
+
+## 11. 데이터 계약
 
 ```python
-# Input: 세 개의 사용자 작성 파일
+# Input — 사용자 작성 파일 셋
 Dataset(items=[DatasetItem(id="t1", input="...", reference="..."), ...])
 JudgeRubric(
     dimensions=[
@@ -209,62 +333,53 @@ JudgeRubric(
         Dimension(name="conciseness", description="...", weight=0.2),
     ],
     hard_gates=[
-        HardGate(name="no_refusal",        description="...", evaluator="judge"),
+        HardGate(name="no_refusal",          description="...", evaluator="judge"),
         HardGate(name="no_safety_violation", description="...", evaluator="judge"),
     ],
 )
-ParamVariants(
+PromptVariants(
     system_prompts=["You are a...", "You are a senior...", "You are a teacher..."],
     few_shot_examples=[{"input": "...", "output": "..."}, ...],
 )
 
-# ↓ omega-lock.run_p1 이 PromptTarget.evaluate() 를 여러 (params, slice) 조합으로 drive
-# 각 evaluate() 호출이 주어진 params dict 에 대해 N target calls + N judge calls 발급.
+# ↓ omega-lock.run_p1이 PromptTarget.evaluate()를 (params × slice) 조합으로 drive.
+# 매 evaluate()는 주어진 params dict에 대해 N target call + N judge call.
 
-# ↓ messages.parse(output_format=JudgeResult)
+# ↓ 벤더 native structured-output가 schema-enforce
 JudgeResult(
-    scores={"correctness": 5, "clarity": 4, "conciseness": 3},  # 선언된 scale 내 정수
+    scores={"correctness": 5, "clarity": 4, "conciseness": 3},
     gate_results={"no_refusal": True, "no_safety_violation": True},
-    notes="Response 가 task 를 올바르게 해결. Wrap-up 문단에 약간의 padding.",
+    notes="응답이 task를 정확히 풀었음. wrap-up 문단에 약간의 padding.",
 )
 
-# ↓ CompositeFitness 가 (hard_gate × soft_score) 로 집계
+# ↓ CompositeFitness가 (hard_gate × soft_score)로 집계
 # fitness = sum(soft_score_i * all_gates_passed_i) / n_items
 
-# ↓ omega-lock run_p1 이 walk-forward 결과 발급
-CalibrationOutcome(
-    best_params={"system_prompt_idx": 2, "few_shot_count": 1, "effort_idx": 2, ...},
-    best_fitness=0.876,      # training slice
-    test_fitness=0.841,      # held-out slice
-    generalization_gap=0.040,
-    hard_gate_pass_rate=1.00,
-    method="p1",
-    total_api_calls=1250,
-    usage_summary={"input_tokens": ..., "cache_read_input_tokens": ...},
-)
+# ↓ omega-lock run_p1이 walk-forward 결과 산출
+CalibrationArtifact(...)   # 위 §10 참조
 ```
 
-Malformed judge 응답은 SDK 경계에서 `ValidationError` raise — fitness 를 오염시키지 않음. `JudgeResult.gate_results` 의 missing hard-gate 결과는 "답 안 함" 으로 취급, "통과" 와 별개. 모든 model 의 모든 필드는 계약; 위반은 loud.
+malformed judge 응답은 SDK 경계에서 `ValidationError` raise — fitness 오염 없음. `JudgeResult.gate_results`에서 missing한 hard-gate 결과는 *"답하지 않음"* 으로 간주, 통과와 별개. 모든 model의 모든 필드는 계약입니다 — 위반은 loud.
 
 ---
 
-## 아키텍처
+## 12. 아키텍처
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Dataset (.jsonl)   ParamVariants (.json)   JudgeRubric (.json) │
+│  Dataset (.jsonl)   PromptVariants (.json)   JudgeRubric (.json)│
 └────────────────┬─────────────────────────────────────────────┘
                  │
                  ▼
 ┌──────────────────────────────────────────────────────────────┐
 │  PromptTarget                                                 │
 │    omega-lock CalibrableTarget 구현                           │
-│    param_space() ───▶ 5 축                                    │
+│    param_space() ───▶ 6 meta-axes                            │
 │    evaluate(params):                                          │
 │       for each dataset item:                                  │
-│         1. params 에서 prompt build (variant, few-shot, ...)  │
-│         2. call_target(target_client, ...) ─▶ response text   │
-│         3. call_judge(judge_client, rubric, ...) ─▶ JudgeResult │
+│         1. params에서 prompt build (variant, few-shot, ...)   │
+│         2. call_target(target_provider, ...) ─▶ response text │
+│         3. judge.score(rubric, ...) ─▶ JudgeResult            │
 │       CompositeFitness(judge_results) ─▶ fitness              │
 │    returns EvalResult(fitness, n_trials, metadata)            │
 └────────────────┬─────────────────────────────────────────────┘
@@ -273,261 +388,213 @@ Malformed judge 응답은 SDK 경계에서 `ValidationError` raise — fitness �
 ┌──────────────────────────────────────────────────────────────┐
 │  omega-lock run_p1                                            │
 │    measure_stress + select_unlock_top_k                       │
-│    Unlocked subspace 에서 GridSearch                          │
-│    --test slice 에서 WalkForward (KC-4)                       │
-│    grid_best, test_fitness, status 출력                       │
+│    unlocked subspace에서 GridSearch                           │
+│    --test slice에서 WalkForward (KC4)                         │
+│    grid_best, test_fitness, status 산출                       │
 └────────────────┬─────────────────────────────────────────────┘
                  │
                  ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  CalibrationOutcome (JSON artifact)                           │
-│    best_params, best_fitness, test_fitness,                   │
-│    generalization_gap, hard_gate_pass_rate,                   │
-│    n_candidates_evaluated, total_api_calls, usage_summary     │
+│  CalibrationArtifact (JSON, schema v2.0)                      │
+│    neutral_baseline, calibrated, walk_forward,                │
+│    providers, capability_events, relaxed_safeguards,          │
+│    usage_summary, status, ship_recommendation                 │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-Omega-lock 라인 위의 모든 조각은 새로 구현; 그 라인에 또는 아래의 모든 조각은 변경 없이 재사용. Composition 경계는 `CalibrableTarget` 프로토콜 — 하나의 함수 (`param_space()`) + 하나의 메서드 (`evaluate(params)`).
+omega-lock 라인 위는 새로 구현. 그 라인 또는 아래는 변경 없이 재사용. 합성 경계는 `CalibrableTarget` 프로토콜 — 함수 하나(`param_space()`) + 메서드 하나(`evaluate(params)`).
 
-`PromptTarget` 이 ~200 라인인 이유. 비싼 부분 (sensitivity 분석, search, walk-forward, kill criteria) 은 이미 존재하고 이미 omega-lock 의 176 unit tests 로 테스트됨. omegaprompt 는 prompt-specific adapter, LLM-as-judge machinery, fitness shape 를 기여. 나머지는 모두 composition.
-
----
-
-## Non-trivial 한 설계 결정
-
-**두 boundary 에서 provider-agnostic.** omegaprompt 가 vendor SDK 를 건드리는 곳은 정확히 둘: target 호출과 judge 호출. 둘 다 `LLMProvider` Protocol 을 통과. Calibration 파이프라인 (stress, grid, walk-forward, KC-4) 은 구성상 vendor-neutral. Target 과 judge 는 *독립적* provider 를 받음 — CLI 한 줄이 cross-vendor 검증으로 flip.
-
-**재구현이 아닌 단일 책임 adapter.** omega-lock 이 이미 stress 측정, top-K unlock, grid search, walk-forward, KC gate, benchmark scorecard, iterative lock-in, 연속-공간 탐색용 `run_p2_tpe` 처리. 여기서 이들을 재구현하는 것은 틀림. `PromptTarget` 은 얇은 adapter; 가치는 모든 omega-lock 파이프라인이 변경 없이 작동한다는 것.
-
-**Per-vendor 네이티브로 schema-enforce 된 judge 응답.** 각 adapter 는 vendor 의 가장 강한 structured-output 경로 사용 — Anthropic 은 `messages.parse(output_format=JudgeResult)`, OpenAI 는 `beta.chat.completions.parse(response_format=JudgeResult)`. Malformed judge 응답 — missing 필드, 선언된 scale 바깥 scores, non-boolean gate 결과 — 은 SDK 경계에서 `ValidationError` raise. 이 없으면, 한 번의 잘못된 judge call 이 전체 calibration 을 tank 시킬 수 있고, 최종 report 까지 눈치채지 못함. Judge 의 prose output 을 regex-parse 하는 것은 antemortem-cli 에서 모델의 self-report line number 를 신뢰하는 것과 같은 실수.
-
-**Hard gate 가 fitness 를 0 으로 collapse, gradient 없음.** Refusal 에 soft penalty (예: "refusal 은 20% 감점") 를 주면 *almost* refuse 하는 prompt 를 reward — soft score 대부분을 capture 하면서 safety boundary 테스트. Hard-zero 는 refusal 을 절대적으로 처벌. Searcher 는 refusal region 안쪽에서 reward signal 을 못 봐서 boundary 근접을 안 함. 실제 deployment 가 prompt 를 평가하는 방식과 일치: 10번 중 1번 refuse 하는 prompt 는 "90% 만큼 좋은" 게 아니라 unshippable.
-
-**Adapter-native 로 judge system prompt 에 prompt caching.** Judge 의 ~5k 토큰 system prompt 는 각 vendor 의 cacheable-prefix 최소값을 넘도록 sized. Anthropic 은 명시적 `cache_control={"type": "ephemeral"}` 사용; OpenAI 의 자동 prompt caching 은 system prompt 가 provider threshold 를 넘으면 발동. 전형적 calibration run 이 수백 judge call — cache hit 이 지원되는 모든 vendor 에서 비용을 dominate. CLI 는 provider 간 정규화된 `cache_read_input_tokens` 를 surface (OpenAI 의 `prompt_tokens_details.cached_tokens` 가 같은 필드로 매핑), silent invalidator 가 어디서 실행하든 loud fail. [전체 judge prompt](src/omegaprompt/prompts.py) 는 vendor-neutral prompt-cache-aware 설계 사례.
-
-**`effort` 와 `thinking_enabled` 는 first-class 축, global 아님.** 어떤 prompt 는 `low` effort 만 필요; 전역으로 `high` 를 강제하면 fitness 개선 없이 토큰 낭비. Calibration 이 이것을 surface 하게 하는 게 핵심 — `effort_idx` 가 high stress 면 task 에 중요; low stress 면 neutral 로 lock + 토큰 절약. "측정하기 전 최적화하지 말라" 의 parameter-calibration analog.
-
-**Target 과 judge provider 는 독립적, first-class.** 같은 provider 를 양쪽에 넘기는 게 일반 케이스. 나누면 (a) cross-vendor 검증 — Anthropic judge 가 OpenAI 출력 평가 (또는 반대) 가 self-agreement bias 를 구조적으로 깸; (b) 비대칭 quality/cost — cheap 로컬 target (Ollama) + 클라우드 judge 채점; (c) 테스트 — 양쪽을 독립적으로 mock; (d) billing 격리 — judge call 을 다른 workspace 로 라우팅. CLI 가 서로 미러링되는 `--target-*` 와 `--judge-*` flag 노출.
-
-**Prompt 에 들어가기 전 모든 path 는 forward slash 로 정규화.** `src\foo.py` 와 `src/foo.py` 는 API payload 에서 다른 바이트. Prompt caching 은 바이트가 일치해야 cache-invariant. Windows 사용자는 조용히 cache hit 을 잃을 것 — 100 run 당 ~\$15 비용 버그.
-
-**`temperature` / `top_p` 축 없음.** 모던 frontier-tier chat 모델들이 점점 이들을 제거/deprecate (Anthropic 최신 Claude pin 은 drop; OpenAI 의 o1/o3 reasoning 모델은 accept 안 함). Support 하는 척하고 일부 서버에서 실패하기보다, omegaprompt 는 기본 공간에서 배제. 더 오래된 모델에 필요하면 `PromptSpace` 를 axis 추가로 extend — 20줄짜리 adapter 이지 프레임워크 변경 아님.
-
-**UTF-8 + error='replace' 파일 읽기.** 비-UTF-8 파일 (BOM 붙은 Windows 파일, legacy cp949 데이터셋, Latin-1 extraction prompt) 이 도구를 crash 시키지 않음. 바이트 수준 교체와 CLI warning 으로 읽힘. "BOM 때문에 내 calibration 이 실패했습니다" 와 "내 calibration 이 돌았고 인코딩 이슈를 note 했습니다" 의 차이.
+`PromptTarget`이 ~200 라인인 이유가 여기 있습니다. 비싼 부분 — sensitivity 분석, search, walk-forward, kill criteria — 은 omega-lock의 176 unit test에서 이미 검증되어 있습니다. omegaprompt가 기여하는 것: prompt-specific adapter, LLM-as-judge machinery, fitness shape. 나머지는 모두 composition.
 
 ---
 
-## 이것은 아닙니다
+## 13. 비-trivial한 설계 결정
 
-잘못된 용도로 쓰면 discipline 이 실패. 명시적 non-goals:
+**두 boundary 모두 provider-agnostic.** vendor SDK를 만지는 곳은 target call과 judge call 둘뿐. 둘 다 `LLMProvider`를 통과. 파이프라인(stress, grid, walk-forward, KC4)은 구성상 vendor-neutral. target과 judge는 *독립적으로* provider를 받습니다 — CLI 한 줄로 cross-vendor 검증으로 flip.
+
+**재구현 아닌 단일 책임 adapter.** omega-lock이 stress 측정, top-K unlock, grid search, walk-forward, kill criteria, benchmark scorecard, iterative lock-in, 연속-공간용 `run_p2_tpe`까지 처리합니다. 여기서 재구현하는 것은 잘못. `PromptTarget`은 얇은 adapter — 가치는 omega-lock 파이프라인 전체가 변경 없이 작동한다는 점에 있습니다.
+
+**Per-vendor native + schema-enforced judge.** Anthropic은 `messages.parse(output_format=JudgeResult)`, OpenAI는 `beta.chat.completions.parse(response_format=JudgeResult)`. malformed judge 응답 — missing 필드, 선언된 scale 밖 점수, non-boolean gate 결과 — 은 SDK 경계에서 `ValidationError` raise. 이게 없으면 잘못된 judge call 한 번이 calibration 전체를 오염시킬 수 있고 최종 report까지도 알아채지 못합니다. judge prose를 regex parse하는 것은 antemortem-cli에서 모델의 self-report line 번호를 신뢰하는 것과 같은 종류의 실수.
+
+**Hard gate가 fitness를 0으로 collapse, gradient 없음.** refusal에 soft penalty (예: "20% 감점")를 주면 *almost* refuse하는 prompt에 reward — soft score 대부분을 capture하면서 safety boundary를 테스트하는 — 효과를 줍니다. hard-zero는 boundary 근처를 reward signal에서 invisible하게 만듭니다. 실제 deployment가 prompt를 평가하는 방식과 일치합니다 — 10번에 1번 refuse하는 prompt는 *"90%만큼 좋은"* 게 아니라 unshippable.
+
+**Adapter-native judge prompt caching.** judge의 ~5k 토큰 system prompt는 각 벤더의 cacheable-prefix 최소값을 넘도록 sized. Anthropic은 명시적 `cache_control={"type": "ephemeral"}`; OpenAI의 자동 prompt caching은 system prompt가 provider threshold를 넘으면 발동. 전형적 run의 수백 judge call에서 cache hit이 비용을 dominate합니다. CLI는 provider 간 정규화된 `cache_read_input_tokens`를 surface — silent invalidator가 어디서 실행하든 loud fail. Windows path 누출 (`src\foo.py` vs `src/foo.py`) 은 prompt 진입 전에 forward slash로 정규화 — 100 run 당 ~$15짜리 캐시 무효화 버그.
+
+**`reasoning_profile`과 `output_budget_bucket`은 first-class axis, global이 아님.** 어떤 prompt는 LIGHT만 필요. 전역 DEEP을 강제하면 fitness 개선 없이 토큰만 소진. calibration이 이를 surface하게 하는 것이 핵심 — `reasoning_profile`이 high stress면 task에 중요, low stress면 OFF로 lock + 토큰 절약. *"측정하기 전에 최적화하지 말라"* 의 parameter-calibration 버전.
+
+**Target과 judge provider는 독립적.** 같은 provider를 양쪽에 넘기는 게 일반 케이스. 분리하면 (a) cross-vendor 검증으로 self-agreement bias 구조적 제거, (b) 비대칭 quality/cost — 로컬 cheap target + cloud judge, (c) 양쪽 독립 mock으로 테스트, (d) judge call billing 분리. CLI는 서로 미러링되는 `--target-*` / `--judge-*` flag 노출.
+
+**UTF-8 + `errors='replace'`로 파일 읽기.** non-UTF-8 파일 (BOM 동반 Windows 파일, legacy cp949 데이터셋, Latin-1 prompt) 이 도구를 crash시키지 않습니다. 바이트 수준 교체와 CLI warning으로 진행. *"BOM 때문에 calibration 실패"* 와 *"calibration 돌았고 인코딩 이슈를 노트"* 의 차이.
+
+---
+
+## 14. 이 도구가 *아닌* 것
+
+잘못된 용도로 쓰면 규율이 실패합니다. 명시적 non-goal:
 
 | 이 도구는 | 이유 |
 |---|---|
-| DSPy 의 prompt optimizer 가 아님 | DSPy 는 program 추상화 + bootstrapped few-shot 을 통해 prompt 를 synthesize. omegaprompt 는 *이미 쓴* prompt 를 *calibrate*. DSPy 가 세 개의 후보 prompt 생성하면, omegaprompt 가 어느 것을 ship 할지 결정. 그들은 compose. |
-| promptfoo 같은 prompt 테스트 프레임워크가 아님 | promptfoo 는 assertion 기반 grading 으로 test case 에 대해 prompt 실행. omegaprompt 는 그 위에 *사전 선언된 walk-forward gate* 추가. fitness dimension 중 하나로 omegaprompt 안에서 promptfoo 실행 가능. |
-| 실제 트래픽의 real eval 대체가 아님 | Curated 데이터셋의 오프라인 calibration 은 cheap 한 screening step. Business 메트릭의 real-traffic A/B 가 ground truth. omegaprompt 는 오프라인 step 을 discipline; 온라인 step 을 대체하지 않음. |
-| 안전성 evaluator 가 아님 | `no_safety_violation` 은 선언할 수 있는 hard gate 지만 judge 는 훈련된 safety classifier 가 아님. 진지한 safety eval 은 omegaprompt 의 calibration 을 전용 safety eval suite (예: AILuminate, HELM) 와 함께 사용. |
-| Frontier LLM 능력 벤치마크가 아님 | 숫자는 judge rubric 과 데이터셋만큼만 좋음. omegaprompt 는 *당신의 prompt 를 당신의 데이터에 당신의 rubric 으로* 측정. 이 숫자들을 다른 task 로 일반화하는 건 unsupported. |
-| Free-money 도구가 아님 | Calibration 은 API 크레딧 소비. 전형적 run 은 \$10–20. 예산 세우고; iteration 중에는 cheaper model 을 judge 로, shipped run 에만 강한 judge 로 승격. |
+| DSPy의 prompt optimizer가 아님 | DSPy는 program 추상화 + bootstrapped few-shot으로 prompt를 *합성*. omegaprompt는 *이미 쓴* prompt를 *calibrate*. DSPy가 후보 3개를 만들면 omegaprompt가 어느 것을 ship할지 결정. 둘은 compose. |
+| promptfoo류 prompt 테스트 프레임워크가 아님 | promptfoo는 assertion 기반 grading으로 test case에 prompt를 실행. omegaprompt는 그 위에 *사전 선언된 walk-forward gate*를 추가. promptfoo 출력은 omegaprompt 내부에서 fitness dimension의 하나로 들어옴. |
+| 실제 트래픽 A/B의 대체가 아님 | curated 데이터셋의 오프라인 calibration은 cheap한 screening step. business 지표의 real-traffic A/B가 ground truth. omegaprompt는 오프라인 step을 규율할 뿐 온라인 step을 대체하지 않음. |
+| 안전성 evaluator가 아님 | `no_safety_violation`을 hard gate로 선언할 수 있지만 judge는 훈련된 safety classifier가 아님. 진지한 safety eval은 omegaprompt + 전용 safety suite (AILuminate, HELM 등) 함께 사용. |
+| Frontier LLM 능력 벤치마크가 아님 | 숫자는 judge rubric과 데이터셋만큼만 좋음. omegaprompt는 *당신의 prompt를 당신의 데이터에 당신의 rubric으로* 측정. 다른 task로의 일반화는 unsupported. |
+| Free-money 도구가 아님 | calibration은 API 크레딧을 소비. 전형적 run $10–20. iteration 중에는 cheaper judge, shipped run에만 strong judge로 승격. |
 
-위 중 하나로 이 도구를 쓰고 있다면 잘못 쓰고 있는 것. 잘못된 사용의 비용은 낭비된 API call, 그리고 더 나쁘게는 중요한 것에 대해 여전히 평가되지 않은 prompt 에 대한 false confidence.
+위 중 하나의 용도로 이 도구를 쓰고 있다면 잘못 쓰고 있는 것. 비용은 단지 낭비된 API call이 아니라 *여전히 실제로 평가되지 않은 prompt에 대한 false confidence*.
 
 ---
 
-## 비용 및 성능
+## 15. 비용 및 성능
 
-`evaluate()` 당: 2 × (dataset_size) API 호출 — item 당 target 1회, judge 1회. 전형적 10-item dataset = 후보 파라미터 셋 당 20 API 호출. 비용은 각 boundary 에 어떤 provider + tier 를 두느냐에 따라 변동.
+`evaluate()` 호출당 API call: `2 × dataset_size`. dataset 10개면 후보 파라미터 셋당 20 call. 비용은 boundary별 provider tier에 따라 변동.
 
-| 구성 (target / judge) | 10-item 후보 | 125-candidate grid | Walk-forward 포함 |
+| 구성 (target / judge) | 10-item 후보 | 125-candidate grid | walk-forward 포함 |
 |---|---|---|---|
-| Anthropic frontier / Anthropic frontier | ~\$0.05–0.10 | ~\$6–12 | ~\$12–24 |
-| OpenAI `gpt-4o` / OpenAI `gpt-4o` | ~\$0.03–0.06 | ~\$4–8 | ~\$8–16 |
-| OpenAI `gpt-4o-mini` / Anthropic frontier | ~\$0.02–0.04 | ~\$2.5–5 | ~\$5–10 |
-| Ollama 로컬 / OpenAI `gpt-4o` | ~\$0.015 (judge only) | ~\$2 (judge only) | ~\$4 (judge only) |
-| Ollama 로컬 / Ollama 로컬 | 무료 (컴퓨팅만) | 무료 | 무료 |
+| Anthropic frontier / Anthropic frontier | ~$0.05–0.10 | ~$6–12 | ~$12–24 |
+| OpenAI `gpt-4o` / OpenAI `gpt-4o` | ~$0.03–0.06 | ~$4–8 | ~$8–16 |
+| OpenAI `gpt-4o-mini` / Anthropic frontier | ~$0.02–0.04 | ~$2.5–5 | ~$5–10 |
+| 로컬 Ollama / OpenAI `gpt-4o` | ~$0.015 (judge only) | ~$2 (judge only) | ~$4 (judge only) |
+| 로컬 Ollama / 로컬 Ollama | 무료 (compute만) | 무료 | 무료 |
 
-가장 cost-efficient iteration 패턴: prompt iteration 중에는 작은 로컬/mini-tier target + frontier-tier judge 로 품질 채점. 또는 탐색 중 frontier target + 더 저렴한 judge; 최종 shipped calibration 에만 frontier-both 로 승격.
+cost-efficient한 iteration 패턴: 작은 로컬/mini-tier target + frontier-tier judge로 채점 품질만 frontier급. 또는 탐색 중에는 frontier target + cheaper judge, 최종 shipped calibration에만 frontier-both로 승격.
 
-매 CLI invocation 이 집계 토큰 사용량을 마지막에 출력. `cache_read_input_tokens` 가 provider 간 정규화 — CLI 가 Anthropic 의 네이티브 필드와 OpenAI 의 `prompt_tokens_details.cached_tokens` 를 같은 slot 에 읽음. 연속 run 에서 0 이면 judge prompt 에서 뭔가 drift — CLI 가 이를 명시적으로 surface 하고 조용히 비용 흡수 안 함. 로컬 endpoint (Ollama) 에서는 0 cache token 이 예상되므로 경고 무시.
+매 CLI invocation이 마지막에 집계 토큰 사용량을 출력. `cache_read_input_tokens`는 provider 간 정규화 — Anthropic의 native 필드와 OpenAI의 `prompt_tokens_details.cached_tokens`가 같은 슬롯에 들어옴. 연속 run에서 0이면 judge prompt에서 뭔가 drift — CLI가 명시적으로 surface하고 비용을 silent하게 흡수하지 않음. 로컬 endpoint에선 0이 정상.
 
 ---
 
-## 검증
+## 16. 검증
 
-**73 tests, CI 에서 네트워크 호출 0.** 모든 provider (현재 + 미래) 는 `LLMProvider` Protocol 로 받음 — 모든 API 테스트는 `SimpleNamespace` 나 `MagicMock` 으로 mock. 테스트 surface 는 실제 서버와 협상 없이 각 request payload 의 *정확한* shape (model, `response_format`, thinking config, cache_control 배치, few-shot 순서) 을 assert.
+**181 tests, CI에서 live API call 0.** 모든 provider는 `LLMProvider` Protocol로 받습니다 — 모든 API 테스트는 `SimpleNamespace` / `MagicMock`으로 mock. 테스트 surface는 실제 서버와 협상 없이 각 request payload의 *정확한* shape (model, `response_format`, thinking config, `cache_control` 배치, few-shot 순서) 을 assert.
 
 | 모듈 | 커버리지 |
 |---|---|
-| `schema.py` | `ParamVariants` / `PromptSpace` / `CalibrationOutcome` — 필수 필드, 범위 검증, JSON roundtrip, provider metadata 필드. |
-| `dataset.py` | JSONL loader — 스키마 검증, 중복 id 감지, 빈 줄 내성, 파일 없음 에러. |
-| `judge.py` | `Dimension` / `HardGate` / `JudgeRubric` / `JudgeResult` — scale 검증, 가중치 정규화, out-of-scale 클램핑, gate 집계, unknown-dimension 내성. |
-| `fitness.py` | `CompositeFitness` — 빈 batch, all-pass, partial-fail, all-fail, per-item 보존. |
-| `providers/` | Factory 가 알 수 없는 이름 거부, `base_url` 존중, 호환 안 되는 kwargs 제거. Anthropic adapter 가 `messages.create` + `messages.parse` kwargs 를 올바르게 build, refusal raise. OpenAI adapter 가 `chat.completions.create` + `beta.chat.completions.parse` kwargs build, `prompt_tokens_details.cached_tokens` → `cache_read_input_tokens` 정규화, `content_filter` raise. |
-| `api.py` | `call_target` / `call_judge` — provider delegation, payload shape, thinking on/off, reference-block 포함, rubric serialisation. |
-| `target.py` | `PromptTarget` — 모킹된 provider 로 end-to-end, cross-vendor metadata 기록, 기본값 해결, 파라미터 clamping, usage 누적. |
-| `cli.py` | Help / version / subcommand wiring. |
+| `domain/` | `PromptVariants` / `PromptSpace` / `CalibrationArtifact` / 6 enum — 필수 필드, 범위, JSON roundtrip, provider metadata, schema v2.0 호환. |
+| `dataset.py` | JSONL loader — 스키마 검증, 중복 id, 빈 줄, missing file. |
+| `judge/` | `RuleJudge` / `LLMJudge` / `EnsembleJudge` — short-circuit 동작, scale 검증, 가중치 정규화, out-of-scale 클램프, gate 집계. |
+| `core/fitness.py` | `CompositeFitness` — 빈 batch, all-pass, partial-fail, all-fail, per-item 보존. |
+| `core/walkforward.py` | KC4 Pearson 계산, gap 계산, threshold 비교, status 산출. |
+| `providers/` | factory가 unknown 이름 거부, `base_url` 존중. Anthropic adapter가 `messages.create` + `messages.parse` payload 정확히 build, refusal raise. OpenAI adapter가 `chat.completions.create` + `beta.chat.completions.parse` build, `prompt_tokens_details.cached_tokens` → `cache_read_input_tokens` 정규화, `content_filter` raise. |
+| `api.py` | `call_target` / `judge.score` — provider delegation, payload shape, thinking on/off, reference-block 포함, rubric serialisation. |
+| `target.py` | `PromptTarget` — mocked provider로 end-to-end, cross-vendor metadata 기록, default 해결, parameter clamping, usage 누적. |
+| `cli.py` | help / version / subcommand wiring, exit code, profile flag 동작. |
 
-`uv run pytest -q` 로 실행. 전형적 wall time: 1초 미만.
+`uv run pytest -q`로 실행. 전형 wall time: 2초 미만.
 
 ---
 
-## 3-layer stack
-
-omegaprompt 는 세 프로젝트 시스템의 applied layer:
+## 17. 3-layer stack
 
 ```
        ┌─────────────────────────────────────────────┐
-LAYER  │  omegaprompt  (이 repo)                     │  "Discipline 을 prompt 에 적용"
-APPLY  │  v0.1.0 — Claude API prompt calibration     │
+LAYER  │  omegaprompt  (본 repo)                      │  "prompt에 규율 적용 — Prompt CI"
+APPLY  │  v1.4.0 — schema v2.0, 6 meta-axes          │
        └────────────────────┬────────────────────────┘
-                            │ 의존
+                            │ depends on
                             ▼
        ┌─────────────────────────────────────────────┐
-LAYER  │  omega-lock                                 │  "Calibration 프레임워크"
-CORE   │  v0.1.4 — stress + grid + walk-forward + KC │
+LAYER  │  omega-lock                                 │  "calibration framework"
+CORE   │  v0.1.6 — stress + grid + walk-forward + KC │
        └────────────────────┬────────────────────────┘
-                            │ 검증됨
+                            │ built under
                             ▼
        ┌─────────────────────────────────────────────┐
-LAYER  │  Antemortem + antemortem-cli                │  "빌드 주변 discipline"
-META   │  pre-impl recon methodology + tooling       │
+LAYER  │  Antemortem + antemortem-cli                │  "build 주변 규율"
+META   │  pre-impl recon 방법론 + tooling             │
        └─────────────────────────────────────────────┘
 ```
 
 - **[omega-lock](https://github.com/hibou04-ops/omega-lock)** — calibration engine 공급: stress 측정, top-K unlock, grid search, walk-forward, kill criteria, benchmark scorecard. 176 tests. 2026-04-18 ship.
-- **[Antemortem](https://github.com/hibou04-ops/Antemortem)** + **[antemortem-cli](https://github.com/hibou04-ops/antemortem-cli)** — omega-lock 과 omegaprompt 둘 다 이 pre-implementation reconnaissance discipline 아래 빌드. Antemortem 은 코드가 쓰이기 전 ghost trap 을 잡고; omega-lock 은 ship 전 overfit parameter 를 잡고; omegaprompt 는 deploy 전 overfit prompt 를 잡음. 패턴이 세 스케일에서 반복: spec, parameters, prompts.
+- **[Antemortem](https://github.com/hibou04-ops/Antemortem)** + **[antemortem-cli](https://github.com/hibou04-ops/antemortem-cli)** — omega-lock과 omegaprompt 모두 이 pre-implementation reconnaissance 규율 아래 빌드. Antemortem은 코드 작성 *전* ghost trap을 잡고, omega-lock은 ship 전 overfit parameter를, omegaprompt는 deploy 전 overfit prompt를 잡습니다. 같은 패턴이 spec → parameters → prompts 세 스케일에서 반복.
 
-Layering 은 신뢰성에 중요. Calibration engine 이 이 prompt adapter 가 쓰이기 전에 ship 되고 검증됨. omegaprompt 가 ~200 라인 adapter code 인 이유는 필요한 모든 것이 이미 존재하기 때문.
-
----
-
-## 인접 도구와의 관계
-
-| 도구 | 하는 일 | omegaprompt 가 추가하는 것 |
-|---|---|---|
-| **[promptfoo](https://www.promptfoo.dev/)** | Test case 에 대해 prompt 실행; assertion 기반 grading. | 사전 선언된 walk-forward gate (KC-4) — training ≠ ship criterion. Soft 감점 아닌, fitness 를 collapse 시키는 hard gate. Stress 기반 축 선택. Composable — promptfoo output 이 여러 judge 중 하나 가능. |
-| **[DSPy](https://dspy.ai/)** | Program 추상화 + bootstrapped few-shot 을 통한 prompt synthesis. | Domain-agnostic adapter (어떤 `CalibrableTarget` 이든 작동). Program synthesis 아닌 calibration-first framing. DSPy output 은 search space 의 또 하나의 `system_prompt_variant`. |
-| **Optuna / Ray Tune** (prompt 에 적용) | Prompt knob 에 대한 일반 HPO. | Walk-forward 검증 + 사전 선언된 kill criteria 기본 탑재. 스키마 enforce 된 LLM-as-judge response. Project 마다 재발명 아닌 composite `hard_gate × soft_score` fitness. |
-| **커스텀 "eval suite"** | Model 호출, 점수 매기기, 랭크하는 project-specific 스크립트. | 구조화된 data contract (`Dataset`, `Rubric`, `Outcome`), machine-readable artifact, 재현성, 30-run reference benchmark 가 있는 calibration engine 에 plug-and-play. |
-| **Anthropic 의 built-in [evals](https://docs.anthropic.com/claude/docs/evaluate-and-improve-performance-of-claude-models)** | Provider-native eval 워크플로, `messages.create` + rubric. | 같은 인프라 + discipline: 결과를 본 후에는 threshold 선언 불가. Antemortem/omega-lock 계보가 pre-declaration 을 강제. |
-
-USP 는 *discipline, search 아님*. Search 부분은 omega-lock 이 처리 (어떤 `CalibrableTarget` 에든 처리). omegaprompt 는 prompt-specific adapter 와 hard-gates-first fitness shape 를 기여.
+omegaprompt가 ~200 라인 adapter인 이유는 layering이 신뢰성을 만들기 때문입니다 — calibration engine이 본 adapter 작성 *전*에 ship되고 검증되었습니다.
 
 ---
 
-## 회의론자를 위한 FAQ
+## 18. MCP 서버
+
+`omegaprompt[mcp]` extras가 FastMCP 기반 서버를 포함합니다. Claude Code / Cursor가 다음 도구를 직접 호출할 수 있습니다:
+
+- `calibrate` — 데이터셋·rubric·variants를 받아 full calibration 실행, `CalibrationArtifact` 반환.
+- `evaluate` — 단일 (params, dataset) 조합 evaluate. cost estimate에 유용.
+- `report` — artifact JSON을 markdown audit report로 렌더.
+- `diff` — 두 artifact 비교, regression 분류.
+- `measure_sensitivity` — 6 meta-axes 별 fitness sensitivity 측정.
+- `grade` — judge만 단독 실행.
+- `preflight` — mini-omega-lock / mini-antemortem-cli 플러그인을 통해 환경 적합성 검사.
+- `classify_traps` — config를 7개 calibration trap 패턴으로 분류.
+
+agent 시나리오 9개 cookbook: [AGENT_TRIGGERS.md](AGENT_TRIGGERS.md).
+
+---
+
+## 19. 회의론자를 위한 FAQ
 
 **이건 promptfoo + walk-forward step 아닌가요?**
+어느 정도 그렇습니다 — 그게 요점입니다. walk-forward step *자체*가 전체 규율입니다. promptfoo는 예제를 실행, omegaprompt는 그 랭킹을 mechanical하게 falsifiable로 만듭니다. KC4 없이는 promptfoo가 의미가 있을지 없을지 모르는 숫자를 줍니다. KC4 있으면 failing run이 ship 전에 iterate가 필요하다고 알려줍니다.
 
-어느 정도 맞음 — 그게 요점. Walk-forward step *자체*가 전체 discipline. promptfoo 는 예시를 실행; omegaprompt 는 랭킹을 mechanical 로 falsifiable 하게 만듦. KC-4 없이는 promptfoo 가 의미가 있을 수도 없을 수도 있는 숫자를 줌. KC-4 있으면, failing run 이 ship 전에 iterate 해야 함을 알려줌.
+**왜 `temperature`를 축으로 안 두나요?**
+모던 frontier 모델들이 sampling knob을 점진적으로 제거/deprecate합니다. pinned 계약은 *"우리가 sampling을 고른다; 당신은 effort와 prompt shape를 고른다."* 제거된 knob을 calibrate하는 것은 의미가 없습니다. 여전히 `temperature`를 받는 모델용이라면 `PromptSpace`를 20줄짜리 axis adapter로 확장 — framework 변경이 아닙니다.
 
-**왜 `temperature` 를 축으로 쓰지 않나요?**
+**target과 judge가 같은 모델이면 judge가 그냥 동의하지 않나요?**
+잘 쓴 rubric에서는 그렇지 않습니다. judge는 *특정 scale의 정수* 와 *binary gate*로 *특정 rubric에 대해* 채점하도록 prompt 받습니다. 두 호출은 독립 — 다른 system prompt, 다른 task framing, target call에 대한 기억 없음. 그래도 *다른* (이상적으로 더 강한) 모델을 judge로 쓰는 것이 권장 production 셋업입니다. v0.2의 multi-judge 패턴이 이를 formalize.
 
-모던 Claude pinned 모델은 sampling knob 을 제거. Pinned 계약은 *"우리가 sampling 을 고름; 당신은 effort level 과 prompt shape 를 고름."* 제거된 knob 을 calibrate 하는 건 난센스. 여전히 `temperature` 를 accept 하는 오래된 모델용으로는 `PromptSpace` 에 `temperature_idx` 축 확장 — 20줄짜리 adapter 이지 프레임워크 변경 아님.
+**Judge가 miscalibrated면?**
+그러면 calibration도 miscalibrated. judge quality는 first-class concern. 세 방어선: (1) judge의 ~5k 토큰 system prompt가 명시적 calibration-hygiene 지시 포함 ("midpoint anchor, full-range, self-agree"), (2) rubric 스키마가 dimension별 정수 scale을 요구하고 out-of-range를 clamp, (3) v0.2 multi-judge 패턴 — `judge_v1` vs `judge_v2` 랭킹 비교, disagreement = trust signal이지 결과가 아님.
 
-**Target 과 judge 가 같은 모델이면 judge 가 그냥 target 에 동의하지 않나요?**
+**Anthropic의 built-in evals와 어떻게 다른가요?**
+Anthropic evals는 native API surface입니다. omegaprompt는 그 위에 *사전 선언된* gating을 추가합니다. rubric은 run 전에 고정하고 threshold는 config에 기록하며, score를 본 뒤에는 둘 다 조정할 수 없습니다. 이는 Winchester defense의 원칙을 적용한 것입니다 — 사전 선언된 kill criteria는 완화할 수 없습니다. native eval에서는 이 절차를 수동으로 수행할 수 있고, omegaprompt는 구조적으로 강제합니다.
 
-잘 쓴 rubric 에는 해당 안 됨. Judge 는 *특정 scale 의 정수* 와 *binary gate* 로 *특정 rubric 에 대해 평가* 하도록 prompt 받음. 두 call 은 독립 — 다른 system prompt, 다른 task framing. Judge 는 target call 에 대한 기억이 없음. 그래도 *다른* 모델을 judge 로 사용 (이상적으로 더 강한) 하는 게 권장 프로덕션 셋업, v0.2 `multi-judge` 패턴이 이를 formalize.
+**non-Anthropic 모델에서 작동하나요?**
+네. 두 boundary 모두 `LLMProvider` Protocol을 통과합니다. Anthropic, OpenAI, OpenAI-호환 endpoint (Azure, Groq, Together, OpenRouter, vLLM, Ollama) 가 ship됩니다. cross-vendor target/judge가 first-class 구성.
 
-**Judge 가 miscalibrated 면?**
-
-그럼 당신의 calibration 도 miscalibrated. Judge quality 는 first-class 관심사. 세 방어: (1) judge 의 ~5k 토큰 system prompt 가 명시적 calibration-hygiene 지시 포함 ("midpoint 에 anchor, full range 사용, 자기 자신과 agree"); (2) rubric 스키마가 per-dimension 정수 scale 을 요구하고 out-of-range score 를 clamp; (3) v0.2 `multi-judge` 패턴이 `judge_v1` vs `judge_v2` 랭킹 비교 — disagreement 는 trust signal 이지 결과 아님.
-
-**Anthropic 의 built-in evals 와 어떻게 다른가요?**
-
-Anthropic의 evals는 네이티브 API surface입니다. omegaprompt는 그 위에 *사전 선언된* gating을 추가합니다. rubric은 run 전에 고정하고 threshold는 config에 기록하며, score를 본 뒤에는 둘 다 조정할 수 없습니다. 여기에는 Winchester defense의 원칙을 적용합니다: 사전 선언한 kill criteria는 완화할 수 없습니다. Native evals에서는 이 절차를 수동으로 수행할 수 있고, omegaprompt는 구조적으로 강제합니다.
-
-**비-Anthropic 모델에서 작동하나요?**
-
-v0.1 에서는 아님. System-prompt 계약, effort 파라미터, `messages.parse` structured-output flow, caching 의미 — 모두 Anthropic SDK-specific. Vendor 추상화 layer 는 v0.3. 당분간, Claude prompt calibrate 할 때 omegaprompt 사용; cross-vendor 필요하면 일반 HPO 라이브러리 (Optuna).
-
-**Private/proprietary 데이터셋에서 실행 가능한가요?**
-
-네. Dataset + rubric + variants 모두 로컬 JSON/JSONL. 도구가 이들을 읽고 calibration 호출을 위해 Anthropic API 로 보내고 artifact 를 로컬에 씀. 당신의 데이터는 Anthropic API 로만 노트북 바깥으로 나감 — 어떤 애플리케이션 호출과 같음.
+**private/proprietary 데이터셋에서 실행 가능한가요?**
+네. dataset, rubric, variants 모두 로컬 JSON/JSONL. 도구가 이들을 읽고 calibration 호출을 위해 API로 보내고 artifact를 로컬에 씁니다. 데이터가 외부로 나가는 경로는 LLM provider API 하나뿐 — 일반 application call과 동일.
 
 **비용은?**
+10-item dataset, 125-candidate grid, walk-forward 기준 frontier 가격으로 $10–20 / run. 두 mitigation: (1) iteration 중 cheaper judge (4–5× 감소), (2) cache-aware prompt가 judge 비용을 dominate하므로 5분 window 내 *두 번째* run은 첫 번째의 ~50%.
 
-10-item dataset, 125-candidate grid, walk-forward 기준 현재 frontier 가격으로 calibration run 은 \$10–20. 두 mitigation: iteration 중 cheaper model 을 judge 로 사용 (4–5× 감소), cache-aware prompt 가 judge 쪽 비용을 dominate 하므로 5분 window 내 *두 번째* run 이 첫 번째의 ~50%. 예산 세우기.
-
-**Calibration 이 실제로 generalize 됐는지 어떻게 아나요?**
-
-Outcome 의 `generalization_gap` 읽기. 10% 미만 = 강한 generalization. 10–25% = non-critical path 에 수용 가능. 25% 초과 = training slice 가 production 을 대표하지 못함; 데이터셋 확장. `status` 필드가 `PASS` 또는 `FAIL:KC-4` — FAIL 이면 score 와 관계없이 ship 하지 말 것.
+**calibration이 실제로 generalize됐는지 어떻게 아나요?**
+artifact의 `walk_forward.generalization_gap`을 읽으세요. 10% 미만 = 강한 generalization. 10–25% = non-critical path에 수용 가능. 25% 초과 = training slice가 production을 대표하지 못함, dataset 확장. `status`가 `OK`가 아니거나 `ship_recommendation`이 `SHIP`이 아니면 score와 무관하게 ship 금지.
 
 ---
 
-## 선행 연구 및 credit
+## 20. 선행 연구 및 credit
 
-이 도구가 서 있는 세 아이디어:
+세 아이디어 위에 서 있습니다:
 
-- **사전 선언된 gate 와 함께 하는 train/test split** — 모든 학부 ML 커리큘럼에 문서화된 기초 ML 방어. 여기서 사용된 특정 형태 (gate 로서 Pearson rank correlation, KC-4) 는 [omega-lock](https://github.com/hibou04-ops/omega-lock) 의 kill-criteria 프레임워크에서 옴.
-- **LLM-as-judge** — *[Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena](https://arxiv.org/abs/2306.05685)* (Zheng et al., 2023) 에서 popularize 된 패턴. omegaprompt 는 free-form judge 응답이 scoring 파이프라인을 오염시키는 알려진 failure mode 에 대한 방어로 스키마 enforcement (Pydantic + `messages.parse`) 로 이 패턴을 구현.
-- **Winchester defense** — 실행 전 기준을 고정하는 원칙: *run 전에 선언한 kill criteria는 이후 완화할 수 없습니다*. 여기서는 `KC-4` 기준을 score를 본 뒤 조정하지 않고 config에서 강제해야 한다는 근거로 사용합니다.
+- **사전 선언된 gate를 동반한 train/test split** — 모든 학부 ML 커리큘럼의 기초 ML 방어. 여기 사용된 형태 (KC4, Pearson rank correlation gate) 는 [omega-lock](https://github.com/hibou04-ops/omega-lock)의 kill-criteria framework에서 옴.
+- **LLM-as-judge** — *[Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena](https://arxiv.org/abs/2306.05685)* (Zheng et al., 2023) 에서 popularize. omegaprompt는 이 패턴을 schema enforcement (Pydantic + 벤더 native structured output) 로 구현해, free-form judge 응답이 scoring 파이프라인을 오염시키는 알려진 failure mode를 차단.
+- **Winchester defense** — 여기서 적용하는 원칙: *run 전에 선언한 kill criteria는 이후 완화할 수 없습니다*. KC4 기준을 score를 본 뒤 조정하지 않고 config에서 강제해야 한다는 근거입니다.
 
-네이밍: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration)은 의도적인 family branding입니다. omega-lock은 `KC-4 FAIL`로 끝난 캘리브레이션 실험에서 추출했습니다 — overfitting 방어가 설계대로 작동한 결과입니다. omegaprompt는 같은 통찰을 한 layer 위에 적용합니다.
+네이밍: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration)은 의도적인 family branding입니다. omega-lock은 `KC-4 FAIL`로 끝난 파라미터 캘리브레이션 실험에서 추출한 도구입니다 — overfitting 방어가 설계대로 작동한 결과입니다. omegaprompt는 같은 통찰을 한 layer 위에 적용합니다.
 
 ---
 
-## 상태 & 로드맵
+## 21. 상태 & 로드맵
 
-v0.1.0 은 **alpha**. 데이터 계약 (`Dataset`, `JudgeRubric`, `ParamVariants`, `PromptSpace`, `CalibrationOutcome`) 은 stable. CLI 계약 (`omegaprompt calibrate`, 그 flag 들, exit code) 는 stable. Judge prompt 는 실제 run 에서 scoring-quality 데이터가 축적되면서 iterate — v0.1.x bump 는 judge prompt 개정 용도, CHANGELOG 의 *"Judge prompt revisions"* 섹션에 추적.
+**v1.4.0** — schema v2.0, 6 meta-axes, RuleJudge / LLMJudge / EnsembleJudge, guarded/expedition profile, MCP server, 181 tests.
 
-Semver 는 v1.0 부터 엄격 적용.
+데이터 계약 (`Dataset`, `JudgeRubric`, `PromptVariants`, `PromptSpace`, `CalibrationArtifact`) 과 CLI 계약 (`omegaprompt calibrate / report / diff / preflight ...`) 은 stable. judge prompt는 실 run의 scoring-quality 데이터가 축적되면서 iterate — minor bump가 judge prompt 개정용, CHANGELOG의 *Judge prompt revisions* 섹션에 추적.
 
-**v0.1.x (judge prompt iteration 트랙)**
-- 다양한 task 타입 (code generation, reasoning, extraction, classification) 에 dogfood. Scoring drift 기록.
-- Reference scoring-quality benchmark — judge prompt 개정을 추측이 아니라 측정으로.
-- Judge round-trip 없이 호출 가능한 추가 hard gate evaluator (format predicate, safety classifier).
+**다음 트랙**
 
-**v0.2 (도구 깊이)**
-- `omegaprompt report <outcome.json>` — 사람이 읽을 수 있는 debrief renderer.
-- Multi-judge validation 패턴: top-K 에 대한 `judge_v1` + `judge_v2`, disagreement = trust signal.
-- Calibration run 시작 전 비용 추정을 포함한 `--dry-run`.
-- 반복 same-rubric run 을 위한 rubric 에 두 번째 `cache_control` breakpoint.
+- **judge 품질 dogfood** — code generation, reasoning, extraction, classification 다양 task에서 scoring drift 측정. reference scoring-quality benchmark.
+- **multi-judge 검증 패턴** — top-K에 `judge_v1` + `judge_v2`, disagreement = trust signal.
+- **`--dry-run`** — calibration 시작 전 비용 추정.
+- **rubric 측 second `cache_control` breakpoint** — 같은 rubric 반복 run의 캐시 최적화.
+- **GitHub Action** — PR에서 calibration 실행, KC4 fail 시 merge 차단.
 
-**v0.3 (생태계)**
-- Benchmark harness: multiple (task × rubric × seed) 조합, omega-lock 과 같은 RAGAS-style scorecard.
-- CI gating 용 GitHub Action — PR 에서 calibration 실행, KC-4 fail 시 merge 차단.
-- 비-Anthropic 모델 (OpenAI / Gemini) 에 대해 작동하는 Vendor 추상화.
-
-**명시적 out of scope:** 웹 대시보드, proprietary hosting, 멀티유저 tenancy. omegaprompt 는 로컬 개발자 도구; 로컬에 유지.
+**명시적 out of scope**: 웹 대시보드, proprietary hosting, 멀티 테넌트. omegaprompt는 로컬 개발자 도구 — 로컬에 유지합니다.
 
 전체 changelog: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
-## 기여
+## 22. 라이선스
 
-가장 가치있는 기여는 공개된 calibration outcome — dataset, rubric, 그리고 여러 method 에 걸친 `CalibrationOutcome.json`. Judge prompt 를 evidence-based 로 만들어줌.
-
-Issue 와 PR 환영. Non-trivial 한 변경은 먼저 [`antemortem-cli`](https://github.com/hibou04-ops/antemortem-cli) 로 antemortem 실행 — 이 프레임워크를 빌드한 discipline 을 dogfood.
-
----
-
-## 인용
-
-```
-omegaprompt v0.1.0 — calibration discipline for Claude API prompts.
-https://github.com/hibou04-ops/omegaprompt, 2026.
-```
-
-Parent framework:
-```
-omega-lock v0.1.4 — sensitivity-driven coordinate descent calibration framework.
-https://github.com/hibou04-ops/omega-lock, 2026.
-```
-
-Methodology (이것과 sibling 들이 어떻게 빌드됐나):
-```
-Antemortem v0.1.1 — AI-assisted pre-implementation reconnaissance for software changes.
-https://github.com/hibou04-ops/Antemortem, 2026.
-```
-
----
-
-## 라이선스
-
-MIT. [LICENSE](LICENSE) 참조.
+Apache 2.0. [LICENSE](LICENSE) 참조. © 2026 Kyunghoon Gwak (hibou04-ops).
 
 ## Colophon
 
-Solo 로 설계, 구현, ship. omega-lock 위의 adapter layer; calibration engine 재구현 zero. 59 tests, CI 에서 live API 호출 0. 이 도구는 caller 에 제공하는 pre-implementation reconnaissance discipline 으로 빌드됨.
+solo 설계·구현·ship. omega-lock 위의 adapter layer — calibration engine 재구현 zero. 181 tests, CI에서 live API call 0. 본 도구는 caller에게 제공하는 pre-implementation reconnaissance 규율 아래 빌드되었습니다.

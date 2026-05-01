@@ -104,6 +104,7 @@ def test_diff_detects_regression():
         "n_candidates_evaluated": 1,
         "total_api_calls": 1,
         "status": "OK",
+        "ship_recommendation": "ship",
     }
     new_a = dict(old_a)
     new_a["best_fitness"] = 0.7
@@ -136,6 +137,7 @@ def test_diff_passes_on_improvement():
         "n_candidates_evaluated": 1,
         "total_api_calls": 1,
         "status": "OK",
+        "ship_recommendation": "ship",
     }
     new_a = dict(old_a)
     new_a["best_fitness"] = 0.85

@@ -348,6 +348,56 @@ def test_max_gap_and_min_kc4_thresholds_recorded():
     assert wf.shared_item_count == 4
 
 
+def test_legacy_artifact_with_correlation_upgrades_to_computed():
+    """An artifact written before kc4_status existed deserializes with
+    the UNKNOWN_LEGACY default. The post-init validator must upgrade it
+    to COMPUTED when kc4_correlation is non-None so the markdown report
+    doesn't surface a contradictory state."""
+    from omegaprompt.domain.result import WalkForwardResult
+
+    legacy = WalkForwardResult(
+        train_best_fitness=0.8,
+        test_fitness=0.75,
+        generalization_gap=0.0625,
+        kc4_correlation=0.83,
+        passed=True,
+        # validation_mode, kc4_status, etc. all default
+    )
+    assert legacy.kc4_status == "COMPUTED"
+
+
+def test_legacy_artifact_without_correlation_stays_unknown():
+    """When the legacy artifact has no correlation either, leave the
+    status as UNKNOWN_LEGACY — we genuinely don't know why."""
+    from omegaprompt.domain.result import WalkForwardResult
+
+    legacy = WalkForwardResult(
+        train_best_fitness=0.8,
+        test_fitness=0.75,
+        generalization_gap=0.0625,
+        passed=True,
+    )
+    assert legacy.kc4_status == "UNKNOWN_LEGACY"
+    assert legacy.kc4_correlation is None
+
+
+def test_computed_status_without_correlation_is_rejected():
+    """The validator catches the inverse mistake at construction time:
+    a status of COMPUTED with no correlation is contradictory."""
+    import pytest
+    from omegaprompt.domain.result import WalkForwardResult
+
+    with pytest.raises(ValueError, match="kc4_status='COMPUTED' requires"):
+        WalkForwardResult(
+            train_best_fitness=0.8,
+            test_fitness=0.75,
+            generalization_gap=0.0625,
+            kc4_correlation=None,
+            kc4_status="COMPUTED",
+            passed=True,
+        )
+
+
 def test_walkforward_result_round_trips_through_json():
     """All new fields must serialize and deserialize so an artifact
     written today still parses tomorrow."""

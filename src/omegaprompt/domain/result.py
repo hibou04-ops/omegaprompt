@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omegaprompt.domain.judge import JudgeResult
 from omegaprompt.domain.profiles import (
@@ -142,15 +142,20 @@ class WalkForwardResult(BaseModel):
         "ZERO_VARIANCE_TEST",
         "ZERO_VARIANCE_BOTH",
         "PEARSON_NAN",
+        "UNKNOWN_LEGACY",
     ] = Field(
-        default="INSUFFICIENT_SHARED_ITEMS",
+        default="UNKNOWN_LEGACY",
         description=(
             "Outcome of the KC-4 computation. ``COMPUTED`` is the only "
             "value where ``kc4_correlation`` is non-None and the gate "
             "actually checked. The others tell a reviewer whether KC-4 "
             "was unmeasurable for structural reasons (disjoint split, "
             "missing scores) or because the data degenerated (zero "
-            "variance, NaN). Reviewer P1 #6."
+            "variance, NaN). ``UNKNOWN_LEGACY`` is reserved for "
+            "artifacts produced before kc4_status existed; the "
+            "post-init validator upgrades it to ``COMPUTED`` when "
+            "``kc4_correlation`` is non-None so the artifact does not "
+            "contradict itself. Reviewer P1 #6."
         ),
     )
 
@@ -174,6 +179,27 @@ class WalkForwardResult(BaseModel):
         ...,
         description="Did the candidate clear the pre-declared gap + KC-4 thresholds?",
     )
+
+    @model_validator(mode="after")
+    def _reconcile_kc4_status_with_correlation(self) -> WalkForwardResult:
+        """Keep ``kc4_status`` and ``kc4_correlation`` from contradicting.
+
+        Pre-this-PR artifacts deserialize with ``kc4_status="UNKNOWN_LEGACY"``
+        even when they recorded a real correlation. Upgrade those to
+        ``COMPUTED`` so the markdown report and downstream readers don't
+        see a contradictory state ("kc4=0.83, status=UNKNOWN_LEGACY").
+
+        Also catches the inverse mistake at construction time: a status
+        of ``COMPUTED`` with no correlation is invalid by definition.
+        """
+        if self.kc4_status == "UNKNOWN_LEGACY" and self.kc4_correlation is not None:
+            object.__setattr__(self, "kc4_status", "COMPUTED")
+        if self.kc4_status == "COMPUTED" and self.kc4_correlation is None:
+            raise ValueError(
+                "kc4_status='COMPUTED' requires a non-None kc4_correlation; "
+                "use one of the explicit none-status values instead."
+            )
+        return self
 
 
 class CalibrationArtifact(BaseModel):

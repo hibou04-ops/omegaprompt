@@ -83,6 +83,44 @@ class AdaptationPlan(BaseModel):
         """True when the plan flagged any condition that cannot be auto-resolved."""
         return bool(self.require_manual_review_reasons)
 
+    def split_overrides(self) -> tuple[list[ParameterOverride], list[ParameterOverride]]:
+        """Partition recorded overrides into ``(applied, advisory)``.
+
+        Reviewer P0: pre-fix every entry on ``self.overrides`` looked
+        equally authoritative, but ``runtime.calibrate`` only consumes
+        a subset (min_kc4, max_gap, unlock_k via apply_adaptation_plan).
+        Other recorded overrides — rescore_count, schema_mode_fallback,
+        skip_axes, judge_ensemble_shift, rubric_weight_overrides,
+        candidate_budget_cap, dataset_reorder_for_cache — are advisory
+        because no consumer wires them through. A reviewer reading the
+        artifact can't tell which is which without this split.
+
+        ``applied`` entries reach the search loop. ``advisory`` entries
+        are recorded for reviewers but the pipeline behaviour is
+        unchanged. Future work that wires an advisory override into
+        the pipeline should move it to ``APPLIED_PARAMETERS``.
+        """
+        applied: list[ParameterOverride] = []
+        advisory: list[ParameterOverride] = []
+        for ov in self.overrides:
+            if ov.parameter in APPLIED_PARAMETERS:
+                applied.append(ov)
+            else:
+                advisory.append(ov)
+        return applied, advisory
+
+
+# Parameters whose AdaptationPlan overrides actually flow through
+# ``runtime.calibrate`` -> ``apply_adaptation_plan`` -> the search
+# loop or the ship-gate escalation. Anything else recorded on
+# ``AdaptationPlan.overrides`` is advisory-only as of v1.x.
+APPLIED_PARAMETERS: frozenset[str] = frozenset({
+    "min_kc4",
+    "max_gap",
+    "unlock_k",
+    "manual_review",
+})
+
 
 _NOISE_TO_KC4_FLOOR: tuple[tuple[float, float], ...] = (
     (0.05, 0.50),

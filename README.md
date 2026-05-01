@@ -363,12 +363,13 @@ The artifact's `ship_recommendation` field takes one of:
 
 ```python
 class ShipRecommendation(str, Enum):
-    SHIP = "ship"
-    HOLD = "hold"
-    ROLLBACK = "rollback"
+    SHIP = "ship"            # OK to deploy; all gates pass
+    HOLD = "hold"             # do not deploy; at least one gate fails
+    EXPERIMENT = "experiment" # opt-in expedition path; not a ship verdict
+    BLOCK = "block"           # structural risk exceeds the current profile
 ```
 
-Computation is deterministic from `status`, walk-forward outcome, hard-gate pass rate, `stayed_within_guarded_boundaries`, and the presence of blocking `CapabilityEvent`s. Same artifact in, same recommendation out — a CI pipeline whitelists `SHIP` without interpreting prose.
+Computation is deterministic from `status`, walk-forward outcome, hard-gate pass rate, `stayed_within_guarded_boundaries`, and the presence of blocking `CapabilityEvent`s. Same artifact in, same recommendation out — a CI pipeline whitelists `SHIP` without interpreting prose. `omegaprompt diff` treats `BLOCK` and `HOLD` on the candidate as regressions even when the raw metrics improve; `EXPERIMENT` remains non-blocking by design.
 
 ---
 
@@ -1177,7 +1178,8 @@ class ExecutionProfile(str, Enum):
 class ShipRecommendation(str, Enum):
     SHIP = "ship"
     HOLD = "hold"
-    ROLLBACK = "rollback"
+    EXPERIMENT = "experiment"
+    BLOCK = "block"
 
 class RiskCategory(str, Enum): ...
 class BoundaryWarning(BaseModel): ...

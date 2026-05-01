@@ -168,7 +168,11 @@ def test_preflight_blocks_real_placeholder_judge_under_guarded(monkeypatch):
     assert any("judge" in r and "placeholder" in r for r in report.blocker_reasons)
 
 
-def test_preflight_warns_on_experimental_target(monkeypatch):
+def test_preflight_blocks_experimental_target_under_guarded(monkeypatch):
+    """Reviewer P1 #15: experimental target under guarded is a blocker,
+    not a soft warning. Pre-fix preflight returned PROCEED with a
+    warning string; post-fix it routes through enforce_profile_policy
+    and surfaces a critical blocker."""
     target_caps = ProviderCapabilities(
         provider="openai",
         tier=CapabilityTier.CLOUD,
@@ -181,8 +185,27 @@ def test_preflight_warns_on_experimental_target(monkeypatch):
     _patch_provider(monkeypatch, target_caps, judge_caps)
 
     report = preflight(target="openai", judge="anthropic", profile="guarded")
+    assert report.status == PreflightStatus.ABORT
+    assert any("Experimental target" in r for r in report.blocker_reasons)
+
+
+def test_preflight_warns_on_experimental_target_under_expedition(monkeypatch):
+    """Under expedition profile the policy allows experimental providers,
+    so the same input that aborts under guarded proceeds with a soft
+    warning instead."""
+    target_caps = ProviderCapabilities(
+        provider="openai",
+        tier=CapabilityTier.CLOUD,
+        experimental=True,
+    )
+    judge_caps = ProviderCapabilities(
+        provider="anthropic",
+        tier=CapabilityTier.CLOUD,
+    )
+    _patch_provider(monkeypatch, target_caps, judge_caps)
+
+    report = preflight(target="openai", judge="anthropic", profile="expedition")
     assert report.status == PreflightStatus.PROCEED
-    assert any("experimental" in w for w in report.warnings)
 
 
 def test_preflight_warns_on_experimental_judge(monkeypatch):

@@ -1,33 +1,38 @@
-"""``omegaprompt calibrate`` - end-to-end prompt calibration."""
+"""``omegaprompt calibrate`` — end-to-end prompt calibration.
+
+Reviewer P0: pre-fix this CLI re-implemented the calibration pipeline,
+so the CLI / Python runtime / MCP all had subtly different gate
+policies. ``runtime.calibrate()`` is now the canonical pipeline; this
+module is the Typer wrapper that parses CLI args, builds
+``CalibrateTuning`` + ``ProviderSpec``, and delegates.
+
+The behaviour is the same as ``runtime.calibrate(...)``: a
+``CalibrationArtifact`` is written to ``--output`` and a one-line
+status summary prints to stdout. New flags exposed through CLI:
+
+- ``--validation-mode {auto,paired,disjoint}`` (already on
+  CalibrateTuning since v1.5)
+- ``--adaptation-plan PATH`` (loads a saved AdaptationPlan JSON and
+  threads it through runtime.calibrate)
+"""
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
+from typing import Literal
 
 import typer
 
-from omegaprompt.core import (
-    assess_run_risk,
-    evaluate_walk_forward,
-    policy_for,
-    relaxed_safeguards_for,
-    save_artifact,
-)
-from omegaprompt.domain.dataset import Dataset
-from omegaprompt.domain.judge import JudgeRubric
-from omegaprompt.domain.params import MetaAxisSpace, PromptVariants
 from omegaprompt.domain.profiles import ExecutionProfile
-from omegaprompt.domain.result import CalibrationArtifact
-from omegaprompt.judges.llm_judge import LLMJudge
-from omegaprompt.providers import (
-    ProviderError,
-    provider_capabilities,
-    quality_per_cost,
-    quality_per_latency,
+from omegaprompt.preflight import AdaptationPlan
+from omegaprompt.providers.factory import supported_providers
+from omegaprompt.runtime import (
+    CalibrateTuning,
+    ProviderSpec,
+    calibrate as runtime_calibrate,
 )
-from omegaprompt.providers.factory import make_provider, supported_providers
-from omegaprompt.targets.prompt_target import PromptTarget
 
 
 _ENV_KEY_FOR_PROVIDER: dict[str, str] = {
@@ -170,13 +175,40 @@ def calibrate(
         "--min-kc4",
         help="Walk-forward: minimum Pearson correlation when computable.",
     ),
+    validation_mode: str = typer.Option(  # noqa: B008
+        "auto",
+        "--validation-mode",
+        help=(
+            "How walk-forward interprets train/test slices: 'auto' (default — "
+            "compute KC-4 only when slices share >=3 ids), 'paired' (assert "
+            "shared ids; raise if overlap < 3), 'disjoint' (assert no shared "
+            "ids; KC-4 not computed)."
+        ),
+        case_sensitive=False,
+    ),
+    adaptation_plan_path: Path | None = typer.Option(  # noqa: B008
+        None,
+        "--adaptation-plan",
+        help=(
+            "Optional path to a serialized AdaptationPlan JSON. When supplied, "
+            "the plan's overrides tighten min_kc4/max_gap/unlock_k before the "
+            "search runs and the plan's manual-review escalation flows into "
+            "the artifact's status / ship_recommendation."
+        ),
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+    ),
 ) -> None:
-    """Calibrate a prompt configuration against a dataset."""
+    """Calibrate a prompt configuration against a dataset.
 
+    Thin wrapper over ``runtime.calibrate()``. All gate policy
+    decisions (KC-4 thresholds, walk-forward semantics, adaptation
+    plan honouring, ship recommendation, status escalation) live in
+    the runtime so CLI / Python / MCP behave identically.
+    """
     selected_profile = ExecutionProfile(profile)
-    policy = policy_for(selected_profile)
-    resolved_max_gap = max_gap if max_gap is not None else policy.default_max_gap
-    resolved_min_kc4 = min_kc4 if min_kc4 is not None else policy.default_min_kc4
 
     tp = target_provider.lower().strip()
     jp = judge_provider.lower().strip()
@@ -197,247 +229,85 @@ def calibrate(
         )
         raise typer.Exit(code=2)
 
-    provider_envs = {
-        tp: target_base_url,
-        jp: judge_base_url,
-    }
-    for provider_key, base_url in provider_envs.items():
+    for provider_key, base_url in {tp: target_base_url, jp: judge_base_url}.items():
         err = _require_env_for(provider_key, base_url=base_url)
         if err:
             typer.secho(err, fg=typer.colors.RED, err=True)
             raise typer.Exit(code=2)
 
-    try:
-        from omega_lock import P1Config, run_p1  # type: ignore
-    except ImportError as exc:
+    vmode = validation_mode.lower().strip()
+    if vmode not in {"auto", "paired", "disjoint"}:
         typer.secho(
-            f"The 'omega-lock' package is required for `calibrate`. "
-            f"Install with `pip install omega-lock`. ({exc})",
+            f"Unknown --validation-mode {validation_mode!r}. "
+            "Use one of: auto, paired, disjoint.",
             fg=typer.colors.RED,
             err=True,
         )
-        raise typer.Exit(code=2) from exc
+        raise typer.Exit(code=2)
 
-    train_ds = Dataset.from_jsonl(dataset_path)
-    test_ds = Dataset.from_jsonl(test_path) if test_path is not None else None
-    rubric = JudgeRubric.from_json(rubric_path)
-    variants = PromptVariants.model_validate_json(variants_path.read_text(encoding="utf-8"))
-    space = (
-        MetaAxisSpace.model_validate_json(space_path.read_text(encoding="utf-8"))
-        if space_path is not None
-        else None
-    )
-
-    try:
-        target_provider_obj = make_provider(tp, model=target_model, base_url=target_base_url)
-        judge_provider_obj = make_provider(jp, model=judge_model, base_url=judge_base_url)
-    except ProviderError as exc:
-        typer.secho(str(exc), fg=typer.colors.RED, err=True)
-        raise typer.Exit(code=2) from exc
-
-    judge = LLMJudge(provider=judge_provider_obj, execution_profile=selected_profile)
-    train_target = PromptTarget(
-        target_provider=target_provider_obj,
-        judge=judge,
-        dataset=train_ds,
-        rubric=rubric,
-        variants=variants,
-        space=space,
-        execution_profile=selected_profile,
-    )
-    test_target = (
-        PromptTarget(
-            target_provider=target_provider_obj,
-            judge=judge,
-            dataset=test_ds,
-            rubric=rubric,
-            variants=variants,
-            space=space,
-            execution_profile=selected_profile,
+    space = None
+    if space_path is not None:
+        from omegaprompt.domain.params import MetaAxisSpace
+        space = MetaAxisSpace.model_validate_json(
+            space_path.read_text(encoding="utf-8")
         )
-        if test_ds is not None
-        else None
-    )
 
-    typer.secho(
-        f"Target: {target_provider_obj.name}/{target_provider_obj.model}   "
-        f"Judge: {judge_provider_obj.name}/{judge_provider_obj.model}",
-        fg=typer.colors.BRIGHT_BLACK,
-    )
-    typer.secho(
-        f"Profile: {selected_profile.value}   method: {method}   unlock_k={unlock_k}",
-        fg=typer.colors.BRIGHT_BLACK,
-    )
-
-    neutral_result = train_target.evaluate(train_target.neutral_params())
-
-    config = P1Config(unlock_k=unlock_k)
-    result = run_p1(train_target=train_target, test_target=test_target, config=config)
-
-    grid_best = getattr(result, "grid_best", None) or {}
-    best_unlocked: dict = grid_best.get("unlocked", {}) if isinstance(grid_best, dict) else {}
-    best_candidate = {**train_target.neutral_params(), **best_unlocked}
-    best_train_eval = train_target.evaluate(best_candidate)
-    best_guarded_eval = train_target.best_guarded_eval()
-
-    walk_forward = None
-    test_eval = None
-    status = "OK"
-    rationale = "passed"
-    if test_target is not None:
-        test_eval = test_target.evaluate(best_candidate)
-        walk_forward = evaluate_walk_forward(
-            best_train_eval.fitness,
-            test_eval.fitness,
-            per_item_train=_per_item_scores(best_train_eval),
-            per_item_test=_per_item_scores(test_eval),
-            max_gap=resolved_max_gap,
-            min_kc4=resolved_min_kc4,
+    plan: AdaptationPlan | None = None
+    if adaptation_plan_path is not None:
+        plan = AdaptationPlan.model_validate_json(
+            adaptation_plan_path.read_text(encoding="utf-8")
         )
-        if not walk_forward.passed:
-            status = "FAIL_KC4_GATE"
-            rationale = (
-                f"train={best_train_eval.fitness:.3f} test={test_eval.fitness:.3f} "
-                f"gap={walk_forward.generalization_gap:.2%} "
-                f"kc4={walk_forward.kc4_correlation}"
-            )
 
-    sensitivity_rows = _sensitivity_rows(getattr(result, "stress_results", None))
-
-    degraded_capabilities = _dedupe_events(
-        [
-            *neutral_result.degraded_capabilities,
-            *best_train_eval.degraded_capabilities,
-            *(test_eval.degraded_capabilities if test_eval is not None else []),
-        ]
-    )
-    target_caps = provider_capabilities(target_provider_obj)
-    judge_caps = provider_capabilities(judge_provider_obj)
-    boundary_warnings, within_guarded, ship_recommendation = assess_run_risk(
-        profile=selected_profile,
-        target_capabilities=target_caps,
-        judge_capabilities=judge_caps,
-        degraded_capabilities=degraded_capabilities,
-        has_walk_forward=test_target is not None,
-        walk_forward_passed=None if walk_forward is None else walk_forward.passed,
-    )
-
-    calibrated_fitness = best_train_eval.fitness
-    neutral_fitness = neutral_result.fitness
-    uplift_absolute = calibrated_fitness - neutral_fitness
-    uplift_percent = (uplift_absolute / neutral_fitness * 100.0) if neutral_fitness else 0.0
-
-    additional_uplift = 0.0
-    if not best_train_eval.within_guarded_boundaries:
-        if best_guarded_eval is not None:
-            additional_uplift = calibrated_fitness - best_guarded_eval.fitness
-        else:
-            additional_uplift = uplift_absolute
-
-    if ship_recommendation.value == "block" and status == "OK":
-        status = "FAIL_HARD_GATES"
-        rationale = "structural risk exceeded the current profile boundary"
-
-    artifact = CalibrationArtifact(
-        method=method,
+    tuning = CalibrateTuning(
+        method=method.lower().strip(),
         unlock_k=unlock_k,
-        selected_profile=selected_profile,
-        neutral_baseline_params=neutral_result.resolved_params,
-        calibrated_params=best_train_eval.resolved_params,
-        neutral_fitness=neutral_fitness,
-        calibrated_fitness=calibrated_fitness,
-        uplift_absolute=uplift_absolute,
-        uplift_percent=uplift_percent,
-        quality_per_cost_neutral=quality_per_cost(neutral_fitness, neutral_result.estimated_cost_units),
-        quality_per_cost_best=quality_per_cost(calibrated_fitness, best_train_eval.estimated_cost_units),
-        quality_per_latency_neutral=quality_per_latency(neutral_fitness, neutral_result.latency_ms),
-        quality_per_latency_best=quality_per_latency(calibrated_fitness, best_train_eval.latency_ms),
-        boundary_warnings=boundary_warnings,
-        degraded_capabilities=degraded_capabilities,
-        ship_recommendation=ship_recommendation,
-        stayed_within_guarded_boundaries=within_guarded and best_train_eval.within_guarded_boundaries,
-        additional_uplift_from_boundary_crossing=additional_uplift,
-        relaxed_safeguards=relaxed_safeguards_for(selected_profile),
-        guarded_boundary_crossed=not (within_guarded and best_train_eval.within_guarded_boundaries),
-        best_params=best_train_eval.resolved_params,
-        best_fitness=calibrated_fitness,
-        walk_forward=walk_forward,
-        hard_gate_pass_rate=best_train_eval.hard_gate_pass_rate,
-        sensitivity_ranking=sensitivity_rows,
-        n_candidates_evaluated=train_target.unique_param_count(),
-        total_api_calls=train_target.total_api_calls + (test_target.total_api_calls if test_target else 0),
-        usage_summary=_merge_usage(
-            train_target.last_usage,
-            test_target.last_usage if test_target is not None else {},
-        ),
-        latency_summary_ms={
-            "neutral_train": neutral_result.latency_ms,
-            "calibrated_train": best_train_eval.latency_ms,
-            "calibrated_test": test_eval.latency_ms if test_eval is not None else 0.0,
-        },
-        target_provider=target_provider_obj.name,
-        target_model=target_provider_obj.model,
-        judge_provider=judge_provider_obj.name,
-        judge_model=judge_provider_obj.model,
-        target_capabilities=target_caps,
-        judge_capabilities=judge_caps,
-        status=status,
-        rationale=rationale,
+        space=space,
+        max_gap=max_gap,
+        min_kc4=min_kc4,
+        profile=selected_profile,
+        validation_mode=vmode,  # type: ignore[arg-type]
     )
 
-    save_artifact(artifact, output_path)
-    colour = typer.colors.GREEN if status == "OK" else typer.colors.YELLOW
     typer.secho(
-        f"Calibration complete [{status}]. calibrated_fitness={calibrated_fitness:.4f}",
-        fg=colour,
+        f"Target: {tp}/{target_model or 'default'}   "
+        f"Judge: {jp}/{judge_model or 'default'}",
+        fg=typer.colors.BRIGHT_BLACK,
     )
     typer.secho(
-        f"neutral={neutral_fitness:.4f} uplift={uplift_absolute:+.4f} ({uplift_percent:+.2f}%)",
-        fg=colour,
+        f"Profile: {selected_profile.value}   method: {tuning.method}   "
+        f"unlock_k={tuning.unlock_k}   validation_mode={vmode}",
+        fg=typer.colors.BRIGHT_BLACK,
     )
-    typer.secho(f"Artifact: {output_path}", fg=typer.colors.GREEN)
 
-
-def _sensitivity_rows(stress: object) -> list[dict]:
-    sensitivity_rows: list[dict] = []
-    if not isinstance(stress, list):
-        return sensitivity_rows
-    ranked = sorted(
-        (entry for entry in stress if isinstance(entry, dict)),
-        key=lambda entry: float(entry.get("normalized_stress", 0.0) or 0.0),
-        reverse=True,
+    artifact = runtime_calibrate(
+        train=dataset_path,
+        rubric=rubric_path,
+        variants=variants_path,
+        target=ProviderSpec(name=tp, model=target_model, base_url=target_base_url),
+        judge=ProviderSpec(name=jp, model=judge_model, base_url=judge_base_url),
+        test=test_path,
+        output=output_path,
+        tuning=tuning,
+        adaptation_plan=plan,
     )
-    for rank, entry in enumerate(ranked):
-        sensitivity_rows.append(
-            {
-                "axis": entry.get("name"),
-                "gini_delta": entry.get("normalized_stress"),
-                "raw_stress": entry.get("raw_stress"),
-                "rank": rank,
-            }
-        )
-    return sensitivity_rows
 
-
-def _per_item_scores(result) -> dict[str, float]:
-    rows = result.metadata.get("per_item_scores", []) if getattr(result, "metadata", None) else []
-    return {row["item_id"]: float(row["final_score"]) for row in rows}
-
-
-def _dedupe_events(events):
-    seen = set()
-    unique = []
-    for event in events:
-        key = (event.capability, event.requested, event.applied, event.reason)
-        if key in seen:
-            continue
-        seen.add(key)
-        unique.append(event)
-    return unique
-
-
-def _merge_usage(left: dict[str, int], right: dict[str, int]) -> dict[str, int]:
-    merged = dict(left or {})
-    for key, value in (right or {}).items():
-        merged[key] = int(merged.get(key, 0) + int(value or 0))
-    return merged
+    color = (
+        typer.colors.GREEN
+        if artifact.status == "OK"
+        else typer.colors.RED
+    )
+    typer.secho(
+        f"\n{artifact.status}: calibrated_fitness={artifact.calibrated_fitness:.4f} "
+        f"neutral_fitness={artifact.neutral_fitness:.4f} "
+        f"uplift={artifact.uplift_percent:+.1f}%",
+        fg=color,
+    )
+    typer.secho(
+        f"Ship recommendation: {artifact.ship_recommendation.value}   "
+        f"Hard-gate pass rate: {artifact.hard_gate_pass_rate:.1%}   "
+        f"Stayed within guarded boundaries: {artifact.stayed_within_guarded_boundaries}",
+        fg=typer.colors.BRIGHT_BLACK,
+    )
+    typer.secho(f"Artifact written to: {output_path}", fg=typer.colors.BRIGHT_BLACK)
+    if artifact.status != "OK":
+        raise typer.Exit(code=1)

@@ -20,7 +20,12 @@ from omegaprompt.domain.params import (
     ResolvedPromptParams,
     validate_space_against_variants,
 )
-from omegaprompt.domain.profiles import ExecutionProfile, ShipRecommendation
+from omegaprompt.domain.profiles import (
+    BoundaryWarning,
+    ExecutionProfile,
+    RiskCategory,
+    ShipRecommendation,
+)
 from omegaprompt.domain.result import EvalItemResult, EvalResult
 from omegaprompt.judges.base import Judge
 from omegaprompt.providers.base import (
@@ -158,7 +163,7 @@ class PromptTarget:
         ]
 
     def evaluate(self, params: dict | None) -> EvalResult:
-        resolved = self._resolve_params(params)
+        resolved, param_clamp_warnings = self._resolve_params(params)
         system_prompt = self.variants.system_prompts[resolved.system_prompt_variant]
         few_shots = self.variants.few_shot_examples[: resolved.few_shot_count]
 
@@ -242,7 +247,12 @@ class PromptTarget:
             "tool_policy": resolved.tool_policy_variant.value,
         }
         estimated_cost = estimate_cost_units(run_usage)
-        within_guarded_boundaries = not degraded_capabilities
+        # Reviewer P1 #11: param-clamp warnings under expedition profile
+        # are also "off the guarded path" — they signal the optimizer
+        # emitted out-of-bounds values that we silently clamped.
+        within_guarded_boundaries = (
+            not degraded_capabilities and not param_clamp_warnings
+        )
         ship_recommendation = (
             ShipRecommendation.SHIP if within_guarded_boundaries else ShipRecommendation.EXPERIMENT
         )
@@ -258,6 +268,7 @@ class PromptTarget:
             latency_ms=total_latency_ms,
             estimated_cost_units=estimated_cost,
             degraded_capabilities=list(degraded_capabilities),
+            boundary_warnings=list(param_clamp_warnings),
             within_guarded_boundaries=within_guarded_boundaries,
             ship_recommendation=ship_recommendation,
             metadata={
@@ -301,61 +312,139 @@ class PromptTarget:
             return None
         return max(guarded, key=lambda res: res.fitness)
 
-    def _resolve_params(self, params: dict | None) -> ResolvedPromptParams:
+    def _resolve_params(
+        self, params: dict | None
+    ) -> tuple[ResolvedPromptParams, list[BoundaryWarning]]:
+        """Resolve raw params to typed values, surfacing out-of-range drift.
+
+        Reviewer P1 #11: silent clamping is dangerous in an audit-first
+        tool. An optimizer that emits ``system_prompt_variant=99`` against
+        a 3-prompt pool gets clamped to 2; the artifact only shows the
+        clamped value, so a reviewer cannot tell the optimizer was
+        misconfigured.
+
+        Profile policy:
+
+        - ``GUARDED`` (default): out-of-range values raise. The optimizer
+          contract says "respect axis bounds"; a violation is a setup
+          bug we want surfaced before the eval runs.
+        - ``EXPEDITION``: clamp + emit a ``BoundaryWarning`` per drift.
+          Useful when iterating on the optimizer and a few drifts are
+          expected; the warnings end up on ``EvalResult.boundary_warnings``
+          and ``CalibrationArtifact.boundary_warnings`` so they remain
+          visible in audits.
+
+        Returns ``(resolved, warnings)``. Warnings is empty when no value
+        was clamped or under guarded profile (which raises instead).
+        """
         params = params or {}
         neutral = self.neutral_params()
+        warnings: list[BoundaryWarning] = []
 
         def _get(key: str, default: Any) -> Any:
             return params.get(key, default)
 
-        sys_idx = int(
+        def _clamp_or_raise(name: str, raw: int, low: int, high: int) -> int:
+            clamped = max(low, min(high, raw))
+            if clamped == raw:
+                return clamped
+            if self.execution_profile == ExecutionProfile.GUARDED:
+                raise ValueError(
+                    f"Parameter {name}={raw} is out of axis bounds "
+                    f"[{low}, {high}] under guarded profile. Either fix "
+                    f"the optimizer to respect axis bounds, or run under "
+                    f"expedition profile (which clamps with a "
+                    f"BoundaryWarning instead of raising)."
+                )
+            warnings.append(
+                BoundaryWarning(
+                    code="param_clamped",
+                    category=RiskCategory.SAFETY_BOUNDARY,
+                    severity="warning",
+                    summary=f"Parameter {name} was clamped to axis bounds.",
+                    detail=(
+                        f"{name}: {raw} -> {clamped} "
+                        f"(bounds: [{low}, {high}])"
+                    ),
+                )
+            )
+            return clamped
+
+        sys_idx_raw = int(
             _get(
                 "system_prompt_variant",
                 _get("system_prompt_idx", neutral["system_prompt_variant"]),
             )
         )
-        sys_idx = max(0, min(self.space.system_prompt_idx_max, sys_idx))
+        sys_idx = _clamp_or_raise(
+            "system_prompt_variant", sys_idx_raw, 0, self.space.system_prompt_idx_max
+        )
 
-        fs_count = int(_get("few_shot_count", neutral["few_shot_count"]))
-        fs_count = max(self.space.few_shot_min, min(self.space.few_shot_max, fs_count))
+        fs_count_raw = int(_get("few_shot_count", neutral["few_shot_count"]))
+        fs_count = _clamp_or_raise(
+            "few_shot_count",
+            fs_count_raw,
+            self.space.few_shot_min,
+            self.space.few_shot_max,
+        )
 
-        reasoning_idx = int(
+        reasoning_idx_raw = int(
             _get(
                 "reasoning_profile",
                 _get("reasoning_profile_idx", neutral["reasoning_profile"]),
             )
         )
-        reasoning_idx = max(0, min(len(self.space.reasoning_profiles) - 1, reasoning_idx))
+        reasoning_idx = _clamp_or_raise(
+            "reasoning_profile",
+            reasoning_idx_raw,
+            0,
+            len(self.space.reasoning_profiles) - 1,
+        )
         reasoning = self.space.reasoning_profiles[reasoning_idx]
 
-        budget_idx = int(
+        budget_idx_raw = int(
             _get(
                 "output_budget_bucket",
                 _get("output_budget_idx", neutral["output_budget_bucket"]),
             )
         )
-        budget_idx = max(0, min(len(self.space.output_budgets) - 1, budget_idx))
+        budget_idx = _clamp_or_raise(
+            "output_budget_bucket",
+            budget_idx_raw,
+            0,
+            len(self.space.output_budgets) - 1,
+        )
         budget = self.space.output_budgets[budget_idx]
 
-        schema_idx = int(
+        schema_idx_raw = int(
             _get(
                 "response_schema_mode",
                 _get("response_schema_mode_idx", neutral["response_schema_mode"]),
             )
         )
-        schema_idx = max(0, min(len(self.space.response_schema_modes) - 1, schema_idx))
+        schema_idx = _clamp_or_raise(
+            "response_schema_mode",
+            schema_idx_raw,
+            0,
+            len(self.space.response_schema_modes) - 1,
+        )
         schema = self.space.response_schema_modes[schema_idx]
 
-        tool_idx = int(
+        tool_idx_raw = int(
             _get(
                 "tool_policy_variant",
                 _get("tool_policy_idx", neutral["tool_policy_variant"]),
             )
         )
-        tool_idx = max(0, min(len(self.space.tool_policy_variants) - 1, tool_idx))
+        tool_idx = _clamp_or_raise(
+            "tool_policy_variant",
+            tool_idx_raw,
+            0,
+            len(self.space.tool_policy_variants) - 1,
+        )
         tool = self.space.tool_policy_variants[tool_idx]
 
-        return ResolvedPromptParams(
+        resolved = ResolvedPromptParams(
             system_prompt_variant=sys_idx,
             few_shot_count=fs_count,
             reasoning_profile=reasoning,
@@ -363,6 +452,7 @@ class PromptTarget:
             response_schema_mode=schema,
             tool_policy_variant=tool,
         )
+        return resolved, warnings
 
 
 def _accumulate_usage(acc: dict[str, int], delta: dict[str, int] | None) -> None:

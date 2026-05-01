@@ -89,6 +89,16 @@ class CalibrateTuning(BaseModel):
     max_gap: float | None = None
     min_kc4: float | None = None
     profile: ExecutionProfile = ExecutionProfile.GUARDED
+    validation_mode: Literal["auto", "paired", "disjoint"] = Field(
+        default="auto",
+        description=(
+            "How to interpret the train/test slices for KC-4 correlation. "
+            "'auto' (default) computes KC-4 only when slices share >=3 ids, "
+            "preserving historical behaviour. 'paired' asserts shared ids "
+            "by design — raises when overlap < 3. 'disjoint' asserts no "
+            "shared ids by design and skips KC-4 entirely (gap-only gate)."
+        ),
+    )
 
     model_config = {"extra": "forbid"}
 
@@ -309,6 +319,7 @@ def calibrate(
             per_item_test=_per_item_scores(test_eval),
             max_gap=resolved_max_gap,
             min_kc4=resolved_min_kc4,
+            validation_mode=tuning.validation_mode,
         )
         if not walk_forward.passed:
             status = "FAIL_KC4_GATE"

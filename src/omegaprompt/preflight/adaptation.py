@@ -334,5 +334,46 @@ def apply_adaptation_plan(
     return applied_kc4, applied_gap, applied_unlock
 
 
+def apply_ship_gate_escalation(
+    plan: AdaptationPlan,
+    *,
+    status: str,
+    ship_recommendation: object,
+    rationale: str,
+) -> tuple[str, object, str, list[str]]:
+    """Force HOLD when the plan flagged conditions that need manual review.
+
+    Pure function used by ``runtime.calibrate`` (and any other artifact
+    builder) to honour ``plan.requires_manual_review`` end-to-end. When
+    a small-sample finding (or any future analytical finding that calls
+    for review) elevates ``requires_manual_review_reasons``, the artifact's
+    ``status`` and ``ship_recommendation`` are forced to a halt regardless
+    of how the metrics came out — so a CI gate keying off the artifact
+    behaves the same way the in-process ``plan.requires_manual_review``
+    property would.
+
+    Returns ``(status, ship_recommendation, rationale, extra_warnings)``.
+    ``extra_warnings`` is a list of human-readable boundary warning
+    strings the caller should fold into the artifact's
+    ``boundary_warnings`` (or surface to the user). When the plan does
+    not require manual review the inputs pass through unchanged.
+    """
+    # Local import keeps this module decoupled from the domain layer.
+    from omegaprompt.domain.profiles import ShipRecommendation
+
+    if not plan.requires_manual_review:
+        return status, ship_recommendation, rationale, []
+
+    new_status = "REQUIRES_MANUAL_REVIEW" if status == "OK" else status
+    new_ship: object = ShipRecommendation.HOLD
+    extra: list[str] = list(plan.require_manual_review_reasons)
+    new_rationale = (
+        rationale
+        + "; manual review required: "
+        + "; ".join(plan.require_manual_review_reasons)
+    ).strip("; ")
+    return new_status, new_ship, new_rationale, extra
+
+
 # Sentinel for PreflightStatus reuse in downstream diagnostics.
 _ = PreflightStatus

@@ -32,6 +32,7 @@ from omegaprompt.preflight.adaptation import (
     AdaptationPlan,
     ParameterOverride,
     apply_adaptation_plan,
+    apply_ship_gate_escalation,
     derive_adaptation_plan,
 )
 from omegaprompt.preflight.contracts import (
@@ -57,5 +58,6 @@ __all__ = [
     "PreflightStatus",
     # adaptation functions
     "apply_adaptation_plan",
+    "apply_ship_gate_escalation",
     "derive_adaptation_plan",
 ]

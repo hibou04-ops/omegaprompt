@@ -349,7 +349,9 @@ def calibrate(
                 f"train={best_train_eval.fitness:.3f} "
                 f"test={test_eval.fitness:.3f} "
                 f"gap={walk_forward.generalization_gap:.2%} "
-                f"kc4={walk_forward.kc4_correlation}"
+                f"kc4={walk_forward.kc4_correlation} "
+                f"kc4_status={walk_forward.kc4_status} "
+                f"validation_mode={walk_forward.validation_mode}"
             )
 
     sensitivity_rows = _sensitivity_rows(getattr(result, "stress_results", None))

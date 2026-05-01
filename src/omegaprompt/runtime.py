@@ -203,7 +203,10 @@ def _resolve_params(p: object) -> dict:
     if isinstance(p, ResolvedPromptParams):
         return p.model_dump()
     if isinstance(p, CalibrationArtifact):
-        return p.calibrated_params.model_dump()
+        # CalibrationArtifact.calibrated_params is dict[str, Any], not a
+        # BaseModel — calling .model_dump() on it raises AttributeError.
+        # Copy to a fresh dict so callers can't mutate the artifact.
+        return dict(p.calibrated_params)
     if isinstance(p, dict):
         return p
     raise TypeError(f"Unsupported params input: {type(p).__name__}")
@@ -699,6 +702,22 @@ def measure_sensitivity(
     )
 
 
+class GradeResult(BaseModel):
+    """Wrapper around a single ``grade()`` call.
+
+    Carries the JudgeResult plus token usage from the judge call, so MCP
+    callers and Python callers see the same shape and can serialise the
+    result without unwrapping a tuple. Replaces the v0.x ``grade() ->
+    JudgeResult`` signature, which silently returned a tuple from the
+    underlying ``Judge.score()`` and tripped MCP's ``.model_dump()``.
+    """
+
+    judge: JudgeResult
+    usage: dict[str, int] = Field(default_factory=dict)
+
+    model_config = {"extra": "forbid"}
+
+
 def grade(
     *,
     rubric: JudgeRubric | Path | str | dict,
@@ -706,7 +725,7 @@ def grade(
     response: str,
     provider: LLMProvider | ProviderSpec | str | dict,
     strategy: Literal["rule", "llm", "ensemble"] = "ensemble",
-) -> JudgeResult:
+) -> GradeResult:
     """Score a single response against a rubric.
 
     Use case: agent self-grading its own output before returning it; or
@@ -716,8 +735,7 @@ def grade(
     gate checks, ``llm`` for LLM scoring, ``ensemble`` (default) runs
     rule first and short-circuits if hard gates fail.
 
-    Named ``grade`` (not ``judge``) to avoid shadowing the legacy
-    ``omegaprompt.judge`` shim module at package level.
+    Returns a ``GradeResult`` carrying the JudgeResult and token usage.
     """
     rubric_obj = _resolve_rubric(rubric)
     if isinstance(item, DatasetItem):
@@ -740,9 +758,10 @@ def grade(
             fallback=LLMJudge(provider=provider_obj),
         )
 
-    return judge_obj.score(
+    judge_result, usage = judge_obj.score(
         rubric=rubric_obj, item=item_obj, target_response=response
     )
+    return GradeResult(judge=judge_result, usage=usage)
 
 
 def preflight(
@@ -780,19 +799,29 @@ def preflight(
             f"target and judge share vendor '{target_provider.name}' — "
             "self-agreement bias possible. Cross-vendor judge recommended."
         )
-    if getattr(target_caps, "is_placeholder", False):
+    # ProviderCapabilities exposes the canonical field names `placeholder`
+    # and `experimental` (the v1.0 schema). Earlier drafts referenced
+    # `is_placeholder` / `is_experimental` here, which silently returned
+    # False for every real adapter — so a placeholder Gemini target would
+    # not be blocked under guarded profile. Use the canonical names.
+    if getattr(target_caps, "placeholder", False):
         blocker_reasons.append(
             f"target provider '{target_provider.name}' is a placeholder; "
             "real provider needed before ship."
         )
-    if getattr(judge_caps, "is_placeholder", False):
+    if getattr(judge_caps, "placeholder", False):
         blocker_reasons.append(
             f"judge provider '{judge_provider.name}' is a placeholder; "
             "real provider needed before ship."
         )
-    if getattr(target_caps, "is_experimental", False):
+    if getattr(target_caps, "experimental", False):
         warnings.append(
             f"target provider '{target_provider.name}' is experimental — "
+            "interface may change."
+        )
+    if getattr(judge_caps, "experimental", False):
+        warnings.append(
+            f"judge provider '{judge_provider.name}' is experimental — "
             "interface may change."
         )
 
@@ -925,6 +954,7 @@ __all__ = [
     # Tier 2 types + entrypoints
     "SensitivityTuning",
     "SensitivityResult",
+    "GradeResult",
     "measure_sensitivity",
     "grade",
     "preflight",

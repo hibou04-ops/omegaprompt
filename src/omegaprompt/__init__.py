@@ -94,6 +94,7 @@ from omegaprompt.targets import CalibrableTarget, PromptTarget
 from omegaprompt.runtime import (
     ArtifactDiff,
     CalibrateTuning,
+    GradeResult,
     ProviderSpec,
     SensitivityResult,
     SensitivityTuning,
@@ -174,6 +175,7 @@ __all__ = [
     # runtime — high-level Tier 1 + Tier 2 entrypoints (agent-callable surface)
     "ArtifactDiff",
     "CalibrateTuning",
+    "GradeResult",
     "ProviderSpec",
     "SensitivityResult",
     "SensitivityTuning",

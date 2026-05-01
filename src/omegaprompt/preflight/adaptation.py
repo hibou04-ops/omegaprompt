@@ -398,11 +398,16 @@ def apply_ship_gate_escalation(
     """
     # Local import keeps this module decoupled from the domain layer.
     from omegaprompt.domain.profiles import ShipRecommendation
+    from omegaprompt.domain.result import ArtifactStatus
 
     if not plan.requires_manual_review:
         return status, ship_recommendation, rationale, []
 
-    new_status = "REQUIRES_MANUAL_REVIEW" if status == "OK" else status
+    # status may arrive as either an ArtifactStatus enum (from runtime)
+    # or a bare str (from older callers / tests); compare on string value
+    # to support both during the migration.
+    is_ok = status == ArtifactStatus.OK or status == "OK"
+    new_status = ArtifactStatus.REQUIRES_MANUAL_REVIEW if is_ok else status
     new_ship: object = ShipRecommendation.HOLD
     extra: list[str] = list(plan.require_manual_review_reasons)
     new_rationale = (

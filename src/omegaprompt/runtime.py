@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from omegaprompt.core import (
     assess_run_risk,
+    enforce_profile_policy,
     evaluate_walk_forward,
     load_artifact,
     policy_for,
@@ -39,6 +40,7 @@ from omegaprompt.domain import (
     ResolvedPromptParams,
     ShipRecommendation,
 )
+from omegaprompt.domain.result import ArtifactStatus
 from omegaprompt.judges import EnsembleJudge, Judge, LLMJudge, RuleJudge
 from omegaprompt.judges.rule_judge import default_no_refusal, default_non_empty
 from omegaprompt.preflight.adaptation import (
@@ -330,7 +332,7 @@ def calibrate(
 
     walk_forward = None
     test_eval = None
-    status = "OK"
+    status: ArtifactStatus = ArtifactStatus.OK
     rationale = "passed"
     if test_target is not None:
         test_eval = test_target.evaluate(best_candidate)
@@ -344,7 +346,7 @@ def calibrate(
             validation_mode=tuning.validation_mode,
         )
         if not walk_forward.passed:
-            status = "FAIL_KC4_GATE"
+            status = ArtifactStatus.FAIL_KC4_GATE
             rationale = (
                 f"train={best_train_eval.fitness:.3f} "
                 f"test={test_eval.fitness:.3f} "
@@ -372,6 +374,15 @@ def calibrate(
         has_walk_forward=test_target is not None,
         walk_forward_passed=None if walk_forward is None else walk_forward.passed,
     )
+    # Reviewer P1 #15: central profile-policy enforcement. Previously
+    # ``assess_run_risk`` covered placeholder/weak-judge/no-walk-forward
+    # but did not key off the ``allow_experimental_providers`` /
+    # ``allow_non_ship_grade_judge`` slots on the profile policy. This
+    # ensures every public surface that calls runtime sees the same
+    # gate.
+    boundary_warnings.extend(
+        enforce_profile_policy(profile, target_caps, judge_caps)
+    )
 
     calibrated_fitness = best_train_eval.fitness
     neutral_fitness = neutral_result.fitness
@@ -387,8 +398,8 @@ def calibrate(
         else:
             additional_uplift = uplift_absolute
 
-    if ship_recommendation.value == "block" and status == "OK":
-        status = "FAIL_HARD_GATES"
+    if ship_recommendation.value == "block" and status == ArtifactStatus.OK:
+        status = ArtifactStatus.FAIL_HARD_GATES
         rationale = "structural risk exceeded the current profile boundary"
 
     # Honour the adaptation plan's manual-review escalation. If the plan
@@ -870,11 +881,21 @@ def preflight(
             f"judge provider '{judge_provider.name}' is a placeholder; "
             "real provider needed before ship."
         )
-    if getattr(target_caps, "experimental", False):
-        warnings.append(
-            f"target provider '{target_provider.name}' is experimental — "
-            "interface may change."
-        )
+    # Reviewer P1 #15: experimental target under guarded must be a
+    # blocker, not a warning. Route through the central
+    # ``enforce_profile_policy`` so calibrate / preflight / commands
+    # see the same gate.
+    policy_warnings = enforce_profile_policy(profile_obj, target_caps, judge_caps)
+    for pw in policy_warnings:
+        if pw.severity == "critical":
+            blocker_reasons.append(f"{pw.summary} {pw.detail}")
+        else:
+            warnings.append(pw.summary)
+    # Judge experimental flag stays as a soft warning here even when
+    # the policy enforcer doesn't fire (already covered by weak_judge
+    # in assess_run_risk during calibrate). Preflight surfaces it as a
+    # human-readable note so users see the issue before spending API
+    # budget.
     if getattr(judge_caps, "experimental", False):
         warnings.append(
             f"judge provider '{judge_provider.name}' is experimental — "

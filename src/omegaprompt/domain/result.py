@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -14,6 +15,23 @@ from omegaprompt.domain.profiles import (
     ShipRecommendation,
 )
 from omegaprompt.providers.base import CapabilityEvent, ProviderCapabilities
+
+
+class ArtifactStatus(str, Enum):
+    """Closed enum of values ``CalibrationArtifact.status`` can take.
+
+    Reviewer P2 #18: ``status`` was previously a plain ``str`` whose
+    description listed valid values but didn't enforce them. The
+    adaptation path then introduced ``REQUIRES_MANUAL_REVIEW`` which
+    wasn't in the description list. Pinning the type closes that drift
+    — Pydantic now rejects unknown status strings at construction.
+    """
+
+    OK = "OK"
+    FAIL_KC4_GATE = "FAIL_KC4_GATE"
+    FAIL_HARD_GATES = "FAIL_HARD_GATES"
+    FAIL_NO_CANDIDATES = "FAIL_NO_CANDIDATES"
+    REQUIRES_MANUAL_REVIEW = "REQUIRES_MANUAL_REVIEW"
 
 
 class PerItemScore(BaseModel):
@@ -264,11 +282,12 @@ class CalibrationArtifact(BaseModel):
     target_capabilities: ProviderCapabilities | None = None
     judge_capabilities: ProviderCapabilities | None = None
 
-    status: str = Field(
-        default="OK",
+    status: ArtifactStatus = Field(
+        default=ArtifactStatus.OK,
         description=(
-            "One of: OK, FAIL_KC4_GATE, FAIL_HARD_GATES, FAIL_NO_CANDIDATES, "
-            "REQUIRES_MANUAL_REVIEW. Downstream CI checks status first."
+            "Closed enum (see ``ArtifactStatus``). Downstream CI checks "
+            "status first. Reviewer P2 #18: previously a plain str with "
+            "documented values; the enum forbids drift."
         ),
     )
     rationale: str = Field(

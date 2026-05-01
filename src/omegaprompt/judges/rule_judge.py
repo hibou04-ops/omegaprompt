@@ -21,7 +21,7 @@ from dataclasses import dataclass
 
 from omegaprompt.domain.dataset import DatasetItem
 from omegaprompt.domain.judge import JudgeResult, JudgeRubric
-from omegaprompt.judges.base import JudgeError
+from omegaprompt.judges.base import JudgeError, JudgeOutcome
 from omegaprompt.providers.base import empty_usage
 
 
@@ -129,7 +129,7 @@ class RuleJudge:
         rubric: JudgeRubric,
         item: DatasetItem,
         target_response: str,
-    ) -> tuple[JudgeResult, dict[str, int]]:
+    ) -> JudgeOutcome:
         gate_results: dict[str, bool] = {}
         for gate in rubric.hard_gates:
             if gate.evaluator != "rule":
@@ -146,9 +146,13 @@ class RuleJudge:
         # that need both dimensions and rule gates should use EnsembleJudge.
         zero_scores: dict[str, int] = {d.name: d.scale[0] for d in rubric.dimensions}
         notes = "rule-only judge; dimensions unscored"
-        return (
-            JudgeResult(scores=zero_scores, gate_results=gate_results, notes=notes),
-            empty_usage(),
+        return JudgeOutcome(
+            result=JudgeResult(
+                scores=zero_scores, gate_results=gate_results, notes=notes,
+            ),
+            usage=empty_usage(),
+            degraded_capabilities=[],  # rule judge is provider-free
+            latency_ms=0.0,
         )
 
     # Helper for EnsembleJudge: returns only the gate dict without manufacturing

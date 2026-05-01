@@ -15,7 +15,7 @@ from omegaprompt.domain.dataset import DatasetItem
 from omegaprompt.domain.enums import OutputBudgetBucket, ResponseSchemaMode
 from omegaprompt.domain.judge import JudgeResult, JudgeRubric
 from omegaprompt.domain.profiles import ExecutionProfile
-from omegaprompt.judges.base import JudgeError
+from omegaprompt.judges.base import JudgeError, JudgeOutcome
 from omegaprompt.providers.base import LLMProvider, ProviderError, ProviderRequest, provider_capabilities
 
 
@@ -123,7 +123,7 @@ class LLMJudge:
         rubric: JudgeRubric,
         item: DatasetItem,
         target_response: str,
-    ) -> tuple[JudgeResult, dict[str, int]]:
+    ) -> JudgeOutcome:
         capabilities = provider_capabilities(self.provider)
         if not capabilities.supports_llm_judge and self.execution_profile == ExecutionProfile.GUARDED:
             raise JudgeError(
@@ -153,7 +153,18 @@ class LLMJudge:
                 f"Judge provider did not return a JudgeResult (got {type(parsed).__name__})."
             )
         _enforce_rubric_completeness(parsed, rubric)
-        return parsed, response.usage
+        # Reviewer P0: propagate degradation events from the judge
+        # provider response. Pre-fix these were dropped here, so a
+        # judge that fell back from STRICT_SCHEMA to JSON_OBJECT
+        # parsing showed nothing in the artifact — even though that
+        # fallback affects fitness reliability more than a target
+        # fallback would.
+        return JudgeOutcome(
+            result=parsed,
+            usage=response.usage,
+            degraded_capabilities=list(response.degraded_capabilities),
+            latency_ms=response.latency_ms,
+        )
 
 
 def _enforce_rubric_completeness(result: JudgeResult, rubric: JudgeRubric) -> None:

@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from omegaprompt.domain.dataset import DatasetItem
 from omegaprompt.domain.judge import JudgeResult, JudgeRubric
-from omegaprompt.judges.base import Judge, JudgeError
+from omegaprompt.judges.base import Judge, JudgeError, JudgeOutcome
 from omegaprompt.judges.rule_judge import RuleJudge
 from omegaprompt.providers.base import empty_usage
 
@@ -48,7 +48,7 @@ class EnsembleJudge:
         rubric: JudgeRubric,
         item: DatasetItem,
         target_response: str,
-    ) -> tuple[JudgeResult, dict[str, int]]:
+    ) -> JudgeOutcome:
         rule_gates = self.rule_judge.evaluate_gates(rubric, item, target_response)
         any_rule_failed = any(result is False for result in rule_gates.values())
 
@@ -57,19 +57,25 @@ class EnsembleJudge:
         if any_rule_failed:
             # Short-circuit: rule gate failed, fitness will collapse anyway.
             zero_scores = {d.name: d.scale[0] for d in rubric.dimensions}
-            return (
-                JudgeResult(
+            return JudgeOutcome(
+                result=JudgeResult(
                     scores=zero_scores,
                     gate_results=rule_gates,
                     notes="rule gate failed; LLM-judge skipped",
                 ),
-                usage,
+                usage=usage,
+                degraded_capabilities=[],
+                latency_ms=0.0,
             )
 
-        # Escalate to LLM judge for dimensions + judge-mode gates.
-        fallback_result, fallback_usage = self.fallback.score(
+        # Escalate to LLM judge for dimensions + judge-mode gates. The
+        # fallback may itself be a JudgeOutcome-returning judge (LLMJudge
+        # post P0) or a tuple-returning legacy judge — JudgeOutcome's
+        # __iter__ handles both via the same destructuring statement.
+        fallback_outcome = self.fallback.score(
             rubric=rubric, item=item, target_response=target_response
         )
+        fallback_result, fallback_usage = fallback_outcome
         usage = _accumulate_usage(usage, fallback_usage)
 
         merged_gates = {**rule_gates, **fallback_result.gate_results}
@@ -78,7 +84,17 @@ class EnsembleJudge:
             gate_results=merged_gates,
             notes=fallback_result.notes,
         )
-        return merged, usage
+        # Propagate fallback's degradation/latency when available
+        # (LLMJudge attaches them); legacy tuple-returning judges
+        # contribute empty defaults via JudgeOutcome's defaults.
+        return JudgeOutcome(
+            result=merged,
+            usage=usage,
+            degraded_capabilities=list(
+                getattr(fallback_outcome, "degraded_capabilities", []) or []
+            ),
+            latency_ms=float(getattr(fallback_outcome, "latency_ms", 0.0) or 0.0),
+        )
 
 
 __all__ = ["EnsembleJudge"]

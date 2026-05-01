@@ -1,8 +1,14 @@
-"""``omegaprompt diff`` - compare two calibration artifacts.
+"""``omegaprompt diff`` — compare two calibration artifacts.
 
-Intended for CI: catch regressions when someone edits the prompt or
-variants. Exit code reflects whether the new artifact is strictly
-better or at least not worse on the hard metrics.
+Reviewer P0: pre-fix this CLI command had its own regression logic
+that diverged from ``runtime.diff()``. The runtime treats
+``new.status != "OK"`` and ``ship_recommendation in {BLOCK, HOLD}``
+as regressions; the CLI didn't, so the same artifact pair could be
+\"OK\" in one surface and \"REGRESSION\" in the other.
+
+This module is now a thin Typer wrapper around ``runtime.diff()`` so
+all three public surfaces (Python runtime / CLI / MCP) share one
+canonical regression contract.
 """
 
 from __future__ import annotations
@@ -11,7 +17,7 @@ from pathlib import Path
 
 import typer
 
-from omegaprompt.core.artifact import load_artifact
+from omegaprompt.runtime import diff as runtime_diff
 
 
 def diff(
@@ -34,69 +40,20 @@ def diff(
     fail_on_regression: bool = typer.Option(  # noqa: B008
         True,
         "--fail-on-regression/--no-fail-on-regression",
-        help="Exit 1 when the new artifact regresses on fitness or walk-forward.",
+        help=(
+            "Exit 1 when the new artifact regresses on metrics OR carries a "
+            "non-OK status / ship_recommendation in {BLOCK, HOLD}. "
+            "Matches `runtime.diff()`."
+        ),
     ),
 ) -> None:
     """Diff two calibration artifacts."""
-    old = load_artifact(old_path)
-    new = load_artifact(new_path)
+    # Markdown form is the human-readable view.
+    md = runtime_diff(old_path, new_path, format="markdown")
+    typer.echo(md)
 
-    def _arrow(a: float, b: float) -> str:
-        if a == b:
-            return "="
-        return "up" if b > a else "down"
-
-    typer.echo("# omegaprompt diff\n")
-    typer.echo(f"OLD: {old_path}  status={old.status}  calibrated={old.calibrated_fitness:.4f}")
-    typer.echo(f"NEW: {new_path}  status={new.status}  calibrated={new.calibrated_fitness:.4f}")
-    typer.echo("")
-    typer.echo(
-        f"- calibrated_fitness: {old.calibrated_fitness:.4f} -> {new.calibrated_fitness:.4f}  "
-        f"[{_arrow(old.calibrated_fitness, new.calibrated_fitness)}]"
-    )
-    typer.echo(
-        f"- neutral_fitness: {old.neutral_fitness:.4f} -> {new.neutral_fitness:.4f}  "
-        f"[{_arrow(old.neutral_fitness, new.neutral_fitness)}]"
-    )
-
-    regressed = False
-
-    if new.calibrated_fitness < old.calibrated_fitness:
-        regressed = True
-    if new.quality_per_cost_best < old.quality_per_cost_best:
-        regressed = True
-    if new.quality_per_latency_best < old.quality_per_latency_best:
-        regressed = True
-
-    if old.walk_forward is not None and new.walk_forward is not None:
-        typer.echo(
-            f"- test_fitness: {old.walk_forward.test_fitness:.4f} -> "
-            f"{new.walk_forward.test_fitness:.4f}  "
-            f"[{_arrow(old.walk_forward.test_fitness, new.walk_forward.test_fitness)}]"
-        )
-        typer.echo(
-            f"- gen_gap: {old.walk_forward.generalization_gap:.2%} -> "
-            f"{new.walk_forward.generalization_gap:.2%}"
-        )
-        if new.walk_forward.test_fitness < old.walk_forward.test_fitness:
-            regressed = True
-        if old.walk_forward.passed and not new.walk_forward.passed:
-            regressed = True
-
-    typer.echo(
-        f"- hard_gate_pass_rate: {old.hard_gate_pass_rate:.1%} -> "
-        f"{new.hard_gate_pass_rate:.1%}"
-    )
-    if new.hard_gate_pass_rate < old.hard_gate_pass_rate:
-        regressed = True
-    typer.echo(
-        f"- stayed_within_guarded_boundaries: {old.stayed_within_guarded_boundaries} -> "
-        f"{new.stayed_within_guarded_boundaries}"
-    )
-    if old.stayed_within_guarded_boundaries and not new.stayed_within_guarded_boundaries:
-        regressed = True
-
-    if regressed and fail_on_regression:
-        typer.secho("REGRESSION detected.", fg=typer.colors.RED)
+    # Structured form drives the exit code so CI gates honour the same
+    # regression definition as Python callers.
+    structured = runtime_diff(old_path, new_path, format="json")
+    if structured.regressed and fail_on_regression:
         raise typer.Exit(code=1)
-    typer.secho("OK", fg=typer.colors.GREEN)

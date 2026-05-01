@@ -77,3 +77,83 @@ def test_walk_forward_skips_kc4_when_too_few_shared_ids():
     )
     assert wf.kc4_correlation is None
     assert wf.passed is True
+
+
+# ---------------------------------------------------------------------------
+# validation_mode — paired vs disjoint vs auto.
+# Reviewer P3: README claims KC-4 is the holdout gate. In reality KC-4 is
+# only meaningful on a paired replay; on a disjoint train/test split it
+# was silently skipped. The new validation_mode parameter forces callers
+# to be explicit so neither side gets a hidden free pass.
+# ---------------------------------------------------------------------------
+
+
+import pytest
+
+
+def test_validation_mode_disjoint_skips_kc4_even_with_overlap():
+    """disjoint mode never computes KC-4, even if ids accidentally overlap."""
+    per_item_train = {"t1": 0.9, "t2": 0.8, "t3": 0.7, "t4": 0.6}
+    per_item_test = {"t1": 0.85, "t2": 0.75, "t3": 0.7, "t4": 0.55}
+    wf = evaluate_walk_forward(
+        0.75, 0.71,
+        per_item_train=per_item_train,
+        per_item_test=per_item_test,
+        max_gap=0.10,
+        min_kc4=0.5,
+        validation_mode="disjoint",
+    )
+    assert wf.kc4_correlation is None
+    assert wf.passed is True  # gap-only gate
+
+
+def test_validation_mode_paired_raises_when_overlap_too_small():
+    """A paired run with no overlap is a setup bug, not a free pass."""
+    per_item_train = {"t1": 0.5, "t2": 0.6, "t3": 0.7}
+    per_item_test = {"t10": 0.5, "t20": 0.6, "t30": 0.7}  # disjoint ids
+    with pytest.raises(ValueError, match="paired.*at least 3"):
+        evaluate_walk_forward(
+            0.75, 0.70,
+            per_item_train=per_item_train,
+            per_item_test=per_item_test,
+            validation_mode="paired",
+        )
+
+
+def test_validation_mode_paired_computes_kc4_normally():
+    per_item_train = {"t1": 0.9, "t2": 0.8, "t3": 0.7, "t4": 0.6}
+    per_item_test = {"t1": 0.85, "t2": 0.75, "t3": 0.7, "t4": 0.55}
+    wf = evaluate_walk_forward(
+        0.75, 0.71,
+        per_item_train=per_item_train,
+        per_item_test=per_item_test,
+        max_gap=0.10,
+        min_kc4=0.5,
+        validation_mode="paired",
+    )
+    assert wf.kc4_correlation is not None
+    assert wf.kc4_correlation > 0.9
+    assert wf.passed is True
+
+
+def test_validation_mode_auto_matches_legacy_behaviour():
+    """auto is the default and matches pre-validation_mode behaviour."""
+    per_item_train = {"t1": 0.9, "t2": 0.8, "t3": 0.7, "t4": 0.6}
+    per_item_test = {"t1": 0.85, "t2": 0.75, "t3": 0.7, "t4": 0.55}
+    wf_default = evaluate_walk_forward(
+        0.75, 0.71,
+        per_item_train=per_item_train,
+        per_item_test=per_item_test,
+        max_gap=0.10,
+        min_kc4=0.5,
+    )
+    wf_auto = evaluate_walk_forward(
+        0.75, 0.71,
+        per_item_train=per_item_train,
+        per_item_test=per_item_test,
+        max_gap=0.10,
+        min_kc4=0.5,
+        validation_mode="auto",
+    )
+    assert wf_default.kc4_correlation == wf_auto.kc4_correlation
+    assert wf_default.passed == wf_auto.passed

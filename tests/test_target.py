@@ -215,7 +215,12 @@ def test_evaluate_resolves_defaults_for_missing_params():
     assert resolved["few_shot_count"] == 0
 
 
-def test_evaluate_clamps_out_of_range_params():
+def test_evaluate_clamps_out_of_range_params_under_expedition():
+    """Reviewer P1 #11: under expedition profile out-of-range values
+    are clamped, but each drift emits a BoundaryWarning so the artifact
+    can audit which optimizer outputs were ignored."""
+    from omegaprompt.domain.profiles import ExecutionProfile
+
     target = _target_provider()
     judge = _judge_mock(score=1, gate=True)
 
@@ -230,6 +235,7 @@ def test_evaluate_clamps_out_of_range_params():
             few_shot_min=0,
             few_shot_max=1,
         ),
+        execution_profile=ExecutionProfile.EXPEDITION,
     )
     result = t.evaluate({
         "system_prompt_variant": 99,
@@ -240,6 +246,54 @@ def test_evaluate_clamps_out_of_range_params():
     resolved = result.metadata["resolved_params"]
     assert resolved["system_prompt_variant"] == 1
     assert resolved["few_shot_count"] == 0
+
+    # Each clamped axis emits a separate BoundaryWarning.
+    clamp_codes = [
+        bw.code for bw in result.boundary_warnings if bw.code == "param_clamped"
+    ]
+    assert len(clamp_codes) == 4  # sys, fs, reasoning, budget
+    summaries = " | ".join(bw.summary for bw in result.boundary_warnings)
+    assert "system_prompt_variant" in summaries
+    assert "few_shot_count" in summaries
+
+    # Param drift moves us off the guarded path.
+    assert result.within_guarded_boundaries is False
+
+
+def test_evaluate_raises_under_guarded_when_param_out_of_range():
+    """Reviewer P1 #11: silent clamp is dangerous in audit-first mode.
+    Under guarded profile (the default) an out-of-range value is a
+    setup bug that must surface before the eval runs, not be papered
+    over with a clamped artifact."""
+    target = _target_provider()
+    judge = _judge_mock()
+
+    t = PromptTarget(
+        target_provider=target,
+        judge=judge,
+        dataset=_dataset(n=1),
+        rubric=_rubric(),
+        variants=_variants(),
+    )
+    with pytest.raises(ValueError, match="out of axis bounds"):
+        t.evaluate({"system_prompt_variant": 99})
+
+
+def test_evaluate_in_range_params_pass_under_guarded():
+    """Sanity: legitimate params (no clamping needed) work under guarded."""
+    target = _target_provider()
+    judge = _judge_mock(score=1, gate=True)
+
+    t = PromptTarget(
+        target_provider=target,
+        judge=judge,
+        dataset=_dataset(n=1),
+        rubric=_rubric(),
+        variants=_variants(),
+    )
+    result = t.evaluate({"system_prompt_variant": 1, "few_shot_count": 0})
+    assert result.boundary_warnings == []
+    assert result.within_guarded_boundaries is True
 
 
 def test_provider_request_carries_meta_axes():

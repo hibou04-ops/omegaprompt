@@ -480,6 +480,7 @@ def calibrate(
         judge_capabilities=judge_caps,
         status=status,
         rationale=rationale,
+        adaptation_summary=_build_adaptation_summary(adaptation_plan),
     )
 
     if output is not None:
@@ -993,6 +994,27 @@ def _merge_usage(left: dict[str, int], right: dict[str, int]) -> dict[str, int]:
     for k, v in (right or {}).items():
         merged[k] = int(merged.get(k, 0) + int(v or 0))
     return merged
+
+
+def _build_adaptation_summary(plan: AdaptationPlan | None) -> dict | None:
+    """Render the adaptation plan's applied vs advisory split for the artifact.
+
+    Reviewer P0: a recorded ``ParameterOverride`` for ``rescore_count``
+    or ``schema_mode_fallback`` looked equally authoritative as one for
+    ``min_kc4`` even though only the latter actually flowed through
+    ``apply_adaptation_plan``. This summary tells the reviewer exactly
+    which overrides changed pipeline behaviour and which were recorded
+    for awareness only.
+    """
+    if plan is None:
+        return None
+    applied, advisory = plan.split_overrides()
+    return {
+        "applied": [ov.parameter for ov in applied],
+        "advisory_not_applied": [ov.parameter for ov in advisory],
+        "manual_review_required": plan.requires_manual_review,
+        "manual_review_reasons": list(plan.require_manual_review_reasons),
+    }
 
 
 __all__ = [

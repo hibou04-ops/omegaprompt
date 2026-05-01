@@ -155,13 +155,26 @@ class CalibrationArtifact(BaseModel):
     status: str = Field(
         default="OK",
         description=(
-            "One of: OK, FAIL_KC4_GATE, FAIL_HARD_GATES, FAIL_NO_CANDIDATES. "
-            "Downstream CI checks status first."
+            "One of: OK, FAIL_KC4_GATE, FAIL_HARD_GATES, FAIL_NO_CANDIDATES, "
+            "REQUIRES_MANUAL_REVIEW. Downstream CI checks status first."
         ),
     )
     rationale: str = Field(
         default="",
         description="One-sentence human-readable summary of why status is what it is.",
+    )
+    adaptation_summary: dict[str, Any] | None = Field(
+        default=None,
+        description=(
+            "When an adaptation_plan was supplied to calibrate(), summary of "
+            "which overrides actually flowed through the pipeline vs which "
+            "were recorded for reviewer awareness only. Keys: ``applied`` "
+            "(list of parameter names that reached the search loop or the "
+            "ship gate), ``advisory_not_applied`` (recorded but no consumer), "
+            "``manual_review_required`` (bool), ``manual_review_reasons`` "
+            "(list[str]). Reviewer P0: makes the artifact honest about "
+            "which adaptation_plan claims actually changed pipeline behaviour."
+        ),
     )
 
     def model_post_init(self, __context: Any) -> None:

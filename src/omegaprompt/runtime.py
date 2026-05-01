@@ -41,6 +41,11 @@ from omegaprompt.domain import (
 )
 from omegaprompt.judges import EnsembleJudge, Judge, LLMJudge, RuleJudge
 from omegaprompt.judges.rule_judge import default_no_refusal, default_non_empty
+from omegaprompt.preflight.adaptation import (
+    AdaptationPlan,
+    apply_adaptation_plan,
+    apply_ship_gate_escalation,
+)
 from omegaprompt.preflight.contracts import (
     AnalyticalFinding,
     PreflightReport,
@@ -227,6 +232,7 @@ def calibrate(
     test: Dataset | Path | str | None = None,
     output: Path | str | None = None,
     tuning: CalibrateTuning | None = None,
+    adaptation_plan: AdaptationPlan | None = None,
 ) -> CalibrationArtifact:
     """End-to-end calibration: sensitivity → grid → walk-forward → artifact.
 
@@ -261,6 +267,19 @@ def calibrate(
     resolved_min_kc4 = (
         tuning.min_kc4 if tuning.min_kc4 is not None else policy.default_min_kc4
     )
+    resolved_unlock_k = tuning.unlock_k
+
+    # Apply the adaptation plan's discipline-tightening overrides BEFORE the
+    # search runs. apply_adaptation_plan enforces the invariant that the plan
+    # never weakens the caller's defaults — only raises kc4, lowers gap, or
+    # reduces unlock_k.
+    if adaptation_plan is not None:
+        resolved_min_kc4, resolved_max_gap, resolved_unlock_k = apply_adaptation_plan(
+            adaptation_plan,
+            min_kc4=resolved_min_kc4,
+            max_gap=resolved_max_gap,
+            unlock_k=resolved_unlock_k,
+        )
 
     train_ds = _resolve_dataset(train)
     test_ds = _resolve_dataset(test) if test is not None else None
@@ -296,7 +315,7 @@ def calibrate(
     )
 
     neutral_result = train_target.evaluate(train_target.neutral_params())
-    config = P1Config(unlock_k=tuning.unlock_k)
+    config = P1Config(unlock_k=resolved_unlock_k)
     result = run_p1(
         train_target=train_target, test_target=test_target, config=config
     )
@@ -370,9 +389,43 @@ def calibrate(
         status = "FAIL_HARD_GATES"
         rationale = "structural risk exceeded the current profile boundary"
 
+    # Honour the adaptation plan's manual-review escalation. If the plan
+    # flagged conditions like a small held-out slice that the apply-step
+    # invariant won't let us repair via parameter widening, the artifact
+    # must reflect HOLD + an explanatory status — otherwise CI gates that
+    # key off ``ship_recommendation`` would silently pass.
+    if adaptation_plan is not None:
+        status, ship_recommendation, rationale, manual_review_extras = (
+            apply_ship_gate_escalation(
+                adaptation_plan,
+                status=status,
+                ship_recommendation=ship_recommendation,
+                rationale=rationale,
+            )
+        )
+        # Surface each manual-review reason as a boundary warning so the
+        # human-readable artifact carries the full chain of reasoning.
+        if manual_review_extras:
+            from omegaprompt.domain.profiles import (
+                BoundaryWarning,
+                RiskCategory,
+            )
+
+            for reason in manual_review_extras:
+                boundary_warnings.append(
+                    BoundaryWarning(
+                        code="manual_review_required",
+                        category=RiskCategory.DEPLOYMENT_READINESS,
+                        severity="critical",
+                        summary="manual review required by adaptation plan",
+                        detail=reason,
+                        affects_guarded_boundary=True,
+                    )
+                )
+
     artifact = CalibrationArtifact(
         method=tuning.method,
-        unlock_k=tuning.unlock_k,
+        unlock_k=resolved_unlock_k,
         selected_profile=profile,
         neutral_baseline_params=neutral_result.resolved_params,
         calibrated_params=best_train_eval.resolved_params,

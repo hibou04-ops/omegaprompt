@@ -36,11 +36,24 @@ def test_no_args_returns_nonzero_help():
     assert "Usage" in combined or "calibrate" in combined
 
 
-def test_calibrate_help_documents_flags():
+def test_calibrate_help_documents_flags(monkeypatch):
+    # Force a wide terminal so typer/rich's help renderer doesn't wrap
+    # flag names across lines. Without this, a narrow CI runner shell
+    # (default ~80 cols) splits "--rubric" into "--rub\nric" inside a
+    # bordered table, and the substring assertions below fail. The test
+    # is checking that documentation surfaces each flag, not how it's
+    # paginated.
+    monkeypatch.setenv("COLUMNS", "200")
+    monkeypatch.setenv("NO_COLOR", "1")
     result = runner.invoke(app, ["calibrate", "--help"])
     assert result.exit_code == 0
+    # Strip any remaining ANSI escapes that survive NO_COLOR (typer's
+    # help renderer still emits some bold codes) before substring search.
+    import re
+
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
     for flag in ("--rubric", "--variants", "--target-model", "--judge-model"):
-        assert flag in result.stdout
+        assert flag in plain, f"missing {flag} in help output"
 
 
 def test_report_renders_markdown():

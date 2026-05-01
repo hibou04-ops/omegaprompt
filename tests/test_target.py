@@ -88,6 +88,51 @@ def test_prompt_target_rejects_empty_dataset():
         )
 
 
+def test_prompt_target_rejects_user_supplied_space_with_oversized_idx_max():
+    """Reviewer P1 #10: a user-supplied space whose system_prompt_idx_max
+    exceeds the variant pool would IndexError mid-eval. PromptTarget must
+    reject at construction time."""
+    space = MetaAxisSpace(system_prompt_idx_max=99)  # variants has 2 prompts
+    with pytest.raises(ValueError, match="system_prompt_idx_max"):
+        PromptTarget(
+            target_provider=_target_provider(),
+            judge=_judge_mock(),
+            dataset=_dataset(),
+            rubric=_rubric(),
+            variants=_variants(),
+            space=space,
+        )
+
+
+def test_prompt_target_rejects_user_supplied_space_with_oversized_few_shot_max():
+    space = MetaAxisSpace(system_prompt_idx_max=1, few_shot_max=10)  # only 1 shot
+    with pytest.raises(ValueError, match="few_shot_max"):
+        PromptTarget(
+            target_provider=_target_provider(),
+            judge=_judge_mock(),
+            dataset=_dataset(),
+            rubric=_rubric(),
+            variants=_variants(),
+            space=space,
+        )
+
+
+def test_prompt_target_auto_derived_space_remains_consistent():
+    """When space is None PromptTarget builds one from variants.
+    The auto-derived bounds must satisfy the cross-validator (regression
+    guard against future changes that desynchronise the two)."""
+    target = PromptTarget(
+        target_provider=_target_provider(),
+        judge=_judge_mock(),
+        dataset=_dataset(),
+        rubric=_rubric(),
+        variants=_variants(),
+        space=None,
+    )
+    assert target.space.system_prompt_idx_max == 1  # 2 prompts
+    assert target.space.few_shot_max <= 1  # 1 shot in _variants()
+
+
 def test_param_space_returns_meta_axes():
     t = PromptTarget(
         target_provider=_target_provider(),

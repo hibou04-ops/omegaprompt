@@ -66,12 +66,26 @@ class Dataset(BaseModel):
 
     @classmethod
     def from_items(cls, items: Iterable[DatasetItem | dict]) -> Dataset:
+        """Build a Dataset from in-memory items.
+
+        Mirrors ``from_jsonl`` invariants: duplicate ids and empty input
+        are rejected here, not silently accepted. Reviewer P1 #9 — the
+        downstream walk-forward path keys per-item scores by id, so a
+        duplicate would silently overwrite the earlier item's score and
+        bias KC-4 / the gap calculation.
+        """
         parsed: list[DatasetItem] = []
         for it in items:
             if isinstance(it, DatasetItem):
                 parsed.append(it)
             else:
                 parsed.append(DatasetItem.model_validate(it))
+        if not parsed:
+            raise ValueError("Dataset.from_items received zero items.")
+        ids = [it.id for it in parsed]
+        if len(set(ids)) != len(ids):
+            dupes = sorted({i for i in ids if ids.count(i) > 1})
+            raise ValueError(f"Dataset has duplicate ids: {dupes}")
         return cls(items=parsed)
 
     def __len__(self) -> int:

@@ -43,6 +43,33 @@ class PromptVariants(BaseModel):
             raise ValueError("Every system prompt must be a non-empty string.")
         return v
 
+    @field_validator("few_shot_examples")
+    @classmethod
+    def _few_shot_shape(cls, v: list[dict[str, str]]) -> list[dict[str, str]]:
+        """Each few-shot must have ``input`` and ``output`` non-empty strings.
+
+        Reviewer P1 #10: provider ``_messages()`` indexes ``shot["input"]``
+        and ``shot["output"]`` directly. A malformed shot (missing either
+        key, or an empty value) would either KeyError mid-eval or silently
+        send an empty user/assistant turn that confuses the target.
+        Catching it at construction time keeps the failure on the user's
+        config, not the eval pipeline.
+        """
+        for i, shot in enumerate(v):
+            if not isinstance(shot, dict):
+                raise ValueError(
+                    f"few_shot_examples[{i}] must be a dict with 'input' "
+                    f"and 'output' keys, got {type(shot).__name__}."
+                )
+            for key in ("input", "output"):
+                val = shot.get(key)
+                if not isinstance(val, str) or not val.strip():
+                    raise ValueError(
+                        f"few_shot_examples[{i}].{key} must be a non-empty "
+                        f"string, got {val!r}."
+                    )
+        return v
+
 
 class MetaAxisSpace(BaseModel):
     """Declarative bounds for every meta-axis.
@@ -118,6 +145,39 @@ class MetaAxisSpace(BaseModel):
             "response_schema_mode",
             "tool_policy_variant",
         ]
+
+
+def validate_space_against_variants(
+    space: MetaAxisSpace, variants: PromptVariants
+) -> None:
+    """Cross-validate space bounds against the variant pool sizes.
+
+    Reviewer P1 #10: ``MetaAxisSpace`` and ``PromptVariants`` validate
+    independently, so a user can declare ``system_prompt_idx_max=99``
+    against a 3-prompt pool and get an ``IndexError`` mid-evaluation
+    instead of a clean config-time failure. Likewise ``few_shot_max``
+    larger than the few-shot pool causes silent slice-shorter behaviour
+    that mis-records ``few_shot_count`` in the artifact (claims 3,
+    actually used 1).
+
+    Raises ``ValueError`` if either bound exceeds the corresponding pool.
+    """
+    if space.system_prompt_idx_max >= len(variants.system_prompts):
+        raise ValueError(
+            f"MetaAxisSpace.system_prompt_idx_max="
+            f"{space.system_prompt_idx_max} exceeds the supplied "
+            f"PromptVariants.system_prompts pool size "
+            f"({len(variants.system_prompts)}). The largest valid index "
+            f"is len(system_prompts) - 1 = {len(variants.system_prompts) - 1}."
+        )
+    if space.few_shot_max > len(variants.few_shot_examples):
+        raise ValueError(
+            f"MetaAxisSpace.few_shot_max={space.few_shot_max} exceeds "
+            f"the supplied PromptVariants.few_shot_examples pool size "
+            f"({len(variants.few_shot_examples)}). Either lower few_shot_max "
+            f"or extend the few-shot pool — silent short-slicing would "
+            f"mis-record few_shot_count in the artifact."
+        )
 
 
 class ResolvedPromptParams(BaseModel):

@@ -34,6 +34,7 @@ from omegaprompt.domain.params import (
     MetaAxisSpace,
     PromptVariants,
     ResolvedPromptParams,
+    validate_space_against_variants,
 )
 from omegaprompt.domain.profiles import (
     BoundaryWarning,
@@ -65,6 +66,7 @@ __all__ = [
     "MetaAxisSpace",
     "PromptVariants",
     "ResolvedPromptParams",
+    "validate_space_against_variants",
     "BoundaryWarning",
     "ExecutionProfile",
     "RelaxedSafeguard",

@@ -95,6 +95,80 @@ def test_adaptation_summary_none_when_no_plan_supplied():
     assert _build_adaptation_summary(None) is None
 
 
+def test_applied_parameters_set_matches_runtime_consumers():
+    """Drift guard: every name in APPLIED_PARAMETERS must actually be
+    referenced in runtime.py (otherwise the set lies). Cheap regex check
+    against the source so the next person who wires a new override into
+    runtime updates the set in the same change.
+    """
+    import inspect
+    import omegaprompt.runtime as runtime_mod
+
+    src = inspect.getsource(runtime_mod)
+    for param in APPLIED_PARAMETERS:
+        # A consumer signal: runtime threads the value through tuning/resolved
+        # locals, passes it as a kwarg to apply_adaptation_plan, or (for
+        # manual_review) processes it via the ship-gate escalation path.
+        readable_forms = [
+            f"tuning.{param}",
+            f"resolved_{param}",
+            f"{param}=resolved_",
+            f'"{param}"',
+            f"'{param}'",
+        ]
+        if param == "manual_review":
+            readable_forms += [
+                "requires_manual_review",
+                "require_manual_review",
+                "manual_review_required",
+                "manual_review_extras",
+            ]
+        assert any(form in src for form in readable_forms), (
+            f"APPLIED_PARAMETERS contains {param!r} but runtime.py does not "
+            f"reference any of {readable_forms}. Either the runtime stopped "
+            "consuming this override or the set is stale."
+        )
+
+
+def test_advisory_overrides_have_no_runtime_consumer():
+    """Inverse drift guard: parameters NOT in APPLIED_PARAMETERS but
+    recorded by derive_adaptation_plan must NOT be consumed by runtime.
+    If they are, they belong in APPLIED_PARAMETERS.
+
+    Lists the advisory parameter names derive_adaptation_plan currently
+    emits so a future change that wires one in is forced to update both
+    sides at once.
+    """
+    import inspect
+    import omegaprompt.runtime as runtime_mod
+
+    src = inspect.getsource(runtime_mod)
+    # Parameters derive_adaptation_plan emits as advisory (no runtime
+    # consumer wired today). If runtime.py starts reading any of these,
+    # move the name into APPLIED_PARAMETERS.
+    advisory_names = {
+        "rescore_count",
+        "schema_mode",  # schema_mode_fallback in plan, but ParameterOverride.parameter is "schema_mode"
+        "judge_ensemble_shift",
+        "skip_axes",
+        "rubric_weight_overrides",
+        "candidate_budget_cap",
+        "dataset_reorder_for_cache",
+    }
+    leaked = []
+    for param in advisory_names:
+        # Look for ``plan.{param}`` or ``adaptation_plan.{param}`` reads
+        # in runtime — that would indicate runtime now consumes them.
+        for prefix in ("plan.", "adaptation_plan."):
+            if f"{prefix}{param}" in src:
+                leaked.append(f"{prefix}{param}")
+    assert leaked == [], (
+        f"runtime.py reads advisory parameters {leaked}; move their "
+        "names into APPLIED_PARAMETERS so the artifact summary stops "
+        "marking them advisory_not_applied."
+    )
+
+
 def test_calibration_artifact_adaptation_summary_round_trips_through_json():
     from omegaprompt.domain import ShipRecommendation
     from omegaprompt.domain.result import CalibrationArtifact

@@ -46,6 +46,7 @@ def calibrate(
     test: str | None = None,
     output: str | None = None,
     tuning: dict | None = None,
+    adaptation_plan: dict | None = None,
 ) -> dict:
     """Run the full calibration pipeline and return the resulting artifact.
 
@@ -66,12 +67,23 @@ def calibrate(
             without it the walk-forward gate cannot run.
         output: If set, also writes the artifact JSON to this path.
         tuning: Optional ``CalibrateTuning`` dict (method, unlock_k, space,
-            max_gap, min_kc4, profile). Defaults from the execution profile.
+            max_gap, min_kc4, profile, validation_mode). Defaults from the
+            execution profile.
+        adaptation_plan: Optional serialized ``AdaptationPlan`` dict from
+            a prior preflight run. The plan's overrides tighten min_kc4,
+            max_gap, and unlock_k before the search runs; manual-review
+            escalation flows into the artifact's status / ship_recommendation.
+            Reaches CLI/Python parity (Reviewer P0 #4).
 
     Returns:
         CalibrationArtifact serialized as a dict. Inspect ``status`` and
         ``ship_recommendation`` to decide whether to ship.
     """
+    plan_obj = None
+    if adaptation_plan is not None:
+        from omegaprompt.preflight import AdaptationPlan
+        plan_obj = AdaptationPlan(**adaptation_plan)
+
     artifact = runtime.calibrate(
         train=train,
         rubric=rubric,
@@ -81,6 +93,7 @@ def calibrate(
         test=test,
         output=output,
         tuning=runtime.CalibrateTuning(**tuning) if tuning else None,
+        adaptation_plan=plan_obj,
     )
     return artifact.model_dump(mode="json")
 

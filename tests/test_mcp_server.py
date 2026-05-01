@@ -67,6 +67,17 @@ def test_calibrate_required_args_match_runtime(tools):
     assert {"train", "rubric", "variants", "target"}.issubset(required)
 
 
+def test_mcp_calibrate_accepts_adaptation_plan(tools):
+    """Reviewer P0 #4: MCP must reach CLI/Python parity for tuning AND
+    adaptation_plan. Pre-fix the tool signature took ``tuning`` but not
+    ``adaptation_plan``, so an agent had no way to thread a serialized
+    plan through MCP."""
+    calibrate = next(t for t in tools if t.name == "calibrate")
+    properties = calibrate.inputSchema["properties"]
+    assert "adaptation_plan" in properties
+    assert "tuning" in properties
+
+
 def test_grade_required_args_match_runtime(tools):
     grade = next(t for t in tools if t.name == "grade")
     required = set(grade.inputSchema.get("required", []))

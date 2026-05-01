@@ -172,7 +172,13 @@ def test_short_projected_wall_time_leaves_unlock_k():
 # --------------------------- small-sample gap widening ---------------------------
 
 
-def test_small_sample_finding_widens_max_gap():
+def test_small_sample_finding_requires_manual_review_not_max_gap_widening():
+    """Reviewer 5순위: pre-fix small-sample widened max_gap, but
+    apply_adaptation_plan clamped it back to the default — net effect
+    was zero but the artifact misleadingly showed an override. Worse,
+    even if the widening had landed it would have *weakened* the
+    discipline. The fix: don't widen, escalate to require_manual_review.
+    """
     report = _report(
         analytical_findings=[
             AnalyticalFinding(
@@ -184,8 +190,28 @@ def test_small_sample_finding_widens_max_gap():
         ],
     )
     plan = derive_adaptation_plan(report=report, default_max_gap=0.25)
-    assert plan.max_gap_override is not None
-    assert plan.max_gap_override > 0.25
+    assert plan.max_gap_override is None
+    assert plan.requires_manual_review
+    assert any(
+        "small_sample_kc4_power" in r for r in plan.require_manual_review_reasons
+    )
+
+
+def test_small_sample_medium_severity_does_not_require_manual_review():
+    """Only HIGH/BLOCKER triggers — MEDIUM is informational."""
+    report = _report(
+        analytical_findings=[
+            AnalyticalFinding(
+                trap_id="small_sample_kc4_power",
+                label="REAL",
+                hypothesis="dataset borderline",
+                severity=PreflightSeverity.MEDIUM,
+            ),
+        ],
+    )
+    plan = derive_adaptation_plan(report=report, default_max_gap=0.25)
+    assert not plan.requires_manual_review
+    assert plan.max_gap_override is None
 
 
 # --------------------------- invariants ---------------------------

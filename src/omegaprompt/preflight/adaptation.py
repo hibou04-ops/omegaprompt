@@ -66,10 +66,22 @@ class AdaptationPlan(BaseModel):
     candidate_budget_cap: int | None = None
     dataset_reorder_for_cache: bool = False
 
+    # Ship gate escalation. Conditions like a small test slice can't be
+    # repaired by widening parameters — the right response is to flag
+    # the run as needing manual review and to surface a HOLD verdict
+    # downstream rather than silently widen max_gap. Each entry is a
+    # short reason string keyed off a finding.
+    require_manual_review_reasons: list[str] = Field(default_factory=list)
+
     # Audit
     overrides: list[ParameterOverride] = Field(default_factory=list)
     rationale: list[str] = Field(default_factory=list)
     preserves_discipline: bool = True
+
+    @property
+    def requires_manual_review(self) -> bool:
+        """True when the plan flagged any condition that cannot be auto-resolved."""
+        return bool(self.require_manual_review_reasons)
 
 
 _NOISE_TO_KC4_FLOOR: tuple[tuple[float, float], ...] = (
@@ -128,7 +140,20 @@ def derive_adaptation_plan(
             f"(noise floor {noise_floor:.3f})"
         )
 
-    # Walk-forward gap: small-sample widening
+    # Walk-forward gap on small samples: previously we tried to widen
+    # max_gap, but the apply step (line ~310) clamps to min(default,
+    # override) so the widening was always silently negated. Worse, even
+    # if it had landed it would have *weakened* the discipline. The
+    # right response to a small test slice is the opposite:
+    #
+    #   1. don't widen anything — small samples need MORE caution, not
+    #      less, around the gap threshold;
+    #   2. require manual review so the artifact carries a clear signal
+    #      downstream consumers (CI gates, ship recommendation logic)
+    #      can key off rather than silently passing;
+    #   3. emit a rationale entry recommending a larger held-out slice
+    #      or paired/bootstrap validation mode.
+    applied_max_gap = default_max_gap
     small_sample_finding = next(
         (
             f
@@ -137,24 +162,23 @@ def derive_adaptation_plan(
         ),
         None,
     )
-    applied_max_gap = default_max_gap
+    require_manual_review_reasons: list[str] = []
     if small_sample_finding is not None and small_sample_finding.severity in {
         PreflightSeverity.HIGH,
         PreflightSeverity.BLOCKER,
     }:
-        applied_max_gap = min(0.40, default_max_gap * 1.6)
-        if applied_max_gap > default_max_gap:
-            overrides.append(
-                ParameterOverride(
-                    parameter="max_gap",
-                    default=default_max_gap,
-                    applied=applied_max_gap,
-                    reason="small-sample test slice widens acceptable gap",
-                )
-            )
-            rationale.append(
-                f"max_gap widened {default_max_gap:.2f} -> {applied_max_gap:.2f} (small sample)"
-            )
+        require_manual_review_reasons.append(
+            "small_sample_kc4_power: held-out slice is too small for KC-4 to "
+            "have meaningful statistical power. Manual review required; "
+            "pre-fix this branch widened max_gap, which weakened the "
+            "discipline AND was silently clamped back to the default. "
+            "Recommended remediation: enlarge held-out slice, or run with "
+            "validation_mode='paired' / bootstrap CI on the metric."
+        )
+        rationale.append(
+            "max_gap NOT widened on small sample (would weaken discipline); "
+            "added require_manual_review reason instead."
+        )
 
     # Judge noise: rescore_count
     rescore = 1
@@ -283,6 +307,7 @@ def derive_adaptation_plan(
         rubric_weight_overrides=rubric_weight_overrides,
         schema_mode_fallback=schema_mode_fallback,
         judge_ensemble_shift=judge_ensemble_shift,
+        require_manual_review_reasons=require_manual_review_reasons,
         overrides=overrides,
         rationale=rationale,
         preserves_discipline=True,

@@ -15,7 +15,12 @@ from omegaprompt.domain.enums import (
     output_budget_from_ordinal,
     reasoning_from_ordinal,
 )
-from omegaprompt.domain.params import MetaAxisSpace, ResolvedPromptParams
+from omegaprompt.domain.params import (
+    MetaAxisSpace,
+    PromptVariants,
+    ResolvedPromptParams,
+    validate_space_against_variants,
+)
 
 
 def test_reasoning_ordinals_ascending():
@@ -78,3 +83,101 @@ def test_resolved_prompt_params_forbids_extra():
             few_shot_count=0,
             unknown_axis="bad",
         )
+
+
+# ---------------------------------------------------------------------------
+# Reviewer P1 #10: PromptVariants.few_shot_examples must validate the
+# {input, output} shape. Provider _messages() helpers index ``shot["input"]``
+# and ``shot["output"]`` directly; a malformed shot would either KeyError
+# mid-eval or silently send an empty turn that confuses the target.
+# ---------------------------------------------------------------------------
+
+
+def test_prompt_variants_few_shot_requires_input_and_output_keys():
+    with pytest.raises(ValidationError, match="few_shot_examples"):
+        PromptVariants(
+            system_prompts=["sp"],
+            few_shot_examples=[{"input": "q1"}],  # missing output
+        )
+    with pytest.raises(ValidationError, match="few_shot_examples"):
+        PromptVariants(
+            system_prompts=["sp"],
+            few_shot_examples=[{"output": "a1"}],  # missing input
+        )
+
+
+def test_prompt_variants_few_shot_rejects_empty_string_values():
+    with pytest.raises(ValidationError, match="non-empty"):
+        PromptVariants(
+            system_prompts=["sp"],
+            few_shot_examples=[{"input": "  ", "output": "a1"}],
+        )
+    with pytest.raises(ValidationError, match="non-empty"):
+        PromptVariants(
+            system_prompts=["sp"],
+            few_shot_examples=[{"input": "q1", "output": ""}],
+        )
+
+
+def test_prompt_variants_few_shot_accepts_well_formed_shots():
+    pv = PromptVariants(
+        system_prompts=["sp"],
+        few_shot_examples=[
+            {"input": "q1", "output": "a1"},
+            {"input": "q2", "output": "a2"},
+        ],
+    )
+    assert len(pv.few_shot_examples) == 2
+
+
+# ---------------------------------------------------------------------------
+# Reviewer P1 #10: cross-validation of MetaAxisSpace against PromptVariants.
+# A user-supplied space whose bounds exceed the variant pool would silently
+# IndexError mid-eval (system_prompt_variant) or short-slice the few-shot
+# list (mis-recording few_shot_count in the artifact).
+# ---------------------------------------------------------------------------
+
+
+def test_validate_space_against_variants_accepts_consistent_pair():
+    space = MetaAxisSpace(system_prompt_idx_max=1, few_shot_max=2)
+    variants = PromptVariants(
+        system_prompts=["sp-A", "sp-B"],
+        few_shot_examples=[
+            {"input": "q1", "output": "a1"},
+            {"input": "q2", "output": "a2"},
+        ],
+    )
+    validate_space_against_variants(space, variants)  # no raise
+
+
+def test_validate_space_against_variants_rejects_idx_max_too_large():
+    space = MetaAxisSpace(system_prompt_idx_max=5)
+    variants = PromptVariants(
+        system_prompts=["sp-A", "sp-B"],
+    )
+    with pytest.raises(ValueError, match="system_prompt_idx_max"):
+        validate_space_against_variants(space, variants)
+
+
+def test_validate_space_against_variants_rejects_few_shot_max_too_large():
+    space = MetaAxisSpace(system_prompt_idx_max=0, few_shot_max=5)
+    variants = PromptVariants(
+        system_prompts=["sp-A"],
+        few_shot_examples=[{"input": "q1", "output": "a1"}],
+    )
+    with pytest.raises(ValueError, match="few_shot_max"):
+        validate_space_against_variants(space, variants)
+
+
+def test_validate_space_against_variants_allows_few_shot_max_equal_to_pool():
+    """Boundary case: few_shot_max == pool size means the search can pick
+    every example, which is valid (slicing returns the full list)."""
+    space = MetaAxisSpace(system_prompt_idx_max=0, few_shot_max=2)
+    variants = PromptVariants(
+        system_prompts=["sp"],
+        few_shot_examples=[
+            {"input": "q1", "output": "a1"},
+            {"input": "q2", "output": "a2"},
+        ],
+    )
+    validate_space_against_variants(space, variants)  # no raise

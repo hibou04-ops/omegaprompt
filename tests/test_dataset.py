@@ -105,3 +105,26 @@ def test_dataset_from_items_dicts_and_objects():
     )
     assert len(ds) == 2
     assert ds.items[0].id == "t1"
+
+
+# ---------------------------------------------------------------------------
+# Reviewer P1 #9: from_items must mirror from_jsonl invariants. The
+# downstream walk-forward path keys per-item scores by id, so a duplicate
+# silently overwrites the earlier score and biases KC-4 / the gap.
+# ---------------------------------------------------------------------------
+
+
+def test_dataset_from_items_rejects_duplicate_ids():
+    with pytest.raises(ValueError, match="duplicate ids"):
+        Dataset.from_items(
+            [
+                {"id": "dup", "input": "a"},
+                {"id": "other", "input": "b"},
+                {"id": "dup", "input": "c"},
+            ]
+        )
+
+
+def test_dataset_from_items_rejects_empty():
+    with pytest.raises(ValueError, match="zero items"):
+        Dataset.from_items([])

@@ -179,18 +179,30 @@ class PromptTarget:
             _accumulate_usage(run_usage, target_response.usage)
 
             judge_started = perf_counter()
-            judge_result, judge_usage = self.judge.score(
+            judge_outcome = self.judge.score(
                 rubric=self.rubric,
                 item=item,
                 target_response=target_response.text,
             )
+            judge_result, judge_usage = judge_outcome
             judge_wall_ms = (perf_counter() - judge_started) * 1000.0
             judge_call_count += 1
             _accumulate_usage(run_usage, judge_usage)
 
+            # Reviewer P0: judge provider degradation must surface in
+            # the artifact. Pre-fix only target_response.degraded_*
+            # was accumulated; a judge that fell back from STRICT_SCHEMA
+            # to JSON_OBJECT was invisible downstream — even though
+            # judge-side fallbacks affect fitness reliability MORE than
+            # target-side fallbacks.
+            judge_degraded = list(
+                getattr(judge_outcome, "degraded_capabilities", []) or []
+            )
+
             item_latency_ms = max(target_response.latency_ms, target_wall_ms) + judge_wall_ms
             total_latency_ms += item_latency_ms
             degraded_capabilities.extend(target_response.degraded_capabilities)
+            degraded_capabilities.extend(judge_degraded)
             judge_results.append((item.id, judge_result))
             item_results.append(
                 EvalItemResult(
@@ -200,7 +212,9 @@ class PromptTarget:
                     judge=judge_result,
                     token_usage=_merge_usage(target_response.usage, judge_usage),
                     latency_ms=item_latency_ms,
-                    degraded_capabilities=list(target_response.degraded_capabilities),
+                    degraded_capabilities=(
+                        list(target_response.degraded_capabilities) + judge_degraded
+                    ),
                 )
             )
 

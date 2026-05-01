@@ -39,6 +39,8 @@ def _make_artifact(
     hard_gate_pass_rate: float = 0.9,
     status: str = "OK",
 ) -> CalibrationArtifact:
+    from omegaprompt.domain import ShipRecommendation
+
     return CalibrationArtifact(
         method="p1",
         unlock_k=3,
@@ -52,6 +54,10 @@ def _make_artifact(
         n_candidates_evaluated=50,
         total_api_calls=500,
         status=status,
+        # Default to SHIP for diff fixtures so the new status/ship gate
+        # in diff() doesn't false-trigger on every regression test that
+        # only cares about metric deltas.
+        ship_recommendation=ShipRecommendation.SHIP,
     )
 
 

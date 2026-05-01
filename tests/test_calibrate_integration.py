@@ -117,9 +117,30 @@ def test_calibrate_result_parsing_against_real_p1(
     monkeypatch.setenv("OPENAI_API_KEY", "fake-test-key")
 
     # Stub provider with deterministic-by-system-prompt response lengths.
+    # Reviewer P1 #13: legacy capability fallback is fail-closed since
+    # PR9, so a stub provider must declare ship-grade capabilities to
+    # exercise the calibration path (real adapters do this; the stub
+    # mirrors that contract).
+    from omegaprompt.providers.base import (
+        CapabilityTier,
+        ProviderCapabilities,
+    )
+
     class StubProvider:
         name = "anthropic"
         model = "stub-model"
+
+        def capabilities(self):
+            return ProviderCapabilities(
+                provider=self.name,
+                tier=CapabilityTier.CLOUD,
+                supports_strict_schema=True,
+                supports_json_object=True,
+                supports_reasoning_profiles=True,
+                supports_usage_accounting=True,
+                supports_llm_judge=True,
+                ship_grade_judge=True,
+            )
 
         def call(self, request):
             # Longer system prompt -> slightly different response.

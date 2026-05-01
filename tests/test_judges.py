@@ -16,7 +16,47 @@ from omegaprompt.judges.rule_judge import (
     json_object_check,
     regex_check,
 )
-from omegaprompt.providers.base import ProviderResponse
+from omegaprompt.providers.base import (
+    CapabilityTier,
+    ProviderCapabilities,
+    ProviderResponse,
+)
+
+
+def _ship_grade_caps(name: str = "mock-judge") -> ProviderCapabilities:
+    """Build a ship-grade ProviderCapabilities for MagicMock providers.
+
+    The legacy capability fallback fails closed since Reviewer P1 #13;
+    a MagicMock without an explicit ``capabilities.return_value`` would
+    go through the fail-closed path and the LLMJudge guarded check
+    would refuse to run. Real adapters declare their capabilities;
+    test mocks must do the same so they exercise the judge code path
+    rather than the capability fallback.
+    """
+    return ProviderCapabilities(
+        provider=name,
+        tier=CapabilityTier.CLOUD,
+        supports_strict_schema=True,
+        supports_json_object=True,
+        supports_reasoning_profiles=True,
+        supports_usage_accounting=True,
+        supports_llm_judge=True,
+        ship_grade_judge=True,
+    )
+
+
+def _judge_provider_mock(parsed=None, usage=None) -> MagicMock:
+    """MagicMock provider primed with ship-grade capabilities + a
+    ProviderResponse. Use this in LLMJudge tests instead of a bare
+    ``MagicMock()`` so the capability check doesn't intercept."""
+    provider = MagicMock()
+    provider.name = "mock-judge"
+    provider.capabilities.return_value = _ship_grade_caps()
+    provider.call.return_value = ProviderResponse(
+        parsed=parsed,
+        usage=usage if usage is not None else {},
+    )
+    return provider
 
 
 def _item(id_: str = "t1", input_: str = "in", reference: str | None = None) -> DatasetItem:
@@ -140,6 +180,7 @@ def test_rule_judge_missing_check_raises():
 
 def test_llm_judge_calls_provider_with_strict_schema():
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     expected = JudgeResult(
         scores={"q": 4},
         gate_results={"correctness": True},
@@ -175,6 +216,7 @@ def test_llm_judge_calls_provider_with_strict_schema():
 
 def test_llm_judge_omits_reference_block_when_absent():
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(
         parsed=JudgeResult(scores={"q": 3}, gate_results={"correctness": True}),
         usage={},
@@ -192,6 +234,7 @@ def test_llm_judge_omits_reference_block_when_absent():
 def test_llm_judge_rejects_missing_judge_gate():
     """Empty gate_results must NOT silently pass when rubric declares a judge gate."""
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(
         parsed=JudgeResult(scores={"q": 4}, gate_results={}),
         usage={},
@@ -207,6 +250,7 @@ def test_llm_judge_rejects_missing_judge_gate():
 
 def test_llm_judge_rejects_missing_dimension():
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(
         parsed=JudgeResult(scores={}, gate_results={"correctness": True}),
         usage={},
@@ -222,6 +266,7 @@ def test_llm_judge_rejects_missing_dimension():
 
 def test_llm_judge_rejects_unknown_dimension():
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(
         parsed=JudgeResult(
             scores={"q": 4, "made_up": 5},
@@ -240,6 +285,7 @@ def test_llm_judge_rejects_unknown_dimension():
 
 def test_llm_judge_rejects_unknown_gate():
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(
         parsed=JudgeResult(
             scores={"q": 4},
@@ -260,6 +306,7 @@ def test_llm_judge_ignores_rule_evaluator_gates_in_completeness_check():
     """Rule-evaluator gates are filled by RuleJudge, not LLMJudge — so the
     LLM is not expected to populate them."""
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(
         parsed=JudgeResult(
             scores={"q": 4},
@@ -280,6 +327,7 @@ def test_llm_judge_ignores_rule_evaluator_gates_in_completeness_check():
 
 def test_llm_judge_raises_when_provider_returns_non_judgeresult():
     provider = MagicMock()
+    provider.capabilities.return_value = _ship_grade_caps()
     provider.call.return_value = ProviderResponse(parsed=None)
     judge = LLMJudge(provider=provider)
     with pytest.raises(JudgeError, match="did not return a JudgeResult"):

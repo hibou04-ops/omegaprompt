@@ -73,6 +73,31 @@ class OpenAIProvider:
         self._client = OpenAI(**kwargs) if kwargs else OpenAI()
 
     def capabilities(self) -> ProviderCapabilities:
+        # Reviewer P1 #14: when a non-OpenAI base_url is configured the
+        # adapter is wired to an OpenAI-compatible endpoint (OpenRouter,
+        # local server, vLLM, etc.). These endpoints frequently lack
+        # strict schema enforcement or honest reasoning profile support;
+        # treating them as cloud-grade is fail-open. Downgrade until a
+        # preflight probe confirms the endpoint actually meets the bar.
+        if self.base_url and "api.openai.com" not in self.base_url:
+            return ProviderCapabilities(
+                provider=self.name,
+                tier=CapabilityTier.LOCAL,
+                supports_strict_schema=False,
+                supports_json_object=True,
+                supports_reasoning_profiles=False,
+                supports_usage_accounting=True,
+                supports_llm_judge=False,
+                ship_grade_judge=False,
+                supports_tools=False,
+                experimental=True,
+                notes=[
+                    "OpenAI-compatible endpoint at a non-openai.com base_url. "
+                    "Capabilities downgraded to LOCAL until a doctor / "
+                    "preflight probe confirms the endpoint supports strict "
+                    "schema, reasoning profiles, and ship-grade judging.",
+                ],
+            )
         notes = [
             "Native json_object and beta parse paths when the model supports them.",
             "Unknown OpenAI-compatible endpoints may degrade schema or reasoning controls.",

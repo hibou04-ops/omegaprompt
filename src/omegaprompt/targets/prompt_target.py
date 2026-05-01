@@ -14,7 +14,12 @@ from omegaprompt.domain.enums import (
     ReasoningProfile,
 )
 from omegaprompt.domain.judge import JudgeRubric
-from omegaprompt.domain.params import MetaAxisSpace, PromptVariants, ResolvedPromptParams
+from omegaprompt.domain.params import (
+    MetaAxisSpace,
+    PromptVariants,
+    ResolvedPromptParams,
+    validate_space_against_variants,
+)
 from omegaprompt.domain.profiles import ExecutionProfile, ShipRecommendation
 from omegaprompt.domain.result import EvalItemResult, EvalResult
 from omegaprompt.judges.base import Judge
@@ -70,6 +75,11 @@ class PromptTarget:
                 few_shot_min=0,
                 few_shot_max=max_few_shot,
             )
+        else:
+            # Reviewer P1 #10: when the user supplies a space, its bounds
+            # must match the variant pool sizes. Auto-derived spaces are
+            # already consistent by construction.
+            validate_space_against_variants(space, variants)
         self.space = space
 
         self._fitness = CompositeFitness(rubric)

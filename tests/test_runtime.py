@@ -252,6 +252,8 @@ def _simple_rubric() -> JudgeRubric:
 
 class TestGradeRule:
     def test_rule_strategy_passes_substantive_response(self):
+        from omegaprompt.runtime import GradeResult
+
         rubric = _simple_rubric()
         item = DatasetItem(id="t1", input="ping", reference="pong")
         result = grade(
@@ -261,9 +263,19 @@ class TestGradeRule:
             provider="anthropic",  # not used by rule strategy
             strategy="rule",
         )
-        assert result is not None
+        # Reviewer P4: result must be a serialisable Pydantic object so the
+        # MCP wrapper's .model_dump(mode="json") doesn't crash.
+        assert isinstance(result, GradeResult)
+        assert result.judge.gate_results.get("no_refusal") is True
+        assert "no_refusal" in result.judge.gate_results
+        # GradeResult must round-trip cleanly through model_dump:
+        payload = result.model_dump(mode="json")
+        assert "judge" in payload
+        assert "usage" in payload
 
     def test_dict_item_coerced(self):
+        from omegaprompt.runtime import GradeResult
+
         rubric = _simple_rubric()
         result = grade(
             rubric=rubric,
@@ -272,7 +284,7 @@ class TestGradeRule:
             provider="anthropic",
             strategy="rule",
         )
-        assert result is not None
+        assert isinstance(result, GradeResult)
 
 
 # ----- preflight() — capability-only mode, no network calls -----
@@ -290,8 +302,8 @@ class TestPreflightCapabilityOnly:
             return StubProvider(name)
 
         class StubCaps:
-            is_placeholder = False
-            is_experimental = False
+            placeholder = False
+            experimental = False
 
         def fake_caps(_):
             return StubCaps()
@@ -315,8 +327,8 @@ class TestPreflightCapabilityOnly:
                 self.model = "stub"
 
         class StubCaps:
-            is_placeholder = False
-            is_experimental = False
+            placeholder = False
+            experimental = False
 
         monkeypatch.setattr(
             "omegaprompt.runtime.make_provider",
@@ -337,8 +349,8 @@ class TestPreflightCapabilityOnly:
                 self.model = "stub"
 
         class PlaceholderCaps:
-            is_placeholder = True
-            is_experimental = False
+            placeholder = True
+            experimental = False
 
         monkeypatch.setattr(
             "omegaprompt.runtime.make_provider",

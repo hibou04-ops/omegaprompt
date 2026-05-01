@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from enum import Enum
 from json import JSONDecodeError
 from typing import Any, Protocol, TypeVar
@@ -128,23 +129,62 @@ class LLMProvider(Protocol):
 
 
 def provider_capabilities(provider: object) -> ProviderCapabilities:
-    """Return declared capabilities or a safe legacy fallback."""
+    """Return declared capabilities or a safe legacy fallback.
+
+    Reviewer P1 #13: a provider without ``capabilities()`` previously got
+    a permissive fallback (every flag True, ship_grade_judge=True). Under
+    guarded profile that's fail-open — a user-written adapter that
+    forgot to declare its capabilities would be treated as cloud-grade.
+
+    The default fallback is now conservative: ship_grade_judge is False,
+    schema/judge support flags are False, ``experimental=True``. Users
+    who deliberately want the old permissive shape (e.g. a quick local
+    test where they know the provider is fine) can set
+    ``OMEGAPROMPT_TRUST_LEGACY_PROVIDERS=1`` to opt back in. The env-var
+    pattern matches how other audit tools (mini-omega-lock fail-open
+    removal) gate trust decisions: explicit, intentional, auditable.
+    """
 
     caps_fn = getattr(provider, "capabilities", None)
     if callable(caps_fn):
         caps = caps_fn()
         if isinstance(caps, ProviderCapabilities):
             return caps
+
+    name = str(getattr(provider, "name", "legacy"))
+    if os.environ.get("OMEGAPROMPT_TRUST_LEGACY_PROVIDERS") == "1":
+        return ProviderCapabilities(
+            provider=name,
+            tier=CapabilityTier.CORE,
+            supports_strict_schema=True,
+            supports_json_object=True,
+            supports_reasoning_profiles=True,
+            supports_usage_accounting=True,
+            supports_llm_judge=True,
+            ship_grade_judge=True,
+            notes=[
+                "Legacy provider without explicit capability declaration.",
+                "OMEGAPROMPT_TRUST_LEGACY_PROVIDERS=1 set — capabilities "
+                "treated as cloud-grade. Audit assumes you verified this.",
+            ],
+        )
     return ProviderCapabilities(
-        provider=str(getattr(provider, "name", "legacy")),
+        provider=name,
         tier=CapabilityTier.CORE,
-        supports_strict_schema=True,
-        supports_json_object=True,
-        supports_reasoning_profiles=True,
-        supports_usage_accounting=True,
-        supports_llm_judge=True,
-        ship_grade_judge=True,
-        notes=["Legacy provider without explicit capability declaration."],
+        supports_strict_schema=False,
+        supports_json_object=False,
+        supports_reasoning_profiles=False,
+        supports_usage_accounting=False,
+        supports_llm_judge=False,
+        ship_grade_judge=False,
+        experimental=True,
+        notes=[
+            "Legacy provider without explicit capability declaration.",
+            "Fail-closed default: treated as experimental until the "
+            "adapter declares its capabilities. Set "
+            "OMEGAPROMPT_TRUST_LEGACY_PROVIDERS=1 to opt back into "
+            "the previous permissive fallback.",
+        ],
     )
 
 

@@ -84,6 +84,115 @@ def test_make_provider_local_alias_has_local_capabilities():
     assert caps.experimental is True
 
 
+# ---------------------------------------------------------------------------
+# Reviewer P1 #14: an OpenAI-compatible endpoint at a non-openai.com base_url
+# is OpenRouter / vLLM / a local server. These frequently lack strict schema
+# enforcement; treating them as cloud-grade is fail-open. Capabilities must
+# downgrade to LOCAL until a probe confirms the endpoint meets the bar.
+# ---------------------------------------------------------------------------
+
+
+def test_openai_provider_with_non_openai_base_url_downgrades_capabilities():
+    p = OpenAIProvider(
+        model="gpt-4",
+        client=MagicMock(),
+        base_url="http://localhost:11434/v1",
+    )
+    caps = p.capabilities()
+    assert caps.tier.value.startswith("tier_3")  # LOCAL
+    assert caps.supports_strict_schema is False
+    assert caps.supports_llm_judge is False
+    assert caps.ship_grade_judge is False
+    assert caps.experimental is True
+
+
+def test_openai_provider_with_official_base_url_stays_cloud_grade():
+    p = OpenAIProvider(
+        model="gpt-4",
+        client=MagicMock(),
+        base_url="https://api.openai.com/v1",
+    )
+    caps = p.capabilities()
+    assert caps.tier.value.startswith("tier_2")  # CLOUD
+    assert caps.supports_strict_schema is True
+    assert caps.ship_grade_judge is True
+    assert caps.experimental is False
+
+
+def test_openai_provider_default_base_url_stays_cloud_grade():
+    p = OpenAIProvider(model="gpt-4", client=MagicMock())
+    caps = p.capabilities()
+    assert caps.tier.value.startswith("tier_2")
+    assert caps.supports_strict_schema is True
+
+
+# ---------------------------------------------------------------------------
+# Reviewer P1 #13: a provider without an explicit ``capabilities()`` method
+# previously got a permissive legacy fallback. Under guarded profile that's
+# fail-open. The fallback now defaults to experimental + capability flags
+# False; users who deliberately want the old shape can opt back in via
+# ``OMEGAPROMPT_TRUST_LEGACY_PROVIDERS=1``.
+# ---------------------------------------------------------------------------
+
+
+def test_provider_capabilities_legacy_fallback_is_fail_closed_by_default(monkeypatch):
+    from omegaprompt.providers.base import provider_capabilities
+
+    monkeypatch.delenv("OMEGAPROMPT_TRUST_LEGACY_PROVIDERS", raising=False)
+
+    class LegacyProvider:
+        name = "custom-legacy"
+        # No capabilities() method — the audit-relevant case.
+
+    caps = provider_capabilities(LegacyProvider())
+    assert caps.experimental is True
+    assert caps.ship_grade_judge is False
+    assert caps.supports_llm_judge is False
+    assert caps.supports_strict_schema is False
+
+
+def test_provider_capabilities_legacy_fallback_opts_back_in_via_env(monkeypatch):
+    from omegaprompt.providers.base import provider_capabilities
+
+    monkeypatch.setenv("OMEGAPROMPT_TRUST_LEGACY_PROVIDERS", "1")
+
+    class LegacyProvider:
+        name = "custom-legacy"
+
+    caps = provider_capabilities(LegacyProvider())
+    assert caps.experimental is False
+    assert caps.ship_grade_judge is True
+    assert caps.supports_llm_judge is True
+    # The note records the opt-in so audits can see it was an explicit choice.
+    assert any("OMEGAPROMPT_TRUST_LEGACY_PROVIDERS" in n for n in caps.notes)
+
+
+def test_provider_capabilities_uses_declared_capabilities_when_present():
+    """Sanity: the legacy fallback only fires when capabilities() is missing
+    or returns a non-ProviderCapabilities. A real adapter is unaffected."""
+    from omegaprompt.providers.base import (
+        CapabilityTier,
+        ProviderCapabilities,
+        provider_capabilities,
+    )
+
+    class GoodProvider:
+        name = "good"
+
+        def capabilities(self):
+            return ProviderCapabilities(
+                provider=self.name,
+                tier=CapabilityTier.CLOUD,
+                supports_strict_schema=True,
+                supports_llm_judge=True,
+                ship_grade_judge=True,
+            )
+
+    caps = provider_capabilities(GoodProvider())
+    assert caps.ship_grade_judge is True
+    assert caps.experimental is False
+
+
 # --------------------------- AnthropicProvider ---------------------------
 
 

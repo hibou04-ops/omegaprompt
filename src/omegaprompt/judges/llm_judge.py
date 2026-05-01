@@ -152,7 +152,47 @@ class LLMJudge:
             raise JudgeError(
                 f"Judge provider did not return a JudgeResult (got {type(parsed).__name__})."
             )
+        _enforce_rubric_completeness(parsed, rubric)
         return parsed, response.usage
+
+
+def _enforce_rubric_completeness(result: JudgeResult, rubric: JudgeRubric) -> None:
+    """Hard-fail when the judge's response does not match the rubric exactly.
+
+    Pydantic validates the *shape* of ``JudgeResult`` (scores is a dict, etc.),
+    but it cannot tell whether every rubric dimension and every judge-mode
+    hard gate is actually present, or whether the judge invented unknown
+    keys. Without this check, an empty ``gate_results`` would pass the gate
+    system silently — a fail-open hole. We close it here, before the
+    calibration loop sees the result.
+    """
+    expected_dims = {d.name for d in rubric.dimensions}
+    expected_gates = {g.name for g in rubric.hard_gates if g.evaluator == "judge"}
+    actual_dims = set(result.scores)
+    actual_gates = set(result.gate_results)
+
+    missing_dims = expected_dims - actual_dims
+    extra_dims = actual_dims - expected_dims
+    missing_gates = expected_gates - actual_gates
+    extra_gates = actual_gates - expected_gates
+
+    problems: list[str] = []
+    if missing_dims:
+        problems.append(f"missing dimensions {sorted(missing_dims)}")
+    if extra_dims:
+        problems.append(f"unknown dimensions {sorted(extra_dims)}")
+    if missing_gates:
+        problems.append(f"missing judge-mode hard_gates {sorted(missing_gates)}")
+    if extra_gates:
+        problems.append(f"unknown gate keys {sorted(extra_gates)}")
+
+    if problems:
+        raise JudgeError(
+            "JudgeResult does not match rubric: "
+            + "; ".join(problems)
+            + ". A miscalibrated judge produces a miscalibrated search; "
+            "the calibration is aborted rather than scoring on a partial result."
+        )
 
 
 def rubric_reasoning_profile():

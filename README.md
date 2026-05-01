@@ -404,6 +404,14 @@ The training-best parameters are replayed on the held-out test slice. The replay
 
 The Pearson correlation between train per-item scores and test per-item scores (on the shared dataset ids) is compared to `--min-kc4`. The generalisation gap `|train - test| / |train|` is compared to `--max-gap`. A failure on either sets `status = FAIL_KC4_GATE` and `ship_recommendation = HOLD`. Both thresholds are recorded on the artifact; they cannot be lowered after the fact.
 
+**KC-4 semantics by validation_mode (v1.5+).** KC-4 is a per-item correlation, so it is only meaningful when train and test slices share the *same* item ids — a "paired replay". On an ordinary disjoint train/test split the slices have no shared ids and KC-4 is structurally unmeasurable; the gate degenerates to the gap-only check. To make this explicit, `CalibrateTuning.validation_mode` accepts:
+
+- `"auto"` (default, backward-compat): compute KC-4 only when slices share ≥3 ids; otherwise skip silently.
+- `"paired"`: caller asserts shared ids by design. Raises `ValueError` if overlap < 3 — a paired run with no overlap is a setup bug, not a free pass.
+- `"disjoint"`: caller asserts no shared ids by design. KC-4 is never computed; the gate is gap-only.
+
+If you run a normal held-out split (disjoint ids), set `validation_mode="disjoint"` to make the artifact's lack of `kc4_correlation` self-documenting. Use `"paired"` when you score two prompts on the *same* items and want the per-item correlation as a stability signal.
+
 ### 5.7 Artifact emission
 
 The `CalibrationArtifact` (see §8) is written as pretty-printed JSON to the `--output` path. It carries enough information to (a) render a Markdown report, (b) diff against a prior run, (c) gate CI on machine-readable fields without parsing prose.

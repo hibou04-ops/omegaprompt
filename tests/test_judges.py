@@ -176,7 +176,7 @@ def test_llm_judge_calls_provider_with_strict_schema():
 def test_llm_judge_omits_reference_block_when_absent():
     provider = MagicMock()
     provider.call.return_value = ProviderResponse(
-        parsed=JudgeResult(scores={"q": 3}),
+        parsed=JudgeResult(scores={"q": 3}, gate_results={"correctness": True}),
         usage={},
     )
     judge = LLMJudge(provider=provider)
@@ -187,6 +187,95 @@ def test_llm_judge_omits_reference_block_when_absent():
     )
     payload = provider.call.call_args.args[0].user_message
     assert "<reference>" not in payload
+
+
+def test_llm_judge_rejects_missing_judge_gate():
+    """Empty gate_results must NOT silently pass when rubric declares a judge gate."""
+    provider = MagicMock()
+    provider.call.return_value = ProviderResponse(
+        parsed=JudgeResult(scores={"q": 4}, gate_results={}),
+        usage={},
+    )
+    judge = LLMJudge(provider=provider)
+    with pytest.raises(JudgeError, match="missing judge-mode hard_gates"):
+        judge.score(
+            rubric=_rubric_judge_gates(),
+            item=_item(),
+            target_response="x",
+        )
+
+
+def test_llm_judge_rejects_missing_dimension():
+    provider = MagicMock()
+    provider.call.return_value = ProviderResponse(
+        parsed=JudgeResult(scores={}, gate_results={"correctness": True}),
+        usage={},
+    )
+    judge = LLMJudge(provider=provider)
+    with pytest.raises(JudgeError, match="missing dimensions"):
+        judge.score(
+            rubric=_rubric_judge_gates(),
+            item=_item(),
+            target_response="x",
+        )
+
+
+def test_llm_judge_rejects_unknown_dimension():
+    provider = MagicMock()
+    provider.call.return_value = ProviderResponse(
+        parsed=JudgeResult(
+            scores={"q": 4, "made_up": 5},
+            gate_results={"correctness": True},
+        ),
+        usage={},
+    )
+    judge = LLMJudge(provider=provider)
+    with pytest.raises(JudgeError, match="unknown dimensions"):
+        judge.score(
+            rubric=_rubric_judge_gates(),
+            item=_item(),
+            target_response="x",
+        )
+
+
+def test_llm_judge_rejects_unknown_gate():
+    provider = MagicMock()
+    provider.call.return_value = ProviderResponse(
+        parsed=JudgeResult(
+            scores={"q": 4},
+            gate_results={"correctness": True, "phantom_gate": True},
+        ),
+        usage={},
+    )
+    judge = LLMJudge(provider=provider)
+    with pytest.raises(JudgeError, match="unknown gate"):
+        judge.score(
+            rubric=_rubric_judge_gates(),
+            item=_item(),
+            target_response="x",
+        )
+
+
+def test_llm_judge_ignores_rule_evaluator_gates_in_completeness_check():
+    """Rule-evaluator gates are filled by RuleJudge, not LLMJudge — so the
+    LLM is not expected to populate them."""
+    provider = MagicMock()
+    provider.call.return_value = ProviderResponse(
+        parsed=JudgeResult(
+            scores={"q": 4},
+            gate_results={"correctness": True},  # only judge-mode gate
+        ),
+        usage={},
+    )
+    judge = LLMJudge(provider=provider)
+    # _rubric_judge_gates has no_refusal=rule + correctness=judge.
+    # LLM only needs to fill correctness; no_refusal is RuleJudge's job.
+    result, _ = judge.score(
+        rubric=_rubric_judge_gates(),
+        item=_item(),
+        target_response="x",
+    )
+    assert result.gate_results == {"correctness": True}
 
 
 def test_llm_judge_raises_when_provider_returns_non_judgeresult():

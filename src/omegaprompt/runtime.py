@@ -37,6 +37,7 @@ from omegaprompt.domain import (
     MetaAxisSpace,
     PromptVariants,
     ResolvedPromptParams,
+    ShipRecommendation,
 )
 from omegaprompt.judges import EnsembleJudge, Judge, LLMJudge, RuleJudge
 from omegaprompt.judges.rule_judge import default_no_refusal, default_non_empty
@@ -509,6 +510,20 @@ def diff(
     qpl_delta = new.quality_per_latency_best - old.quality_per_latency_best
 
     regression_reasons: list[str] = []
+    # Status / ship_recommendation are first-class regression conditions:
+    # a candidate that fails its own ship gate must not be marked clean
+    # just because its raw metrics improved. Without these checks, a
+    # candidate with status=FAIL_KC4_GATE but better fitness would slip
+    # through CI as "no regression."
+    if new.status != "OK":
+        regression_reasons.append(f"candidate status is not OK: {new.status}")
+    if new.ship_recommendation in (
+        ShipRecommendation.BLOCK,
+        ShipRecommendation.HOLD,
+    ):
+        regression_reasons.append(
+            f"candidate ship_recommendation={new.ship_recommendation.value}"
+        )
     if fitness_delta < 0:
         regression_reasons.append(
             f"calibrated_fitness regressed: {fitness_delta:+.4f}"

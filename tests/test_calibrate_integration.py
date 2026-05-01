@@ -137,7 +137,11 @@ def test_calibrate_result_parsing_against_real_p1(
     def fake_make_provider(name, model=None, api_key=None, base_url=None, **_):
         return StubProvider()
 
-    monkeypatch.setattr(calibrate_mod, "make_provider", fake_make_provider)
+    # CLI calibrate now delegates to runtime.calibrate; the runtime
+    # is the actual call site that resolves providers via make_provider.
+    monkeypatch.setattr(
+        "omegaprompt.runtime.make_provider", fake_make_provider
+    )
 
     # Deterministic judge: score strictly based on the integer encoded in the
     # target's response text. This gives omega_lock a clean signal per (params,
@@ -254,8 +258,7 @@ def test_calibrate_without_test_target_skips_walk_forward(
             )
 
     monkeypatch.setattr(
-        calibrate_mod,
-        "make_provider",
+        "omegaprompt.runtime.make_provider",
         lambda name, model=None, api_key=None, base_url=None, **_: StubProvider(),
     )
     monkeypatch.setattr(
@@ -281,7 +284,13 @@ def test_calibrate_without_test_target_skips_walk_forward(
             ],
             catch_exceptions=False,
         )
-        assert result.exit_code == 0, result.stdout
+        # Reviewer P0: CLI now exits 1 on non-OK status (matches
+        # runtime.calibrate semantics). The stub provider lacks a
+        # capabilities() method so guarded profile flags it as
+        # experimental → FAIL_HARD_GATES exit 1. The test's actual
+        # claim is about walk_forward shape, not exit code, so accept
+        # either 0 (OK) or 1 (FAIL_HARD_GATES from the stub).
+        assert result.exit_code in (0, 1), result.stdout
         artifact = load_artifact(output_path)
         assert artifact.walk_forward is None
         assert artifact.status in {"OK", "FAIL_HARD_GATES"}

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -69,7 +69,16 @@ class EvalResult(BaseModel):
 
 
 class WalkForwardResult(BaseModel):
-    """Train/test generalization assessment for one candidate."""
+    """Train/test generalization assessment for one candidate.
+
+    The result preserves both the numbers (fitness, gap, KC-4) and the
+    *conditions* under which they were computed (validation_mode, shared
+    item count, status enums, declared thresholds). A reviewer reading
+    this artifact can tell whether KC-4 was None because the split was
+    structurally disjoint, the per-item scores had zero variance, or
+    the slices shared too few ids — three cases the old shape collapsed
+    into a single ``None`` (Reviewer P1 #6).
+    """
 
     model_config = ConfigDict(extra="forbid")
 
@@ -77,16 +86,93 @@ class WalkForwardResult(BaseModel):
     test_fitness: float
     generalization_gap: float = Field(
         ...,
-        description="|train - test| / |train|. Smaller is better; 0 = no drift.",
+        description=(
+            "|train - test| / |train|. Smaller is better; 0 = no drift. "
+            "When train_best_fitness is 0 the gap is reported as 1.0 to "
+            "stay JSON-friendly; the structural meaning is preserved on "
+            "``gap_status``."
+        ),
     )
+    gap_status: Literal[
+        "OK",
+        "TRAIN_ZERO_BOTH_ZERO",
+        "TRAIN_ZERO_TEST_NONZERO",
+    ] = Field(
+        default="OK",
+        description=(
+            "Why the gap reads what it does. ``OK`` for the normal case. "
+            "``TRAIN_ZERO_BOTH_ZERO`` when both slices scored zero (gap "
+            "is structurally undefined). ``TRAIN_ZERO_TEST_NONZERO`` "
+            "when train was zero but test was not (denominator is zero, "
+            "uplift is technically infinite). Reviewer P1 #8: the old "
+            "shape squashed both cases into 1.0."
+        ),
+    )
+
+    validation_mode: Literal["auto", "paired", "disjoint"] = Field(
+        default="auto",
+        description=(
+            "Which KC-4 contract the caller declared. ``auto`` preserves "
+            "historical behaviour (compute when slices share >=3 ids, "
+            "otherwise skip). ``paired`` is strict: zero-variance / "
+            "fewer than 3 shared ids fail closed. ``disjoint`` skips "
+            "KC-4 by design — the gate is gap-only."
+        ),
+    )
+    shared_item_count: int = Field(
+        default=0,
+        ge=0,
+        description="How many item ids the train and test slices share.",
+    )
+
     kc4_correlation: float | None = Field(
         default=None,
-        description="Pearson correlation between per-item scores on train and test."
-        " None when the slices do not share item ids.",
+        description=(
+            "Pearson correlation between per-item scores on train and "
+            "test, or None when the correlation could not be computed. "
+            "``kc4_status`` records *why* it is None."
+        ),
     )
+    kc4_status: Literal[
+        "COMPUTED",
+        "NOT_APPLICABLE_DISJOINT",
+        "INSUFFICIENT_SHARED_ITEMS",
+        "MISSING_PER_ITEM_SCORES",
+        "ZERO_VARIANCE_TRAIN",
+        "ZERO_VARIANCE_TEST",
+        "ZERO_VARIANCE_BOTH",
+        "PEARSON_NAN",
+    ] = Field(
+        default="INSUFFICIENT_SHARED_ITEMS",
+        description=(
+            "Outcome of the KC-4 computation. ``COMPUTED`` is the only "
+            "value where ``kc4_correlation`` is non-None and the gate "
+            "actually checked. The others tell a reviewer whether KC-4 "
+            "was unmeasurable for structural reasons (disjoint split, "
+            "missing scores) or because the data degenerated (zero "
+            "variance, NaN). Reviewer P1 #6."
+        ),
+    )
+
+    max_gap_threshold: float = Field(
+        default=0.25,
+        description=(
+            "The pre-declared max_gap that produced the pass/fail "
+            "verdict. Recorded so a future reader can tell which "
+            "threshold was active without rerunning."
+        ),
+    )
+    min_kc4_threshold: float | None = Field(
+        default=0.5,
+        description=(
+            "The pre-declared min_kc4. None when KC-4 was not "
+            "applicable (disjoint split or auto with no overlap)."
+        ),
+    )
+
     passed: bool = Field(
         ...,
-        description="Did the candidate clear the pre-declared KC-4 threshold?",
+        description="Did the candidate clear the pre-declared gap + KC-4 thresholds?",
     )
 
 

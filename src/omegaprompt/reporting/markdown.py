@@ -23,9 +23,20 @@ def render_markdown(a) -> str:
     if a.walk_forward is not None:
         wf = a.walk_forward
         lines.append(f"- **Test fitness:** {wf.test_fitness:.4f}")
+        kc4_part = (
+            f", KC-4 r={wf.kc4_correlation:.3f}"
+            if wf.kc4_correlation is not None
+            else f", KC-4 not computed ({wf.kc4_status})"
+        )
+        gap_part = (
+            f"gap {wf.generalization_gap:.2%}"
+            if wf.gap_status == "OK"
+            else f"gap {wf.generalization_gap:.2%} ({wf.gap_status})"
+        )
         lines.append(
-            f"- **Walk-forward:** gap {wf.generalization_gap:.2%}"
-            + (f", KC-4 r={wf.kc4_correlation:.3f}" if wf.kc4_correlation is not None else "")
+            f"- **Walk-forward [{wf.validation_mode}]:** {gap_part}"
+            + kc4_part
+            + f" (shared_ids={wf.shared_item_count})"
             + (" PASS" if wf.passed else " FAIL")
         )
     lines.append(f"- **Ship recommendation:** {a.ship_recommendation.value}")

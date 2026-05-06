@@ -22,6 +22,7 @@ from omegaprompt.providers import (
 )
 from omegaprompt.providers.anthropic_provider import AnthropicProvider
 from omegaprompt.providers.base import empty_usage, normalize_usage
+from omegaprompt.providers.gemini_provider import GeminiProvider
 from omegaprompt.providers.openai_provider import OpenAIProvider
 
 
@@ -59,6 +60,7 @@ def test_supported_providers_lists_both():
 def test_default_models_per_provider():
     assert DEFAULT_MODELS["anthropic"].startswith("claude-")
     assert DEFAULT_MODELS["openai"].startswith("gpt-")
+    assert DEFAULT_MODELS["gemini"] == "gemini-2.5-flash"
 
 
 def test_make_provider_unknown_raises():
@@ -74,6 +76,12 @@ def test_make_provider_uses_default_model():
 def test_make_provider_openai_passes_base_url():
     p = make_provider("openai", client=MagicMock(), base_url="http://localhost:11434/v1")
     assert p.base_url == "http://localhost:11434/v1"
+
+
+def test_make_provider_gemini_uses_default_model():
+    p = make_provider("gemini", client=MagicMock())
+    assert isinstance(p, GeminiProvider)
+    assert p.model == DEFAULT_MODELS["gemini"]
 
 
 def test_make_provider_local_alias_has_local_capabilities():
@@ -428,6 +436,187 @@ def test_local_provider_expedition_falls_back_from_strict_schema():
     assert any(event.capability == "structured_output" for event in resp.degraded_capabilities)
 
 
+# ---------------------------- GeminiProvider -----------------------------
+
+
+def _gemini_response(text: str, *, usage: object | None = None, finish_reason: str = "STOP"):
+    return SimpleNamespace(
+        text=text,
+        candidates=[SimpleNamespace(finish_reason=finish_reason)],
+        usage_metadata=usage,
+    )
+
+
+def _judge_json() -> str:
+    return '{"scores":{"q":4},"gate_results":{"g":true},"notes":"ok"}'
+
+
+def test_gemini_capabilities_are_not_placeholder():
+    p = GeminiProvider(model="gemini-test", client=MagicMock())
+    caps = p.capabilities()
+    assert caps.placeholder is False
+    assert caps.supports_json_object is True
+    assert caps.supports_strict_schema is True
+    assert caps.ship_grade_judge is False
+
+
+def test_gemini_freeform_returns_text_and_usage_with_few_shots():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response(
+        "reply",
+        usage=SimpleNamespace(prompt_token_count=12, candidates_token_count=3),
+    )
+    p = GeminiProvider(model="gemini-test", client=client)
+
+    resp = p.call(_request(few_shots=[{"input": "a", "output": "b"}]))
+
+    assert resp.text == "reply"
+    assert resp.usage["input_tokens"] == 12
+    assert resp.usage["output_tokens"] == 3
+    kw = client.models.generate_content.call_args.kwargs
+    assert kw["model"] == "gemini-test"
+    assert kw["config"]["system_instruction"] == "SP"
+    assert kw["config"]["max_output_tokens"] == 4096
+    assert kw["contents"][0] == {"role": "user", "parts": [{"text": "a"}]}
+    assert kw["contents"][1] == {"role": "model", "parts": [{"text": "b"}]}
+    assert kw["contents"][2] == {"role": "user", "parts": [{"text": "UM"}]}
+
+
+def test_gemini_json_object_requests_json_mode():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response(_judge_json())
+    p = GeminiProvider(model="gemini-test", client=client)
+
+    resp = p.call(_request(response_schema_mode=ResponseSchemaMode.JSON_OBJECT))
+
+    assert resp.text == _judge_json()
+    kw = client.models.generate_content.call_args.kwargs
+    assert kw["config"]["response_mime_type"] == "application/json"
+    assert "valid JSON object" in kw["config"]["system_instruction"]
+
+
+def test_gemini_strict_schema_native_uses_response_schema():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response(_judge_json())
+    p = GeminiProvider(model="gemini-test", client=client)
+
+    resp = p.call(_request(
+        response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
+        output_schema=JudgeResult,
+    ))
+
+    assert isinstance(resp.parsed, JudgeResult)
+    kw = client.models.generate_content.call_args.kwargs
+    assert kw["config"]["response_mime_type"] == "application/json"
+    assert kw["config"]["response_schema"] is JudgeResult
+
+
+def test_gemini_strict_schema_guarded_does_not_silently_degrade():
+    p = GeminiProvider(
+        model="gemini-test",
+        client=MagicMock(),
+        native_strict_schema=False,
+    )
+
+    with pytest.raises(ProviderError, match="Guarded mode"):
+        p.call(_request(
+            response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
+            output_schema=JudgeResult,
+        ))
+
+
+def test_gemini_strict_schema_expedition_fallback_validates_and_emits_event():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response(_judge_json())
+    p = GeminiProvider(
+        model="gemini-test",
+        client=client,
+        native_strict_schema=False,
+    )
+
+    resp = p.call(_request(
+        response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
+        output_schema=JudgeResult,
+        execution_profile="expedition",
+    ))
+
+    assert isinstance(resp.parsed, JudgeResult)
+    assert resp.degraded_capabilities
+    event = resp.degraded_capabilities[-1]
+    assert event.capability == "structured_output"
+    assert event.requested == "strict_schema"
+    assert event.applied == "json_object_parse"
+    assert event.affects_guarded_boundary is True
+    kw = client.models.generate_content.call_args.kwargs
+    assert kw["config"]["response_mime_type"] == "application/json"
+    assert "response_schema" not in kw["config"]
+
+
+def test_gemini_strict_fallback_raises_on_malformed_json():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response("{not json")
+    p = GeminiProvider(
+        model="gemini-test",
+        client=client,
+        native_strict_schema=False,
+    )
+
+    with pytest.raises(ProviderError, match="fallback"):
+        p.call(_request(
+            response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
+            output_schema=JudgeResult,
+            execution_profile="expedition",
+        ))
+
+
+def test_gemini_strict_fallback_raises_on_schema_invalid_json():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response(
+        '{"scores":{"q":"bad"},"gate_results":{"g":true},"notes":"ok"}'
+    )
+    p = GeminiProvider(
+        model="gemini-test",
+        client=client,
+        native_strict_schema=False,
+    )
+
+    with pytest.raises(ProviderError, match="fallback"):
+        p.call(_request(
+            response_schema_mode=ResponseSchemaMode.STRICT_SCHEMA,
+            output_schema=JudgeResult,
+            execution_profile="expedition",
+        ))
+
+
+def test_gemini_usage_extraction_maps_usage_metadata():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response(
+        "reply",
+        usage={"prompt_token_count": 22, "candidates_token_count": 7},
+    )
+    p = GeminiProvider(model="gemini-test", client=client)
+
+    resp = p.call(_request())
+
+    assert resp.usage == {
+        "input_tokens": 22,
+        "output_tokens": 7,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+    }
+
+
+def test_gemini_reasoning_profile_degradation_is_explicit():
+    client = MagicMock()
+    client.models.generate_content.return_value = _gemini_response("reply")
+    p = GeminiProvider(model="gemini-test", client=client)
+
+    resp = p.call(_request(reasoning_profile=ReasoningProfile.DEEP))
+
+    assert resp.degraded_capabilities
+    assert resp.degraded_capabilities[0].capability == "reasoning_profile"
+
+
 # --------------------------- normalize_usage -----------------------------
 
 
@@ -461,3 +650,19 @@ def test_normalize_usage_openai_shape():
 
 def test_normalize_usage_none():
     assert normalize_usage(None) == empty_usage()
+
+
+def test_normalize_usage_gemini_shape():
+    raw = SimpleNamespace(prompt_token_count=10, candidates_token_count=5)
+    u = normalize_usage(raw)
+    assert u["input_tokens"] == 10
+    assert u["output_tokens"] == 5
+    assert u["cache_creation_input_tokens"] == 0
+    assert u["cache_read_input_tokens"] == 0
+
+
+def test_normalize_usage_gemini_total_token_count():
+    raw = {"prompt_token_count": 10, "total_token_count": 14}
+    u = normalize_usage(raw)
+    assert u["input_tokens"] == 10
+    assert u["output_tokens"] == 4

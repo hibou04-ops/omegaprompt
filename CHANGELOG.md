@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-05-06
+
+### Added
+
+- **Real Gemini 2.5 Flash provider** (replaces the prior placeholder). Uses the official Google GenAI SDK (`google-genai`) with freeform / JSON-object / strict-schema (`response_schema`) request paths plus local Pydantic validation. Default model: `gemini-2.5-flash`. Live single-call smoke test verified against `gemini-2.5-flash` (input_tokens=21, output_tokens=2 normalized correctly).
+- **Capability declaration**: `tier=cloud`, `supports_strict_schema=True`, `supports_json_object=True`, `supports_llm_judge=True`, `ship_grade_judge=False` — guarded judge use requires separate validation; expedition profile may fall back to JSON-object output + local validation with a `CapabilityEvent`.
+- **Env key resolution**: `_ENV_KEYS_FOR_PROVIDER` accepts `GEMINI_API_KEY` or `GOOGLE_API_KEY` (tuple form, per-provider).
+- **`google-genai>=1.0.0` dependency** added to base `dependencies`; new `gemini` extra for slim installs.
+
+### Changed
+
+- `normalize_usage` handles Gemini's `prompt_token_count` / `candidates_token_count` / `total_token_count` fields in addition to OpenAI/Anthropic field names.
+- README provider matrix, capability table, and sample commands updated to describe the real adapter.
+- `LLMProvider` Protocol unchanged — Anthropic/OpenAI/local adapters are not modified in this release.
+
+### Test
+
+- 41 provider tests pass (mock-based for all three vendors).
+- Live verification: Anthropic ✅ (claude-opus-4-7), Gemini ✅ (gemini-2.5-flash). OpenAI not verified due to user-side API key issue (provider code unchanged from 1.5.0).
+
+### Notes
+
+- Reasoning profiles (`LIGHT`/`DEEP`) emit a `CapabilityEvent` for Gemini because this adapter does not map them to a native Gemini control. `OFF` / `STANDARD` work without events.
+- Gemini judge is not marked `ship_grade_judge=True`. Validate independently before treating Gemini-judged artifacts as ship-ready under guarded mode.
+
 ## [1.4.0] - 2026-04-29
 
 IP defense package + cross-toolkit AGENT_TRIGGERS guide. Same eight runtime entrypoints + MCP server as 1.3.0; this release ships the previously-out-of-tree authorship and trigger artefacts inside the PyPI sdist for parity with the rest of the toolkit and adds the canonical agent-trigger cookbook.

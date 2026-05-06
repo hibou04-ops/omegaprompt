@@ -35,21 +35,22 @@ from omegaprompt.runtime import (
 )
 
 
-_ENV_KEY_FOR_PROVIDER: dict[str, str] = {
-    "anthropic": "ANTHROPIC_API_KEY",
-    "openai": "OPENAI_API_KEY",
+_ENV_KEYS_FOR_PROVIDER: dict[str, tuple[str, ...]] = {
+    "anthropic": ("ANTHROPIC_API_KEY",),
+    "openai": ("OPENAI_API_KEY",),
+    "gemini": ("GEMINI_API_KEY", "GOOGLE_API_KEY"),
 }
 
 
 def _require_env_for(provider_key: str, base_url: str | None = None) -> str | None:
-    expected = _ENV_KEY_FOR_PROVIDER.get(provider_key)
-    if expected is None:
+    expected = _ENV_KEYS_FOR_PROVIDER.get(provider_key)
+    if not expected:
         return None
     if base_url and "localhost" in base_url:
         return None
-    if not os.getenv(expected):
+    if not any(os.getenv(env) for env in expected):
         return (
-            f"{expected} is not set. Export it before running "
+            f"{' or '.join(expected)} is not set. Export one before running "
             f"`omegaprompt calibrate` with provider={provider_key!r}."
         )
     return None

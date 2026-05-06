@@ -68,6 +68,7 @@ Set API keys for the providers you want to use, then run end-to-end:
 ```bash
 export ANTHROPIC_API_KEY=...
 export OPENAI_API_KEY=...
+export GEMINI_API_KEY=...   # or GOOGLE_API_KEY
 
 omegaprompt calibrate examples/sample_dataset.jsonl \
   --rubric examples/rubric_example.json \
@@ -208,7 +209,7 @@ omegaprompt/
 │                  sensitivity ranking, profile policy, run risk). Depends
 │                  only on domain.
 ├── providers/     LLMProvider Protocol + adapter implementations
-│                  (Anthropic, OpenAI / OpenAI-compatible, Gemini placeholder,
+│                  (Anthropic, OpenAI / OpenAI-compatible, Gemini,
 │                  local/ollama/vllm/llama_cpp). Translates meta-axes to
 │                  vendor parameters, reports capabilities and degradation.
 ├── judges/        Judge protocol + LLM / Rule / Ensemble implementations.
@@ -238,7 +239,7 @@ omegaprompt/
        ┌──────────────────────────────────────────────────────────┐
        │                     providers/                           │
        │ (LLMProvider, ProviderRequest/Response, capabilities,    │
-       │  factory, Anthropic/OpenAI/local adapters)               │
+       │  factory, Anthropic/OpenAI/Gemini/local adapters)        │
        └──────────────────┬───────────────────────────────────────┘
                           │
                           ▼
@@ -283,9 +284,9 @@ Six axes constitute the public search space:
 |---|---|---|---|
 | `system_prompt_variant` | `int` | Index into `PromptVariants.system_prompts`. | Message-level system-prompt substitution. |
 | `few_shot_count` | `int` | Count of examples from `PromptVariants.few_shot_examples`. | Message-list prefix length. |
-| `reasoning_profile` | enum `OFF / LIGHT / STANDARD / DEEP` | How much reasoning effort the target should spend. | Anthropic `thinking={"type":"adaptive"}` + `effort` in `{low,medium,high}`; OpenAI `reasoning_effort`; local: system-prompt suffix. |
+| `reasoning_profile` | enum `OFF / LIGHT / STANDARD / DEEP` | How much reasoning effort the target should spend. | Anthropic `thinking={"type":"adaptive"}` + `effort` in `{low,medium,high}`; OpenAI `reasoning_effort`; Gemini currently records a `CapabilityEvent` for LIGHT/DEEP because no native mapping is used; local: system-prompt suffix. |
 | `output_budget_bucket` | enum `SMALL / MEDIUM / LARGE` | Discretised `max_tokens`. | Resolved to `1024 / 4096 / 16000`. |
-| `response_schema_mode` | enum `FREEFORM / JSON_OBJECT / STRICT_SCHEMA` | How strictly the response is shape-constrained. | Anthropic `messages.create` vs `messages.parse(output_format=...)`; OpenAI `chat.completions.create` vs `beta.chat.completions.parse(response_format=...)` vs `response_format={"type":"json_object"}`. |
+| `response_schema_mode` | enum `FREEFORM / JSON_OBJECT / STRICT_SCHEMA` | How strictly the response is shape-constrained. | Anthropic `messages.create` vs `messages.parse(output_format=...)`; OpenAI `chat.completions.create` vs `beta.chat.completions.parse(response_format=...)`; Gemini `generate_content` with `response_mime_type=application/json` and, for strict mode, `response_schema`. |
 | `tool_policy_variant` | enum `NO_TOOLS / TOOL_OPTIONAL / TOOL_REQUIRED` | Tool-use policy. | No-op for plain chat targets; `tool_choice` derivative on tool-capable targets. |
 
 The `MetaAxisSpace` record declares which values of each enum are in scope for a particular run; a single-member list locks the axis at a fixed value. The `ResolvedPromptParams` record carries the concrete choices after the searcher picks. Both records are Pydantic models with `extra="forbid"` — unknown keys raise at parse time.
@@ -337,7 +338,7 @@ Capability *tiers* are a coarse classification:
 | Tier | Purpose | Example |
 |---|---|---|
 | `tier_1_core_parity` | Neutral contracts and calibration kernel. Required. | In-memory test stubs, legacy provider shims. |
-| `tier_2_cloud_grade` | First-class judge-eligible cloud providers. | Anthropic, OpenAI (frontier models). |
+| `tier_2_cloud_grade` | First-class cloud providers; judge ship-grade is still declared separately. | Anthropic, OpenAI, Gemini. |
 | `tier_3_local` | Local OpenAI-compatible backends. Target-eligible; by default not ship-grade judges. | Ollama, vLLM, llama.cpp, local OpenAI-compatible servers. |
 
 Tiers are a policy input: the guarded profile refuses tier-3 providers in the judge position. Expedition permits it, recording a `RelaxedSafeguard`.
@@ -479,7 +480,7 @@ class Judge(Protocol):
 
 ### 6.1 LLMJudge
 
-Delegates to an `LLMProvider` via `ResponseSchemaMode.STRICT_SCHEMA`. The vendor's native parse path (`messages.parse` on Anthropic, `beta.chat.completions.parse` on OpenAI) returns a Pydantic-validated `JudgeResult` — no regex fallback, no prose-to-structure inference. Under guarded mode, `LLMJudge` refuses to run on a provider whose `supports_llm_judge` capability is false.
+Delegates to an `LLMProvider` via `ResponseSchemaMode.STRICT_SCHEMA`. Anthropic uses `messages.parse`, OpenAI uses `beta.chat.completions.parse`, and Gemini requests `response_schema` through the Google GenAI SDK before local Pydantic validation. No regex fallback, no prose-to-structure inference. Under guarded mode, `LLMJudge` refuses to run on a provider whose `supports_llm_judge` capability is false; separate run-risk policy still treats non-ship-grade judges as a guarded-boundary issue.
 
 ### 6.2 RuleJudge
 
@@ -511,7 +512,7 @@ Every adapter declares a `ProviderCapabilities` record. Built-in adapters:
 |---|---|---|---|---|---|---|
 | `anthropic` | cloud | yes | yes | yes | yes | `messages.parse` + explicit `cache_control`. |
 | `openai` | cloud | yes | yes | yes | yes | `beta.chat.completions.parse`; drops `reasoning_effort` on unsupported endpoints and records the event. |
-| `gemini` | cloud | no | no | no | no | **Placeholder** — raises a clear error; slot reserved for the forthcoming native adapter. |
+| `gemini` | cloud | yes | yes | no | no | Google GenAI `generate_content`; supports target/freeform/json-object and strict schema via `response_schema` + local Pydantic validation. Not marked ship-grade as a guarded judge. |
 | `ollama` / `local` / `vllm` / `llama_cpp` | local | best-effort | yes | no | no | Target-eligible; refuses LLM-judge position under guarded mode. |
 
 ### 7.2 Anthropic
@@ -522,9 +523,11 @@ Every adapter declares a `ProviderCapabilities` record. Built-in adapters:
 
 `chat.completions.create` for freeform and `response_format={"type":"json_object"}` for JSON mode; `beta.chat.completions.parse(response_format=T)` for `STRICT_SCHEMA`. `reasoning_effort` is attempted for non-OFF reasoning profiles; when the endpoint rejects the parameter (some compatible endpoints do), the adapter retries without it and emits a `CapabilityEvent` naming the fallback. Accepts a `base_url`, which makes every OpenAI-compatible endpoint (Azure OpenAI, Groq, Together.ai, OpenRouter, local vLLM / Ollama) a drop-in target or judge.
 
-### 7.4 Gemini (placeholder)
+### 7.4 Gemini
 
-Reserved in the provider registry so that the migration from placeholder to native adapter is contract-stable: downstream code already names `gemini` as a valid provider string; only the adapter implementation needs to fill in.
+Uses the official Google GenAI SDK (`google-genai`). Freeform and JSON-object target calls are supported. `STRICT_SCHEMA` uses Gemini `response_schema` when enabled and still validates the response against the requested Pydantic model before returning. If native strict schema is unavailable, guarded mode raises instead of degrading; expedition mode may fall back to JSON-object output plus local Pydantic validation and records a `CapabilityEvent`.
+
+Gemini is target-eligible for freeform and JSON-object runs, especially with `reasoning_profile` locked to `OFF` or `STANDARD`. `LIGHT` and `DEEP` reasoning profiles emit a `CapabilityEvent` because this adapter does not map them to a native Gemini control. Gemini can be used as a judge, but `ship_grade_judge=False`, so guarded artifacts should not be treated as ship-ready on that basis alone. Use Gemini judge paths for expedition or independently validate judge reliability before changing capability policy.
 
 ### 7.5 Local endpoints
 
@@ -763,6 +766,26 @@ omegaprompt calibrate train.jsonl \
     --target-model llama3.1:8b \
   --judge-provider openai --judge-model gpt-4o \
   --profile guarded \
+  --output artifact.json
+
+# Gemini target + OpenAI judge.
+export GEMINI_API_KEY=...
+omegaprompt calibrate examples/sample_dataset.jsonl \
+  --rubric examples/rubric_example.json \
+  --variants examples/variants_example.json \
+  --target-provider gemini \
+  --target-model gemini-2.5-flash \
+  --judge-provider openai \
+  --output artifact.json
+
+# Gemini judge path: explicit expedition profile.
+omegaprompt calibrate examples/sample_dataset.jsonl \
+  --rubric examples/rubric_example.json \
+  --variants examples/variants_example.json \
+  --target-provider anthropic \
+  --judge-provider gemini \
+  --judge-model gemini-2.5-flash \
+  --profile expedition \
   --output artifact.json
 
 # Render and diff.
@@ -1007,7 +1030,7 @@ The test suite runs with `pytest -q` in under one second on a laptop and issues 
 | `core/artifact` | Round-trip through JSON on disk; `model_post_init` invariants on load. |
 | `core/profiles` | `policy_for(GUARDED/EXPEDITION)` returns distinct defaults; `relaxed_safeguards_for(...)` reports crossings. |
 | `core/risk` | `assess_run_risk(...)` across OK / KC-4 fail / hard-gate fail / capability-event scenarios. |
-| `providers/` | Factory rejects unknown names; respects `base_url`; lists `anthropic` / `openai` / `gemini` / `ollama`. Anthropic adapter: freeform uses `messages.create` with thinking config when reasoning enabled, omits it when OFF; strict schema uses `messages.parse`; refusal raises; JSON-object mode adds system-prompt suffix. OpenAI adapter: same paths on `chat.completions.create` / `beta.chat.completions.parse`; `reasoning_effort` rejected-retry records `CapabilityEvent`; `prompt_tokens_details.cached_tokens` normalised to `cache_read_input_tokens`; content-filter finish reason raises; missing `parsed` raises. `ollama` alias reports tier `tier_3_local`, `supports_llm_judge=False`, `experimental=True`. |
+| `providers/` | Factory rejects unknown names; respects `base_url`; lists `anthropic` / `openai` / `gemini` / `ollama`. Anthropic adapter: freeform uses `messages.create` with thinking config when reasoning enabled, omits it when OFF; strict schema uses `messages.parse`; refusal raises; JSON-object mode adds system-prompt suffix. OpenAI adapter: same paths on `chat.completions.create` / `beta.chat.completions.parse`; `reasoning_effort` rejected-retry records `CapabilityEvent`; `prompt_tokens_details.cached_tokens` normalised to `cache_read_input_tokens`; content-filter finish reason raises; missing `parsed` raises. Gemini adapter: freeform/json-object/strict-schema request shapes, guarded no-degrade rule, expedition JSON fallback with `CapabilityEvent`, malformed/schema-invalid JSON failures, and usage mapping. `ollama` alias reports tier `tier_3_local`, `supports_llm_judge=False`, `experimental=True`. |
 | `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / duplicate-check rejection / missing-check raise); `LLMJudge` (strict-schema dispatch, payload composition, non-`JudgeResult` response raise, guarded-mode ship-grade judge refusal); `EnsembleJudge` (rule-first short-circuit, LLM escalation on rule-pass, merged gate_results, non-`RuleJudge` rejection). |
 | `targets/` | `PromptTarget` end-to-end with mocked provider + judge; meta-axis resolution and clamping for out-of-range inputs; usage accumulation across evaluations; `evaluation_history` retention; latency measurement; degraded-capability propagation. |
 | `commands/` | CLI help lists `calibrate` / `report` / `diff`; `--version` shows `omegaprompt`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips. |
@@ -1056,7 +1079,7 @@ A typical run (10-item dataset, 125-candidate grid, walk-forward) on frontier-ti
 
 ### Not all providers are ship-grade judges
 
-Guarded mode blocks local providers in the judge position by policy. The policy can be overridden in expedition mode (with the relaxation recorded) or by adjusting the provider's capability declaration if you have independently validated its judge quality on your domain.
+Guarded mode blocks local providers in the judge position by policy. Gemini is implemented and can validate `JudgeResult`, but is not marked ship-grade as a guarded judge in this adapter. Use it as a target freely; use it as a judge in expedition or after independent domain validation and a deliberate capability policy change.
 
 ---
 
@@ -1068,12 +1091,11 @@ Guarded mode blocks local providers in the judge position by policy. The policy 
 - `ExecutionProfile` (guarded / expedition) + structural risk reporting.
 - `CalibrationArtifact` schema v2.0 (neutral baseline vs calibrated, capability events, boundary warnings, ship recommendation).
 - `RuleJudge` / `LLMJudge` / `EnsembleJudge`.
-- `gemini` placeholder + `ollama` / `local` / `vllm` / `llama_cpp` local adapter family.
+- Native `gemini` adapter + `ollama` / `local` / `vllm` / `llama_cpp` local adapter family.
 - CLI: `calibrate` / `report` / `diff`. Backward-compat `omegaprompt` alias.
 - Integration test against real `omega_lock.run_p1`.
 
 **v1.1 (judge trust + tooling depth)**
-- Native Gemini adapter (replace placeholder).
 - Multi-judge validation pattern: `judge_v1` + `judge_v2` over top-K; disagreement as a first-class trust signal.
 - `--dry-run` with cost estimate before launching.
 - Additional rule-gate predicates (language detection, length bounds, schema validation against a supplied JSON Schema).
@@ -1323,21 +1345,21 @@ class CalibrationArtifact(BaseModel):
 
 Canonical translation table, excerpted from the adapter implementations.
 
-| Meta-axis value | Anthropic | OpenAI / compatible | Local (Ollama / vLLM / llama.cpp) |
-|---|---|---|---|
-| `reasoning_profile = OFF` | no `thinking` block | no `reasoning_effort` | system prompt unchanged |
-| `reasoning_profile = LIGHT` | `thinking={type:adaptive}` + `effort: low` | `reasoning_effort: low` (if supported) | system-prompt suffix: "think briefly" |
-| `reasoning_profile = STANDARD` | `thinking={type:adaptive}` + `effort: medium` | `reasoning_effort: medium` | system-prompt suffix: "think step by step" |
-| `reasoning_profile = DEEP` | `thinking={type:adaptive}` + `effort: high` | `reasoning_effort: high` | system-prompt suffix: "think carefully step by step" |
-| `output_budget_bucket = SMALL` | `max_tokens=1024` | `max_tokens=1024` | `max_tokens=1024` |
-| `output_budget_bucket = MEDIUM` | `max_tokens=4096` | `max_tokens=4096` | `max_tokens=4096` |
-| `output_budget_bucket = LARGE` | `max_tokens=16000` | `max_tokens=16000` | `max_tokens=16000` |
-| `response_schema_mode = FREEFORM` | `messages.create` | `chat.completions.create` | `chat.completions.create` |
-| `response_schema_mode = JSON_OBJECT` | `messages.create` + system-prompt JSON suffix | `response_format={type:json_object}` | best-effort system-prompt instruction |
-| `response_schema_mode = STRICT_SCHEMA` | `messages.parse(output_format=T)` | `beta.chat.completions.parse(response_format=T)` | not supported; guarded mode raises |
-| `tool_policy_variant = NO_TOOLS` | no `tools` argument | no `tools` argument | no `tools` argument |
-| `tool_policy_variant = TOOL_OPTIONAL` | `tools=[...]`, no `tool_choice` | `tools=[...], tool_choice="auto"` | adapter-specific |
-| `tool_policy_variant = TOOL_REQUIRED` | `tools=[...], tool_choice={type:"any"}` | `tools=[...], tool_choice="required"` | adapter-specific |
+| Meta-axis value | Anthropic | OpenAI / compatible | Gemini | Local (Ollama / vLLM / llama.cpp) |
+|---|---|---|---|---|
+| `reasoning_profile = OFF` | no `thinking` block | no `reasoning_effort` | model default | system prompt unchanged |
+| `reasoning_profile = LIGHT` | `thinking={type:adaptive}` + `effort: low` | `reasoning_effort: low` (if supported) | model default + `CapabilityEvent` | system-prompt suffix: "think briefly" |
+| `reasoning_profile = STANDARD` | `thinking={type:adaptive}` + `effort: medium` | `reasoning_effort: medium` | model default | system-prompt suffix: "think step by step" |
+| `reasoning_profile = DEEP` | `thinking={type:adaptive}` + `effort: high` | `reasoning_effort: high` | model default + `CapabilityEvent` | system-prompt suffix: "think carefully step by step" |
+| `output_budget_bucket = SMALL` | `max_tokens=1024` | `max_tokens=1024` | `max_output_tokens=1024` | `max_tokens=1024` |
+| `output_budget_bucket = MEDIUM` | `max_tokens=4096` | `max_tokens=4096` | `max_output_tokens=4096` | `max_tokens=4096` |
+| `output_budget_bucket = LARGE` | `max_tokens=16000` | `max_tokens=16000` | `max_output_tokens=16000` | `max_tokens=16000` |
+| `response_schema_mode = FREEFORM` | `messages.create` | `chat.completions.create` | `generate_content` | `chat.completions.create` |
+| `response_schema_mode = JSON_OBJECT` | `messages.create` + system-prompt JSON suffix | `response_format={type:json_object}` | `response_mime_type=application/json` + JSON suffix | best-effort system-prompt instruction |
+| `response_schema_mode = STRICT_SCHEMA` | `messages.parse(output_format=T)` | `beta.chat.completions.parse(response_format=T)` | `response_schema=T` + local Pydantic validation; if unavailable, expedition-only JSON fallback | not supported; guarded mode raises |
+| `tool_policy_variant = NO_TOOLS` | no `tools` argument | no `tools` argument | no `tools` argument | no `tools` argument |
+| `tool_policy_variant = TOOL_OPTIONAL` | `tools=[...]`, no `tool_choice` | `tools=[...], tool_choice="auto"` | not mapped | adapter-specific |
+| `tool_policy_variant = TOOL_REQUIRED` | `tools=[...], tool_choice={type:"any"}` | `tools=[...], tool_choice="required"` | not mapped | adapter-specific |
 
 Any cell that reads "not supported" or "best-effort" emits a `CapabilityEvent` at runtime and, under guarded mode, may block the run depending on the execution profile policy.
 
@@ -1347,7 +1369,7 @@ Any cell that reads "not supported" or "best-effort" emits a `CapabilityEvent` a
 
 The following properties hold by construction and are enforced either in the Pydantic schema layer or in a dedicated test. They are the "theorems" a reviewer can rely on without reading the implementation.
 
-1. **No client-side schema regex.** `STRICT_SCHEMA` mode always dispatches to the vendor's native parse path (`messages.parse` on Anthropic, `beta.chat.completions.parse` on OpenAI). A malformed structured response raises `ValidationError` before the calibration loop sees it.
+1. **No client-side schema regex.** `STRICT_SCHEMA` mode dispatches to the provider's strongest structured path (`messages.parse` on Anthropic, `beta.chat.completions.parse` on OpenAI, `response_schema` on Gemini when available). Any fallback to JSON-object plus local Pydantic validation is explicit and expedition-only. A malformed structured response raises before the calibration loop sees it.
 2. **Hard-gate fitness collapse.** For any `(item, params)` pair, if any `hard_gate` returns `False`, the item's contribution to `CompositeFitness` is `0.0`. No soft penalty, no partial credit.
 3. **Walk-forward threshold immutability.** `--max-gap` and `--min-kc4` are CLI arguments resolved once at run start and recorded on the artifact. There is no API surface for modifying them mid-run.
 4. **Capability-event propagation.** Every `CapabilityEvent` emitted in `ProviderResponse.degraded_capabilities` flows up through `EvalItemResult` → `EvalResult` → `CalibrationArtifact.degraded_capabilities` unchanged. An adapter cannot silently degrade.

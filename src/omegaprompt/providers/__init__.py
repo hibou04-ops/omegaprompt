@@ -19,7 +19,9 @@ Supported providers:
   ``beta.chat.completions.parse(response_format=...)``. Works with any
   OpenAI-compatible endpoint (Azure, Groq, Together.ai, OpenRouter,
   local Ollama).
-- ``gemini`` - explicit placeholder in this refactor.
+- ``gemini`` - Google GenAI SDK. ``generate_content`` with freeform,
+  JSON-object, and Gemini ``response_schema`` strict paths; expedition-only
+  fallback to JSON plus local validation when native strict schema is disabled.
 - ``local`` / ``ollama`` / ``vllm`` / ``llama_cpp`` - explicit local
   OpenAI-compatible adapters with honest capability reporting.
 """

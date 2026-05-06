@@ -5,7 +5,7 @@
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-1.4.0-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![PyPI](https://img.shields.io/badge/pypi-1.6.0-blue.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-227%20passing-brightgreen.svg)](tests/)
 [![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
@@ -17,6 +17,8 @@
 pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
+
+> **v1.6.0 (2026-05-06)** — Real Gemini 2.5 Flash adapter (was placeholder through 1.5.0). Live-verified against `gemini-2.5-flash` and `claude-opus-4-7`. See [§ 7.4 Gemini](#74-gemini) and [Troubleshooting](#troubleshooting).
 
 ---
 
@@ -68,7 +70,7 @@ Set API keys for the providers you want to use, then run end-to-end:
 ```bash
 export ANTHROPIC_API_KEY=...
 export OPENAI_API_KEY=...
-export GEMINI_API_KEY=...   # or GOOGLE_API_KEY
+export GEMINI_API_KEY=...   # or GOOGLE_API_KEY — free tier at https://aistudio.google.com/apikey
 
 omegaprompt calibrate examples/sample_dataset.jsonl \
   --rubric examples/rubric_example.json \
@@ -1122,6 +1124,71 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md).
 - **Antemortem discipline.** The pre-implementation reconnaissance methodology under which this project was designed and built. Every non-trivial change runs through [`antemortem-cli`](https://github.com/hibou04-ops/antemortem-cli) before the first keystroke. The case studies in the [methodology repository](https://github.com/hibou04-ops/Antemortem) record the recon for this codebase.
 
 Naming: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration). The family branding is intentional. `omega-lock` was extracted from a trading-strategy calibration that ended in `KC-4 FAIL` — the overfitting defence firing exactly as designed. `omegaprompt` is the same defence applied one layer up, and the sub-tools `mini-omega-lock` / `mini-antemortem-cli` extend the pattern to preflight measurement.
+
+---
+
+## Troubleshooting
+
+### `omegaprompt calibrate` returns "Incorrect API key" / 401
+
+The provider SDK got a key, but the key was invalid. Two common cases:
+
+- **Stale or revoked key.** Check the issuing dashboard (Anthropic / OpenAI / Google AI Studio). Rotate and re-export.
+- **Wrong env var.** Each provider reads its own variable. The CLI does *not* fall back across vendors:
+
+  | Provider | Accepted env vars |
+  |---|---|
+  | `anthropic` | `ANTHROPIC_API_KEY` |
+  | `openai` | `OPENAI_API_KEY` |
+  | `gemini` | `GEMINI_API_KEY` **or** `GOOGLE_API_KEY` (first non-empty wins) |
+  | `local` / `ollama` / `vllm` / `llama_cpp` | none required (uses `--base-url`) |
+
+  Setting `OPENAI_API_KEY` does not authenticate `--target-provider gemini`. Setting `GEMINI_API_KEY` does not authenticate `--target-provider openai`.
+
+### "ProviderError: Gemini API key is required for provider='gemini'"
+
+Neither `GEMINI_API_KEY` nor `GOOGLE_API_KEY` is set. Get a free tier key at <https://aistudio.google.com/apikey>, then:
+
+```bash
+export GEMINI_API_KEY=AIza...
+```
+
+### How do I sanity-check before spending API budget?
+
+Run the deterministic smoke test — no keys, no network:
+
+```bash
+python examples/reference/reproduce_reference_artifact.py
+omegaprompt report examples/reference/reference_artifact.json
+```
+
+This exercises the calibration kernel + judge + artifact serialization end-to-end without ever touching a provider. If this fails, the install is broken; if it passes, the providers are the next thing to test.
+
+For a single live call per provider (smallest possible spend), construct a `ProviderRequest` directly:
+
+```python
+from omegaprompt.providers.factory import make_provider
+from omegaprompt.providers.base import ProviderRequest
+
+req = ProviderRequest(system_prompt="Be brief.", user_message="Say OK.")
+for name in ("anthropic", "openai", "gemini"):
+    try:
+        resp = make_provider(name).call(req)
+        print(name, "OK", resp.usage)
+    except Exception as e:
+        print(name, "FAIL", e)
+```
+
+A 401 here is a key issue; an `ImportError` is a missing optional vendor SDK (`pip install "omegaprompt[anthropic]"` etc.); a successful call confirms the provider path is healthy and the eval can proceed.
+
+### Gemini call works but `LLMJudge` refuses under guarded mode
+
+By design. Gemini is `ship_grade_judge=False`. Under guarded profile the judge tier check fails fast rather than producing an artifact whose ship recommendation rests on an unvalidated judge. Two ways forward:
+
+- Use Gemini as the **target** and Anthropic / OpenAI as the **judge** (cross-vendor still satisfies guarded).
+- Run under `--profile expedition`, which records a `RelaxedSafeguard` rather than failing — the artifact will reflect the relaxed boundary and downstream `diff` will surface it.
+
+Validate independently before flipping `ship_grade_judge=True` in any forked adapter.
 
 ---
 

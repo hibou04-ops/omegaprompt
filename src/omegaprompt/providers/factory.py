@@ -15,7 +15,7 @@ from omegaprompt.providers.base import LLMProvider, ProviderError
 DEFAULT_MODELS: dict[str, str] = {
     "anthropic": "claude-opus-4-7",
     "openai": "gpt-4o",
-    "gemini": "gemini-2.5-pro",
+    "gemini": "gemini-2.5-flash",
     "local": "local-model",
     "ollama": "llama3.1:8b",
     "vllm": "meta-llama/Llama-3.1-8B-Instruct",
@@ -71,8 +71,6 @@ def _build_gemini(**kwargs: Any) -> LLMProvider:
     from omegaprompt.providers.gemini_provider import GeminiProvider
 
     kwargs.pop("base_url", None)
-    kwargs.pop("api_key", None)
-    kwargs.pop("client", None)
     return GeminiProvider(**kwargs)
 
 

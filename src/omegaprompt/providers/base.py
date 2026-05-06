@@ -209,8 +209,21 @@ def normalize_usage(raw: Any) -> dict[str, int]:
         def _attr(name: str) -> int:  # noqa: F811
             return int(raw.get(name, 0) or 0)
 
-    input_tokens = _attr("input_tokens") or _attr("prompt_tokens")
-    output_tokens = _attr("output_tokens") or _attr("completion_tokens")
+    input_tokens = (
+        _attr("input_tokens")
+        or _attr("prompt_tokens")
+        or _attr("prompt_token_count")
+    )
+    output_tokens = (
+        _attr("output_tokens")
+        or _attr("completion_tokens")
+        or _attr("candidates_token_count")
+    )
+    total_tokens = _attr("total_token_count") or _attr("total_tokens")
+    if total_tokens and input_tokens and not output_tokens:
+        output_tokens = max(total_tokens - input_tokens, 0)
+    elif total_tokens and output_tokens and not input_tokens:
+        input_tokens = max(total_tokens - output_tokens, 0)
     cache_create = _attr("cache_creation_input_tokens")
     cache_read = _attr("cache_read_input_tokens")
 

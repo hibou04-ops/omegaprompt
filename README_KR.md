@@ -5,7 +5,7 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-1.6.0-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![PyPI](https://img.shields.io/pypi/v/omegaprompt.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-227%20passing-brightgreen.svg)](tests/)
 [![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#calibrationartifact-schema-v20)
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#mcp-서버)

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-05-07
+
+### Fixed
+
+- **PyPI badge now dynamic.** Switched README + README_KR PyPI version badge from a hardcoded `pypi-X.Y.Z-blue.svg` shield to the dynamic `pypi/v/omegaprompt.svg` endpoint. Previously every release required manual badge bump (and one was missed in 1.7.0, leaving the page rendering with `pypi 1.6.0` next to the 1.7.0 release header). The dynamic endpoint queries PyPI for the latest version, so future releases never drift.
+
 ## [1.7.0] - 2026-05-07
 
 Docs follow-up to 1.6.0. No code changes; version bumped to minor for visibility on the PyPI page (the 1.6.0 page rendered with a stale README and pre-Gemini badge).

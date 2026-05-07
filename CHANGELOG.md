@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-05-07
+
+Docs follow-up to 1.6.0. No code changes; version bumped to minor for visibility on the PyPI page (the 1.6.0 page rendered with a stale README and pre-Gemini badge).
+
+### Changed
+
+- README badge bumped 1.4.0 → 1.6.0 (was stale on PyPI page despite the 1.6.0 release).
+- Top-of-README v1.6.0 callout under `pip install` summarising the Gemini 2.5 Flash adapter.
+- Quick start `GEMINI_API_KEY` line gains free-tier link to <https://aistudio.google.com/apikey>.
+- New **Troubleshooting** section: per-provider env-var matrix (no cross-vendor fallback), missing-key error, deterministic smoke test, single-call provider sanity, Gemini guarded-judge refusal.
+- **`README_KR.md` synced** with the 1.6.0 / 1.6.1 changes (Gemini callout, env-var matrix, Troubleshooting in Korean).
+
 ## [1.6.0] - 2026-05-06
 
 ### Added

@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-05-07
+
+### Fixed
+
+- **Test count badge synced with reality** — was 227 (stale), actual is 317. README + README_KR updated.
+- No code changes.
+
 ## [1.7.2] - 2026-05-07
 
 Re-publish to refresh the PyPI page rendering. No code changes.

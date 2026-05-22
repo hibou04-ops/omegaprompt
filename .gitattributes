@@ -1,0 +1,2 @@
+examples/_demo_output.txt text eol=lf
+examples/reference/*.json text eol=lf

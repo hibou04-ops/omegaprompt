@@ -53,7 +53,13 @@ local release marker under:
 
 This is visibility only. The audit does not call GitHub, create tags, push
 tags, or create GitHub Releases. If a tag exists but no release marker is
-present, the report makes that visible for a human to resolve out of band.
+present, the report keeps local tag visibility as an `OK` local check and
+lists GitHub Release existence under deferred external checks. Verify that
+external state after the actual release with:
+
+```bash
+python tools/post_release_verify.py --version <version> --network --json-output build/post_release_verify_network.json
+```
 
 ## Wheel Boundary
 

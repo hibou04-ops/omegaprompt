@@ -150,6 +150,7 @@ def run_release_audit(root: Path | str = ROOT, *, include_wheel: bool = True) ->
     checks: list[AuditCheck] = []
 
     facts = _version_facts(repo_root)
+    version = str(facts.get("pyproject_version") or "")
     checks.append(_check_version_alignment(facts))
     checks.append(_check_branch_cleanliness(repo_root))
     checks.append(_check_claim_ledger(repo_root))
@@ -160,7 +161,7 @@ def run_release_audit(root: Path | str = ROOT, *, include_wheel: bool = True) ->
     checks.append(_check_readme_badges(repo_root))
     checks.append(_check_no_default_live_tests(repo_root))
     checks.append(_check_repository_consistency(repo_root))
-    checks.append(_check_git_tag_release_state(repo_root, str(facts.get("pyproject_version") or "")))
+    checks.append(_check_git_tag_release_state(repo_root, version))
 
     if include_wheel:
         with tempfile.TemporaryDirectory(prefix="omegaprompt-release-audit-wheel-") as tmp:
@@ -189,6 +190,7 @@ def run_release_audit(root: Path | str = ROOT, *, include_wheel: bool = True) ->
             "status_counts": status_counts,
         },
         "checks": [check.to_json() for check in checks],
+        "deferred_external_checks": _deferred_external_checks(version),
         "mutations": {
             "pypi_publish": False,
             "git_tags_created": False,
@@ -478,16 +480,39 @@ def _check_git_tag_release_state(root: Path, version: str) -> AuditCheck:
         "network_or_github_mutation": False,
     }
     if tag_exists and release_marker is None:
-        return warning(
+        return ok(
             "GIT_TAG_RELEASE_STATE",
-            "Local tag exists, but no local GitHub Release marker was found; no release was created or edited.",
+            "Local tag exists; GitHub Release existence is deferred to post-release network verification.",
             category="release",
             details=details,
-            remediation="Confirm GitHub Release state out of band before publishing; this audit will not create it.",
         )
     if tag_exists:
-        return ok("GIT_TAG_RELEASE_STATE", "Local tag exists and a local release marker was found.", category="release", details=details)
+        return ok(
+            "GIT_TAG_RELEASE_STATE",
+            "Local tag exists and a local release marker was found; GitHub Release network existence remains deferred.",
+            category="release",
+            details=details,
+        )
     return ok("GIT_TAG_RELEASE_STATE", "No local tag exists for the current version.", category="release", details=details)
+
+
+def _deferred_external_checks(version: str) -> list[dict[str, Any]]:
+    release_version = version or "<version>"
+    return [
+        {
+            "id": "GITHUB_RELEASE_NETWORK_VERIFICATION",
+            "status": "DEFERRED",
+            "category": "github",
+            "message": "GitHub Release existence is not verified by local release_audit.",
+            "command": (
+                "python tools/post_release_verify.py "
+                f"--version {release_version} --network --json-output build/post_release_verify_network.json"
+            ),
+            "required_after_release": True,
+            "network_required": True,
+            "mutates_release_surfaces": False,
+        }
+    ]
 
 
 def _check_wheel_build(root: Path, outdir: Path) -> tuple[AuditCheck, Path | None]:
@@ -617,6 +642,13 @@ def render_human(report: dict[str, Any]) -> str:
         lines.append(f"- [{check['status']}] {check['id']}: {check['message']}")
         if check.get("remediation"):
             lines.append(f"  remediation: {check['remediation']}")
+    deferred = report.get("deferred_external_checks", [])
+    if deferred:
+        lines.extend(["", "Deferred external checks:"])
+        for item in deferred:
+            lines.append(f"- [{item['status']}] {item['id']}: {item['message']}")
+            if item.get("command"):
+                lines.append(f"  command: {item['command']}")
     lines.extend(
         [
             "",

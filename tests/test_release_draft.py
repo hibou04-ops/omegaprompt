@@ -16,17 +16,29 @@ def _sample_audit() -> dict[str, object]:
         "root": "C:/repo",
         "final_status": "TOOLING_MISSING",
         "version": {"pyproject_version": "1.7.4"},
-        "summary": {"total_checks": 3, "blocking_checks": 1, "status_counts": {"OK": 1, "WARNING": 1, "TOOLING_MISSING": 1}},
+        "summary": {"total_checks": 3, "blocking_checks": 1, "status_counts": {"OK": 2, "TOOLING_MISSING": 1}},
         "checks": [
             {"id": "VERSION_ALIGNMENT", "status": "OK", "message": "aligned", "blocking": False, "details": {}},
             {
                 "id": "GIT_TAG_RELEASE_STATE",
-                "status": "WARNING",
-                "message": "Local tag exists, but no local GitHub Release marker was found; no release was created or edited.",
+                "status": "OK",
+                "message": "Local tag exists; GitHub Release existence is deferred to post-release network verification.",
                 "blocking": False,
                 "details": {"tag": "v1.7.4", "local_tag_exists": True, "release_marker": None},
             },
             {"id": "WHEEL_BUILD", "status": "TOOLING_MISSING", "message": "build backend missing", "blocking": True, "details": {}},
+        ],
+        "deferred_external_checks": [
+            {
+                "id": "GITHUB_RELEASE_NETWORK_VERIFICATION",
+                "status": "DEFERRED",
+                "category": "github",
+                "message": "GitHub Release existence is not verified by local release_audit.",
+                "command": "python tools/post_release_verify.py --version 1.7.4 --network --json-output build/post_release_verify_network.json",
+                "required_after_release": True,
+                "network_required": True,
+                "mutates_release_surfaces": False,
+            }
         ],
         "mutations": {
             "pypi_publish": False,
@@ -78,6 +90,8 @@ def test_render_release_draft_is_deterministic_and_claim_safe() -> None:
     assert "PyPI publish performed by this generator: `false`" in first
     assert "GitHub Release created or edited by this generator: `false`" in first
     assert "GitHub Release marker: `missing`" in first
+    assert "Deferred External Verification" in first
+    assert "post_release_verify.py --version 1.7.4 --network" in first
     assert "PyPI state: `not queried; no publish performed`" in first
     assert "examples/reference/reference_artifact.json" in first
     assert "best provider" not in first.lower()

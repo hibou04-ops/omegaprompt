@@ -87,44 +87,52 @@ def render_release_draft(
         f"- PyPI state: `not queried; no publish performed`",
         f"- Release-state check: `{release_state['check_status']}`",
         "",
-        "## Changelog",
-        "",
-        changelog_entry.strip() or f"No CHANGELOG entry found for `{version}`.",
-        "",
-        "## Deterministic Artifact References",
-        "",
-        "- Reference artifact: `examples/reference/reference_artifact.json`",
-        "- Golden manifest: `examples/reference/golden_manifest.json`",
-        "- Reproduce command: `python examples/reference/reproduce_reference_artifact.py`",
-        "- Check command: `omegaprompt check-artifact examples/reference/reference_artifact.json --strict`",
-        f"- Artifact schema version: `{reference.get('schema_version', 'unknown')}`",
-        f"- Artifact status: `{reference.get('status', 'unknown')}`",
-        f"- Ship recommendation: `{reference.get('ship_recommendation', 'unknown')}`",
-        f"- Golden cases: `{_manifest_case_ids(manifest)}`",
-        "",
-        "## Claim Evidence",
-        "",
-        f"- Claim ledger: `{CLAIM_LEDGER_PATH.as_posix()}`",
-        f"- Generated claim doc: `{ledger.get('generated_doc', 'docs/claims/README_CLAIMS.generated.md')}`",
-        "- Public claims remain limited to ledger-backed source-of-truth, generated docs, reproducible commands, deterministic artifacts, or qualitative markers.",
-        "- Unsupported download/adoption counts and provider/model/prompt superiority claims are not introduced by this draft.",
-        "",
-        "## Verification Commands",
-        "",
-        "```bash",
-        "python tools/check_repo_consistency.py --strict",
-        "python tools/generate_readme_claims.py --check",
-        "python tools/reproduce_golden_reference.py --check",
-        "omegaprompt check-artifact examples/reference/reference_artifact.json --strict",
-        "python tools/release_audit.py --strict",
-        "python tools/publish_readiness.py --strict --json-output build/publish_readiness.json",
-        f"python tools/post_release_verify.py --version {version} --local-only --json-output build/post_release_verify.json",
-        'python -m pytest -q -m "not live"',
-        "```",
-        "",
-        "## Known Limitations",
+        "## Deferred External Verification",
         "",
     ]
+    lines.extend(_deferred_external_lines(audit))
+    lines.extend(
+        [
+            "",
+            "## Changelog",
+            "",
+            changelog_entry.strip() or f"No CHANGELOG entry found for `{version}`.",
+            "",
+            "## Deterministic Artifact References",
+            "",
+            "- Reference artifact: `examples/reference/reference_artifact.json`",
+            "- Golden manifest: `examples/reference/golden_manifest.json`",
+            "- Reproduce command: `python examples/reference/reproduce_reference_artifact.py`",
+            "- Check command: `omegaprompt check-artifact examples/reference/reference_artifact.json --strict`",
+            f"- Artifact schema version: `{reference.get('schema_version', 'unknown')}`",
+            f"- Artifact status: `{reference.get('status', 'unknown')}`",
+            f"- Ship recommendation: `{reference.get('ship_recommendation', 'unknown')}`",
+            f"- Golden cases: `{_manifest_case_ids(manifest)}`",
+            "",
+            "## Claim Evidence",
+            "",
+            f"- Claim ledger: `{CLAIM_LEDGER_PATH.as_posix()}`",
+            f"- Generated claim doc: `{ledger.get('generated_doc', 'docs/claims/README_CLAIMS.generated.md')}`",
+            "- Public claims remain limited to ledger-backed source-of-truth, generated docs, reproducible commands, deterministic artifacts, or qualitative markers.",
+            "- Unsupported download/adoption counts and provider/model/prompt superiority claims are not introduced by this draft.",
+            "",
+            "## Verification Commands",
+            "",
+            "```bash",
+            "python tools/check_repo_consistency.py --strict",
+            "python tools/generate_readme_claims.py --check",
+            "python tools/reproduce_golden_reference.py --check",
+            "omegaprompt check-artifact examples/reference/reference_artifact.json --strict",
+            "python tools/release_audit.py --strict",
+            "python tools/publish_readiness.py --strict --json-output build/publish_readiness.json",
+            f"python tools/post_release_verify.py --version {version} --local-only --json-output build/post_release_verify.json",
+            'python -m pytest -q -m "not live"',
+            "```",
+            "",
+            "## Known Limitations",
+            "",
+        ]
+    )
     limitations = _known_limitations(blocking, warnings)
     lines.extend(limitations or ["- None reported by the local audit JSON."])
     lines.extend(
@@ -209,6 +217,24 @@ def _release_state(audit: dict[str, Any], version: str) -> dict[str, str]:
         "github_release_marker": marker,
         "check_status": str(check.get("status", "UNKNOWN")),
     }
+
+
+def _deferred_external_lines(audit: dict[str, Any]) -> list[str]:
+    items = audit.get("deferred_external_checks", [])
+    if not isinstance(items, list) or not items:
+        return ["- None reported by the local audit JSON."]
+    lines: list[str] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        check_id = str(item.get("id", "UNKNOWN"))
+        message = str(item.get("message", "")).strip()
+        command = str(item.get("command", "")).strip()
+        if message:
+            lines.append(f"- `{check_id}`: {message}")
+        if command:
+            lines.append(f"  Command: `{command}`")
+    return lines or ["- None reported by the local audit JSON."]
 
 
 def _checks_by_id(report: dict[str, Any]) -> dict[str, dict[str, Any]]:

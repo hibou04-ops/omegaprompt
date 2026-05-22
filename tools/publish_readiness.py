@@ -21,8 +21,8 @@ if str(ROOT) not in sys.path:
 from tools import release_audit  # noqa: E402
 
 
-def build_readiness_report(root: Path | str = ROOT) -> dict[str, object]:
-    audit = release_audit.run_release_audit(Path(root).resolve())
+def build_readiness_report(root: Path | str = ROOT, *, include_wheel: bool = True) -> dict[str, object]:
+    audit = release_audit.run_release_audit(Path(root).resolve(), include_wheel=include_wheel)
     return {
         "schema_version": "1.0",
         "tool": "tools/publish_readiness.py",

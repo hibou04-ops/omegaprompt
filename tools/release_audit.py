@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from tools import check_repo_consistency, generate_readme_claims, reproduce_golden_reference, wheel_smoke  # noqa: E402
+from tools import check_markdown_links, check_repo_consistency, generate_readme_claims, reproduce_golden_reference, wheel_smoke  # noqa: E402
 
 
 CheckStatus = Literal["OK", "WARNING", "NOT_READY", "TOOLING_MISSING", "ENVIRONMENT_BLOCKED"]
@@ -159,6 +159,7 @@ def run_release_audit(root: Path | str = ROOT, *, include_wheel: bool = True) ->
     checks.append(_check_artifact_integrity(repo_root))
     checks.append(_check_provider_docs_code(repo_root))
     checks.append(_check_readme_badges(repo_root))
+    checks.append(_check_markdown_links(repo_root))
     checks.append(_check_no_default_live_tests(repo_root))
     checks.append(_check_repository_consistency(repo_root))
     checks.append(_check_git_tag_release_state(repo_root, version))
@@ -404,6 +405,36 @@ def _check_readme_badges(root: Path) -> AuditCheck:
         category="docs",
         details={"actual": badge_lines, "expected": expected},
         remediation="Preserve the exact CI/license/python/PyPI/tests/schema/MCP/framework badge row.",
+    )
+
+
+def _check_markdown_links(root: Path) -> AuditCheck:
+    try:
+        report = check_markdown_links.run_checks(root, network=False)
+    except PermissionError as exc:
+        return environment_blocked("MARKDOWN_LINKS", f"Markdown links could not be inspected: {exc}", category="docs")
+    except OSError as exc:
+        return environment_blocked("MARKDOWN_LINKS", f"Markdown link inspection failed: {exc}", category="docs")
+
+    blocking = report["summary"]["blocking_checks"]
+    if blocking == 0:
+        return ok(
+            "MARKDOWN_LINKS",
+            "README and docs Markdown links pass the no-network checker.",
+            category="docs",
+            details={
+                "files_scanned": report["summary"]["files_scanned"],
+                "total_checks": report["summary"]["total_checks"],
+                "network_enabled": report["network_enabled"],
+            },
+        )
+    failures = [check for check in report["checks"] if check["blocking"]]
+    return not_ready(
+        "MARKDOWN_LINKS",
+        "README or docs Markdown links failed the no-network checker.",
+        category="docs",
+        details={"failures": failures[:10], "failure_count": blocking},
+        remediation="Run `python tools/check_markdown_links.py --strict --json-output build/markdown_links.json` and fix broken links.",
     )
 
 

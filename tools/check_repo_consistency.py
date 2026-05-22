@@ -63,7 +63,7 @@ README_BADGES = [
     ("CI", "actions/workflows/ci.yml/badge.svg"),
     ("License: Apache 2.0", "license-Apache--2.0-blue.svg"),
     ("Python", "python-3.11%2B-blue.svg"),
-    ("PyPI", "pypi-1.7.4-blue.svg"),
+    ("PyPI", "pypi-2.0.0-blue.svg"),
     ("Tests", "tests-317%20passing-brightgreen.svg"),
     ("Artifact schema", "artifact-schema%20v2.0-blueviolet.svg"),
     ("MCP", "MCP-server-blueviolet.svg"),

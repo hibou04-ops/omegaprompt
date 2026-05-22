@@ -13,7 +13,7 @@ body:
     attributes:
       label: omegaprompt version
       description: Output from `omegaprompt --version` or the installed package version.
-      placeholder: "1.7.4"
+      placeholder: "2.0.0"
     validations:
       required: true
   - type: dropdown

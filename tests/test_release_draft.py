@@ -92,6 +92,7 @@ def test_render_release_draft_is_deterministic_and_claim_safe() -> None:
     assert "GitHub Release marker: `missing`" in first
     assert "Deferred External Verification" in first
     assert "post_release_verify.py --version 1.7.4 --network" in first
+    assert "python tools/check_markdown_links.py --strict --json-output build/markdown_links.json" in first
     assert "PyPI state: `not queried; no publish performed`" in first
     assert "examples/reference/reference_artifact.json" in first
     assert "best provider" not in first.lower()

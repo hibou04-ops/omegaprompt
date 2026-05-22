@@ -5,28 +5,63 @@
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-1.7.4-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![PyPI](https://img.shields.io/badge/pypi-2.0.0-blue.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)
 [![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
-> **Part of the omegaprompt toolkit** — [omegaprompt](https://github.com/hibou04-ops/omegaprompt) (calibration engine, this repo) · [omega-lock](https://github.com/hibou04-ops/omega-lock) (audit framework) · [antemortem-cli](https://github.com/hibou04-ops/antemortem-cli) (pre-implementation recon CLI) · [mini-omega-lock](https://github.com/hibou04-ops/mini-omega-lock) (empirical preflight) · [mini-antemortem-cli](https://github.com/hibou04-ops/mini-antemortem-cli) (analytical preflight) · [Antemortem](https://github.com/hibou04-ops/Antemortem) (methodology). Cross-toolkit cookbook (when-to-call-which-tool, 9 agent scenarios): [AGENT_TRIGGERS.md](AGENT_TRIGGERS.md).
+Documentation: [English](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [Easy English](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md)
+
+Verification / trust evidence: [generated README claims](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md) · [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/public_claim_ledger.json) · [trust model](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/trust-model.md) · [toolkit positioning](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/toolkit-positioning.md) · [provider capabilities](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/provider-capabilities.md) · [profiles and risk boundaries](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/profiles-and-risk-boundaries.md) · [golden reference artifacts](https://github.com/hibou04-ops/omegaprompt/blob/main/examples/reference/README.md) · [release checklist](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md) · [post-release verification](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md#post-release-network-verification)
+
+Use it when:
+
+- You need Prompt CI around prompt changes, not just an eval score.
+- You need train/test split discipline and pre-declared gates for prompt calibration.
+- You want CI to fail on prompt/artifact regressions before a prompt ships.
+- You need provider-neutral calibration/evaluation artifacts that can be reviewed in JSON.
+- You want a deterministic offline smoke/demo path before any live provider use.
+
+Trust loop:
+
+1. Reproduce the deterministic [reference artifact](https://github.com/hibou04-ops/omegaprompt/blob/main/examples/reference/README.md).
+2. Run `calibrate`, `evaluate`, `report`, and `diff` through the same runtime/CLI/MCP semantics.
+3. Check artifact integrity before treating a `CalibrationArtifact` as release evidence.
+4. Run [release audit and publish readiness](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md#required-local-gates) before any external release action.
+5. Run [post-release network verification](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md#post-release-network-verification) only after a human publishes and creates release surfaces.
+6. Keep the [MCP optional-extra boundary](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md#103-mcp-server-claude-code-cursor) explicit: core install does not require the MCP server dependency.
+
+Demo / replay: the 60-second demo below shows the deterministic offline path. Reproduce it with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`, then inspect `examples/reference/reference_artifact.json` with `omegaprompt check-artifact examples/reference/reference_artifact.json --strict`.
+
+How is this different?
+
+| Adjacent path | Scope difference |
+|---|---|
+| Ad-hoc prompt engineering | `omegaprompt` records pre-declared gates, train/test split behavior, and JSON audit artifacts instead of relying on one-off iteration notes. |
+| "Ask an LLM to judge prompts" | LLM judging can be one input; `omegaprompt` adds holdout discipline, capability recording, and artifact integrity checks around it. |
+| Eval-only scripts | Eval scores are preserved as evidence, but `omegaprompt diff` also gates regressions across walk-forward, hard-gate, cost/latency, and guarded-boundary fields. |
+| Provider-specific prompt tools | The artifact uses provider-neutral axes and records provider capability degradation instead of treating vendor knobs as portable facts. |
+| `omega-lock` | `omega-lock` is the parent audit framework; `omegaprompt` is the prompt-calibration package and PyPI distribution in this repository. |
+| `antemortem-cli` | `antemortem-cli` is pre-implementation reconnaissance; `omegaprompt` is runtime prompt calibration and Prompt CI. |
+| `mini-omega-lock` / `mini-antemortem-cli` | These optional preflight plugins distribute separately and can feed `omegaprompt.preflight`; they are not required for the core install. |
+
+> **Part of the omegaprompt toolkit** — [omegaprompt](https://github.com/hibou04-ops/omegaprompt) (calibration engine, this repo) · [omega-lock](https://github.com/hibou04-ops/omega-lock) (audit framework) · [antemortem-cli](https://github.com/hibou04-ops/antemortem-cli) (pre-implementation recon CLI) · [mini-omega-lock](https://github.com/hibou04-ops/mini-omega-lock) (empirical preflight) · [mini-antemortem-cli](https://github.com/hibou04-ops/mini-antemortem-cli) (analytical preflight) · [Antemortem](https://github.com/hibou04-ops/Antemortem) (methodology). Cross-toolkit cookbook (when-to-call-which-tool, 9 agent scenarios): [AGENT_TRIGGERS.md](https://github.com/hibou04-ops/omegaprompt/blob/main/AGENT_TRIGGERS.md).
 
 ```bash
 pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v1.7.4 (2026-05-07)** — Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md). Gemini is implemented as a target adapter; judge ship-grade status remains governed by provider capabilities.
+> **v2.0.0 (2026-05-23)** — Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md). Release gates cover repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, and local/post-release verification.
 
 <!-- public-claim-ledger:start -->
-> Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
+> Claim evidence source: [docs/claims/public_claim_ledger.json](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
 <!-- public-claim-ledger:end -->
 
 Name boundaries: GitHub repo `hibou04-ops/omegaprompt`; PyPI distribution, primary import package, and primary CLI `omegaprompt`; compatibility package / CLI alias `omegacal`; separate parent calibration framework `omega-lock`.
 
-Trust docs: [trust model](docs/trust-model.md) · [toolkit positioning](docs/toolkit-positioning.md) · [provider capabilities](docs/provider-capabilities.md) · [profiles and risk boundaries](docs/profiles-and-risk-boundaries.md).
+Trust docs: [trust model](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/trust-model.md) · [toolkit positioning](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/toolkit-positioning.md) · [provider capabilities](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/provider-capabilities.md) · [profiles and risk boundaries](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/profiles-and-risk-boundaries.md).
 
 ---
 
@@ -128,7 +163,7 @@ Drop into your pipeline:
 ---
 
 📖 **Want depth?** Full architecture, schema, validation, worked examples, and 4 appendices below — paper-grade reference for serious adopters.
-👋 **Want simpler?** [EASY_README.md](EASY_README.md) (English) · [EASY_README_KR.md](EASY_README_KR.md)
+👋 **Want simpler?** [EASY_README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) (English) · [EASY_README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md)
 
 > **Note**: Two optional sub-tools (`mini-omega-lock`, `mini-antemortem-cli`) distribute **separately** and plug in via `omegaprompt.preflight` to add empirical and analytical preflight measurements. Standalone users do not need them — see §5.8.
 
@@ -150,7 +185,7 @@ Drop into your pipeline:
   - [10.1 Python (high-level API)](#101-python-high-level-api)
   - [10.2 CLI](#102-cli)
   - [10.3 MCP server (Claude Code, Cursor)](#103-mcp-server-claude-code-cursor)
-- [11. Worked example](#11-worked-example)
+- [11. Worked examples](#11-worked-examples)
 - [12. Validation](#12-validation)
 - [13. Comparative positioning](#13-comparative-positioning)
 - [14. Limitations and scope boundaries](#14-limitations-and-scope-boundaries)

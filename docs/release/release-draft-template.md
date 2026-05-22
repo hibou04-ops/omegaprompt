@@ -29,6 +29,7 @@ The generated Markdown contains:
 - changelog excerpt for the requested version
 - deterministic artifact references and reproducible commands
 - verification commands
+- no-network Markdown link verification for README/PyPI-safe docs
 - known limitations from warning/blocking release gates
 - explicit no-mutation statement for PyPI, tags, and GitHub Releases
 - claim-ledger evidence references

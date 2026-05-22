@@ -25,6 +25,7 @@ Release work must not weaken:
 - diff regression behavior
 - guarded vs expedition boundaries
 - MCP optional-extra boundaries
+- README/PyPI-safe Markdown link checks
 
 `FAIL_KC4_GATE`, hard-gate failure, and CI-oriented `hold`/`block`
 recommendations remain release blockers.

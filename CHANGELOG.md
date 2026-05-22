@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-05-23
+
+### Added
+
+- Trust-first release gates for repository consistency, generated README claims, artifact integrity, deterministic golden reference artifacts, provider/MCP contracts, wheel smoke, release audit, publish readiness, and post-release verification.
+- Public claim ledger and generated README claim document so README/PyPI-facing claims are tied to source-of-truth, generated-doc, reproducible-command, deterministic-artifact, or qualitative-marker evidence.
+- Measurement-grade offline golden reference harness with multiple deterministic artifacts, a golden manifest, normalized artifact hashes, and drift detection.
+- Local release and collaboration tooling: release checklist, scope freeze, release draft generator, issue/PR templates, and post-release verifier with explicit local-only and network modes.
+- Markdown link checker for README/PyPI-safe file links, anchors, and case-sensitive repository paths, wired for no-network CI use.
+
+### Changed
+
+- README family now separates deterministic offline evidence from opt-in live provider paths and clarifies the `omegaprompt`, `omegacal`, `omega-lock`, MCP extra, and CLI name boundaries.
+- Provider capability documentation and tests now make Gemini/local adapter status measurable without default live API calls.
+- Default CI remains no-network for providers and checks generated claims, reference artifacts, artifact integrity, provider/MCP contracts, and wheel smoke.
+
+### Notes
+
+- Package version is `2.0.0`; `CalibrationArtifact.schema_version` remains `2.0`.
+- This release-preparation commit does not publish to PyPI, push tags, or create/edit GitHub Releases.
+
 ## [1.7.4] - 2026-05-07
 
 ### Fixed

@@ -52,6 +52,8 @@ jobs:
           python -m pip install -e ".[dev,mcp]"
       - name: Generated README claims are fresh
         run: python tools/generate_readme_claims.py --check
+      - name: Markdown links are valid
+        run: python tools/check_markdown_links.py --strict --json-output build/markdown_links.json
       - name: Repository consistency
         run: python tools/check_repo_consistency.py --strict
 

@@ -16,7 +16,7 @@ def save_artifact(artifact: CalibrationArtifact, path: str | Path) -> None:
     """Write the artifact as pretty-printed JSON."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    p.write_text(artifact.model_dump_json(indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def load_artifact(path: str | Path) -> CalibrationArtifact:

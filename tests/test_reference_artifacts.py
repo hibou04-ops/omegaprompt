@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from tools import reproduce_golden_reference
 from omegaprompt.core.artifact import load_artifact
 from omegaprompt.core.artifact_integrity import (
     check_artifact_integrity,
@@ -110,3 +111,16 @@ def test_reproduce_golden_reference_check_command_passes() -> None:
 
     assert result.returncode == 0, result.stderr
     assert "Golden reference artifacts are fresh." in result.stdout
+
+
+def test_reproduce_golden_reference_detects_stale_manifest_hash(monkeypatch, tmp_path: Path) -> None:
+    stale_manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    stale_manifest["cases"][0]["normalized_artifact_hash"] = "0" * 64
+    manifest_path = tmp_path / "golden_manifest.json"
+    manifest_path.write_text(json.dumps(stale_manifest), encoding="utf-8")
+    monkeypatch.setattr(reproduce_golden_reference, "MANIFEST_PATH", manifest_path)
+
+    harness = _load_harness()
+    errors = reproduce_golden_reference._check(harness)
+
+    assert any("manifest normalized_artifact_hash" in error for error in errors)

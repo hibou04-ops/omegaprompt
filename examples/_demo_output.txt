@@ -14,7 +14,7 @@ status: OK
 ship_recommendation: ship
 release_approved: True
 strict_blocking_findings: 0
-normalized_hash: ac561b354215b1dc04c2e820680816aa6573539e885ed4c30f7cfe59456bfd9b
+normalized_hash: 1b16c2cf423915fda7ea14779034e0dcab873f751ef0db265d82d02491ce5563
 
 ---- Deterministic metrics from the artifact ----
 neutral_fitness:    0.4250

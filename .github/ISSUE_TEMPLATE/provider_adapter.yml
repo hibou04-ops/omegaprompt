@@ -1,0 +1,60 @@
+name: Provider adapter change
+description: Propose or report work on provider capability code or docs.
+title: "[Provider adapter]: "
+labels: ["provider", "contract"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provider claims must be measurable without live API calls in default tests.
+        Optional live smoke tests must stay under `tests/live` or a live marker and require `OMEGAPROMPT_LIVE_PROVIDER_TESTS=1`.
+  - type: input
+    id: provider
+    attributes:
+      label: Provider name
+      placeholder: "anthropic, openai, gemini, local, ollama, vllm, llama_cpp"
+    validations:
+      required: true
+  - type: dropdown
+    id: change_type
+    attributes:
+      label: Change type
+      options:
+        - Capability documentation drift
+        - Adapter implementation change
+        - Strict-schema behavior
+        - Usage normalization
+        - Degraded capability recording
+        - Guarded vs expedition behavior
+        - Optional live smoke test
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Mock/fake contract coverage
+      description: Describe the no-network tests or fakes that make the claim measurable.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: capability_record
+    attributes:
+      label: ProviderCapabilities expectation
+      description: State expected capability flags and whether any CapabilityEvent should be recorded.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: provider_boundaries
+    attributes:
+      label: Provider boundary checks
+      options:
+        - label: This does not mark Gemini or local adapters as ship-grade judges without explicit deterministic evidence and contract changes.
+          required: true
+        - label: Capability degradation is recorded rather than hidden.
+          required: true
+        - label: Default tests and default CI do not call live providers.
+          required: true
+        - label: Provider docs and provider contract tests are updated together when public capability claims change.
+          required: true

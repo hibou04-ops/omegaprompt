@@ -59,3 +59,8 @@ JSON reports. It must not add:
 The readiness tools can report missing release state, including "tag exists but
 GitHub Release marker missing", but they must not repair that state by
 mutation.
+
+Post-release verification follows the same freeze: `--local-only` verifies
+local built artifacts without network, while `--network` may query PyPI/GitHub
+after a human release but must not publish packages, push tags, or create/edit
+GitHub Releases.

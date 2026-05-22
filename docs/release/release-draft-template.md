@@ -33,6 +33,12 @@ The generated Markdown contains:
 - explicit no-mutation statement for PyPI, tags, and GitHub Releases
 - claim-ledger evidence references
 
+Generated drafts should point final no-network verification at
+`python tools/post_release_verify.py --version <version> --local-only`, not the
+informational `--dry-run` path. The canonical no-network pytest command is
+`python -m pytest -q -m "not live"` so opt-in live provider tests do not appear
+as skipped checks in the final local gate.
+
 ## Scope Boundaries
 
 The generator does not publish to PyPI, create or push tags, or create/edit a

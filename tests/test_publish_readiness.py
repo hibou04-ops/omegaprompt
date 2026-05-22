@@ -37,7 +37,7 @@ def _fake_audit(status: str) -> dict[str, object]:
 
 
 def test_publish_readiness_writes_json_report(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(release_audit, "run_release_audit", lambda root: _fake_audit("READY"))
+    monkeypatch.setattr(release_audit, "run_release_audit", lambda root, include_wheel=True: _fake_audit("READY"))
     output = tmp_path / "publish_readiness.json"
 
     exit_code = publish_readiness.main(["--strict", "--json-output", str(output)], root=tmp_path)
@@ -50,7 +50,7 @@ def test_publish_readiness_writes_json_report(monkeypatch, tmp_path: Path) -> No
 
 
 def test_publish_readiness_strict_fails_when_not_ready(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(release_audit, "run_release_audit", lambda root: _fake_audit("NOT_READY"))
+    monkeypatch.setattr(release_audit, "run_release_audit", lambda root, include_wheel=True: _fake_audit("NOT_READY"))
 
     exit_code = publish_readiness.main(["--strict"], root=tmp_path)
 
@@ -58,7 +58,7 @@ def test_publish_readiness_strict_fails_when_not_ready(monkeypatch, tmp_path: Pa
 
 
 def test_publish_readiness_strict_classifies_tooling_missing(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(release_audit, "run_release_audit", lambda root: _fake_audit("TOOLING_MISSING"))
+    monkeypatch.setattr(release_audit, "run_release_audit", lambda root, include_wheel=True: _fake_audit("TOOLING_MISSING"))
 
     exit_code = publish_readiness.main(["--strict"], root=tmp_path)
 

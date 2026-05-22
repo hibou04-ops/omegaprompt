@@ -1002,7 +1002,7 @@ The default test suite runs with `pytest -q` and uses mocked provider clients ra
 | `preflight/` | **Plugin interface only** — no probe or classifier code inside `omegaprompt`. `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement; bounds on `JudgeQualityMeasurement.consistency` (0..1), `EndpointMeasurement.schema_reliability` (0..1). `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample gap widening; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). Sub-tool probe + classifier implementations (with their own test suites) live in the `mini-omega-lock` and `mini-antemortem-cli` repositories. |
 | `test_calibrate_integration.py` | **Drives the real `omega_lock.run_p1`** with a deterministic in-memory `CalibrableTarget` (no mocks on the search engine). Asserts the artifact's `calibrated_params`, `neutral_baseline_params`, `walk_forward`, and `sensitivity_ranking` match `P1Result`'s actual shape — the regression that this test catches is drift between the adapter layer and the search engine that per-module unit tests cannot reach. |
 
-Run with `uv run pytest -q` (or `python -m pytest -q`). The wall-clock time is dominated by Pydantic model compilation on first import.
+Run the default no-network suite with `uv run pytest -q -m "not live"` (or `python -m pytest -q -m "not live"`). The wall-clock time is dominated by Pydantic model compilation on first import.
 
 ---
 

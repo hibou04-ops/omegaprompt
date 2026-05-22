@@ -20,7 +20,7 @@ Describe the change and the public surface it affects.
 ```bash
 python tools/check_repo_consistency.py --strict
 python tools/generate_readme_claims.py --check
-python -m pytest -q
+python -m pytest -q -m "not live"
 ```
 
 Add any focused commands that apply to this PR.

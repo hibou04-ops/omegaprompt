@@ -28,6 +28,8 @@ pip install "omegaprompt[mcp]"       # + MCP server
 
 이름 경계: GitHub repo는 `hibou04-ops/omegaprompt`; PyPI distribution, primary import package, primary CLI는 `omegaprompt`; compatibility package / CLI alias는 `omegacal`; 별도 parent calibration framework는 `omega-lock`입니다.
 
+신뢰 문서: [trust model](docs/trust-model.md) · [toolkit positioning](docs/toolkit-positioning.md) · [provider capabilities](docs/provider-capabilities.md) · [profiles and risk boundaries](docs/profiles-and-risk-boundaries.md).
+
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
 <!-- public-claim-ledger:end -->
@@ -57,6 +59,7 @@ pip install "omegaprompt[mcp]"       # + MCP server
 - [19. 회의론자를 위한 FAQ](#19-회의론자를-위한-faq)
 - [20. 선행 연구 및 credit](#20-선행-연구-및-credit)
 - [21. 상태 & 로드맵](#21-상태--로드맵)
+- [신뢰 및 toolkit 문서](#신뢰-및-toolkit-문서)
 - [22. 라이선스](#22-라이선스)
 
 ---
@@ -666,6 +669,17 @@ for name in ("anthropic", "openai", "gemini"):
 - `--profile expedition` 사용 — fail 대신 `RelaxedSafeguard`를 기록하고 진행. artifact에 relaxed boundary가 남아 downstream `diff`에서 surface됩니다.
 
 forked adapter에서 `ship_grade_judge=True`로 바꾸려면 별도 검증을 먼저 거치세요.
+
+---
+
+## 신뢰 및 toolkit 문서
+
+claim-heavy한 설명은 별도 문서에 둡니다. README는 경로를 안내하고, 정확한 public claim은 claim ledger와 deterministic artifact가 source of truth입니다.
+
+- [Trust model](docs/trust-model.md): `CalibrationArtifact`가 증명하는 것과 증명하지 않는 것, train/test discipline, walk-forward/KC4 한계, offline/live evidence, default CI no-live 원칙, MCP optional boundary, diff regression 사용.
+- [Toolkit positioning](docs/toolkit-positioning.md): `omegaprompt`와 `omega-lock`, `antemortem-cli`, optional `mini-*` preflight plugin, `omegacal` compatibility alias, dashboard/web-app 비범위.
+- [Provider capabilities](docs/provider-capabilities.md): provider capability code와 contract test에 묶인 adapter claim.
+- [Profiles and risk boundaries](docs/profiles-and-risk-boundaries.md): guarded vs expedition, validation mode 해석.
 
 ---
 

@@ -1,6 +1,9 @@
 # Provider Capabilities
 
 This file is intentionally explicit about what is first-class, experimental, and placeholder.
+It is part of the trust model: provider claims must match adapter code and
+contract tests, not marketing language. See [trust-model.md](trust-model.md)
+for how capability records affect artifact trust.
 
 ## Summary
 
@@ -83,7 +86,7 @@ Expedition behavior:
 
 Recommended default:
 - weak or local target model
-- strong cloud judge
+- ship-grade cloud judge
 
 Safe combinations:
 - local target + Anthropic judge
@@ -93,3 +96,18 @@ Safe combinations:
 Unsafe to market as ship-grade:
 - local primary LLM judge without explicit expedition boundary crossing
 - Gemini as primary LLM judge without explicit expedition boundary crossing and separate validation
+
+## Claim Boundaries
+
+Capability support means the adapter has an implemented code path and contract
+tests for that path. It does not mean a provider or model is globally better
+than another provider or model.
+
+Live provider evidence belongs to the local artifact that produced it. Default
+CI uses mocks and deterministic reference artifacts so provider availability,
+network state, billing, and model drift do not decide whether the package is
+healthy.
+
+If a provider rejects or weakens a requested capability at runtime, the adapter
+must emit a `CapabilityEvent`. Hidden degradation is a trust failure; visible
+degradation is audit data.

@@ -8,7 +8,7 @@ This file is intentionally explicit about what is first-class, experimental, and
 | --- | --- | --- | --- | --- |
 | Anthropic | Tier 2 cloud-grade | First-class | Ship-grade | Native strict schema, reasoning control, usage accounting |
 | OpenAI | Tier 2 cloud-grade | First-class | Ship-grade | Native JSON mode, native parse path when supported |
-| Gemini | Tier 2 cloud-grade | Placeholder | Not ship-grade | Adapter reserved, not implemented in this pass |
+| Gemini | Tier 2 cloud-grade | Implemented target adapter | Not ship-grade judge | Freeform, JSON object, and strict-schema paths implemented; judge remains non-ship-grade until validated |
 | `local` / `ollama` / `vllm` / `llama_cpp` | Tier 3 local | Experimental target path | Exploration-grade judge only | Honest fallbacks, no fake parity |
 
 ## Anthropic
@@ -41,12 +41,15 @@ Recommended use:
 ## Gemini
 
 Current state:
-- explicit placeholder only
-- present in the registry so the core stays provider-neutral
-- not implemented deeply enough to claim parity
+- implemented provider adapter in the registry
+- freeform and JSON object calls use the Google GenAI `generate_content` API
+- strict-schema requests use Gemini `response_schema` when enabled and still validate locally
+- `placeholder=False` in code
+- `ship_grade_judge=False` until guarded-mode production probes validate Gemini judge reliability
 
 Recommended use:
-- none for production in this pass
+- target provider with a ship-grade cross-vendor judge for guarded runs
+- expedition-only judge experiments when the artifact records the relaxed boundary
 
 ## Local Adapters
 
@@ -89,4 +92,4 @@ Safe combinations:
 
 Unsafe to market as ship-grade:
 - local primary LLM judge without explicit expedition boundary crossing
-- Gemini placeholder in any judge position
+- Gemini as primary LLM judge without explicit expedition boundary crossing and separate validation

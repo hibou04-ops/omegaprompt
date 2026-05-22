@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0",
+  "generated_doc": "docs/claims/README_CLAIMS.generated.md",
+  "claims": [
+    {
+      "claim_id": "identity.names",
+      "claim": "The GitHub repository, PyPI distribution, primary import package, compatibility package, CLI executables, and MCP optional extra are distinct public surfaces.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "pyproject.toml; src/omegaprompt/__init__.py; src/omegacal/__init__.py; src/omegacal/cli.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "repo"
+    },
+    {
+      "claim_id": "install.core_and_mcp_extra",
+      "claim": "The base install is omegaprompt, and MCP is installed only through the mcp optional extra as omegaprompt[mcp].",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "pyproject.toml",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "PyPI"
+    },
+    {
+      "claim_id": "artifact.schema_version",
+      "claim": "CalibrationArtifact uses schema_version 2.0 and strict nested validation for current artifact structures.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "docs/claims/README_CLAIMS.generated.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "src/omegaprompt/domain/result.py; tests/test_schema.py; tests/test_walkforward.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": true,
+      "owner_surface": "artifact",
+      "claim_pattern": "schema(?:_version)?\\s*(?:v|=)?\\s*2\\.0"
+    },
+    {
+      "claim_id": "reference.metrics",
+      "claim": "Exact reference-run fitness, uplift, sensitivity, and walk-forward numbers are allowed only when tied to the deterministic reference artifact or its reproducible command.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "docs/claims/README_CLAIMS.generated.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "deterministic_artifact",
+      "source": "examples/reference/reference_artifact.json; command: python examples/reference/reproduce_reference_artifact.py",
+      "drift_risk": "high",
+      "exact_numeric_values_allowed": true,
+      "owner_surface": "artifact",
+      "claim_pattern": "(reference artifact|reference run|Sensitivity unlocked|Calibration earned|Hard-gate pass rate|neutral_fitness|calibrated_fitness|uplift_percent|walk_forward\\.test_fitness|baseline `0\\.4250`|calibrated `0\\.9250`)"
+    },
+    {
+      "claim_id": "ci.no_live_provider_calls",
+      "claim": "Default CI and default tests do not require live provider/API calls.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": ".github/workflows/ci.yml; tests/test_providers.py; tests/test_mcp_execution.py; tools/generate_readme_claims.py",
+      "drift_risk": "high",
+      "exact_numeric_values_allowed": true,
+      "owner_surface": "CI",
+      "claim_pattern": "(zero live API calls|no live API calls|live provider/API calls)"
+    },
+    {
+      "claim_id": "tests.no_exact_readme_prose_counts",
+      "claim": "Exact test counts are not allowed in README prose; the existing static top badge is preserved and separately guarded.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md"
+      ],
+      "evidence_type": "generated_doc",
+      "source": "command: python tools/generate_readme_claims.py --check",
+      "drift_risk": "high",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "CI"
+    },
+    {
+      "claim_id": "mcp.tool_contract",
+      "claim": "The MCP server exposes the runtime entrypoints as MCP tools, with MCP installed through the optional extra.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "src/omegaprompt/mcp/server.py; tests/test_mcp_server.py; tests/test_mcp_execution.py; pyproject.toml",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": true,
+      "owner_surface": "MCP",
+      "claim_pattern": "(eight runtime entrypoints|all eight tools|MCP server)"
+    },
+    {
+      "claim_id": "cli.command_contract",
+      "claim": "The public CLI executables are omegaprompt, omegacal, and omegaprompt-mcp; the top-level omegaprompt CLI exposes calibrate, report, diff, and check-artifact.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "pyproject.toml; src/omegaprompt/cli.py; src/omegacal/cli.py; tests/test_cli.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "CLI"
+    },
+    {
+      "claim_id": "cli.exit_codes",
+      "claim": "omegaprompt CLI exit codes are 0 for clean/advisory success, 1 for CI gate failures or regressions, and 2 for environment/config/tooling/input problems; calibrate and diff fail CI gates consistently with runtime semantics.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "src/omegaprompt/commands/calibrate.py; src/omegaprompt/commands/report.py; src/omegaprompt/commands/diff.py; src/omegaprompt/commands/check_artifact.py; tests/test_cli.py; tests/test_cli_calibrate_runtime_parity.py; tests/test_cli_diff_runtime_parity.py; tests/test_artifact_integrity.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "CLI"
+    },
+    {
+      "claim_id": "provider.gemini_status",
+      "claim": "Gemini is implemented as a provider adapter, but its judge path is not marked ship-grade for guarded recommendations.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "docs/provider-capabilities.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "src/omegaprompt/providers/gemini_provider.py; src/omegaprompt/providers/factory.py; tests/test_providers.py; docs/provider-capabilities.md",
+      "drift_risk": "high",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "provider"
+    },
+    {
+      "claim_id": "provider.no_superiority_claims",
+      "claim": "Provider, model, or prompt superiority is not claimed without deterministic artifacts, reproducible commands, or explicit qualitative markers.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "qualitative_marker",
+      "source": "README.md; docs/claims/public_claim_ledger.json",
+      "drift_risk": "high",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "provider"
+    },
+    {
+      "claim_id": "unsupported.downloads_adoption",
+      "claim": "Download counts, user counts, adoption counts, and popularity claims are unsupported and must be absent unless a future source of truth is added.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "qualitative_marker",
+      "source": "tools/generate_readme_claims.py",
+      "drift_risk": "high",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "release",
+      "unsupported": true
+    },
+    {
+      "claim_id": "preflight.boundary",
+      "claim": "omegaprompt ships the preflight contracts and adaptation logic, while probe/classifier implementations live outside the base package.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "src/omegaprompt/preflight/contracts.py; src/omegaprompt/preflight/adaptation.py; pyproject.toml; tests/test_preflight_contracts.py; tests/test_preflight_adaptation.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "repo"
+    },
+    {
+      "claim_id": "guarded.expedition_boundaries",
+      "claim": "Guarded and expedition profiles preserve explicit boundary semantics and record relaxed safeguards rather than silently weakening gates.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "docs/profiles-and-risk-boundaries.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "source_of_truth",
+      "source": "src/omegaprompt/core/profiles.py; src/omegaprompt/core/risk.py; tests/test_profiles_and_risk.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "artifact"
+    }
+  ]
+}

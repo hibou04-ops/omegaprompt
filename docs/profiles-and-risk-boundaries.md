@@ -14,7 +14,7 @@ Sometimes the right answer is:
 - get faster or cheaper
 - measure whether the boundary crossing was actually worth it
 
-`omegacal` supports both with one engine.
+`omegaprompt` supports both with one engine. `omegacal` remains a compatibility CLI alias.
 
 ## Guarded
 

@@ -26,7 +26,7 @@
   "quality_per_latency_best": 0.0,
   "boundary_warnings": [],
   "degraded_capabilities": [],
-  "ship_recommendation": "hold",
+  "ship_recommendation": "ship",
   "stayed_within_guarded_boundaries": true,
   "additional_uplift_from_boundary_crossing": 0.0,
   "relaxed_safeguards": [],
@@ -41,7 +41,13 @@
     "train_best_fitness": 0.9249999999999999,
     "test_fitness": 0.9249999999999999,
     "generalization_gap": 0.0,
+    "gap_status": "OK",
+    "validation_mode": "auto",
+    "shared_item_count": 0,
     "kc4_correlation": null,
+    "kc4_status": "MISSING_PER_ITEM_SCORES",
+    "max_gap_threshold": 0.3,
+    "min_kc4_threshold": null,
     "passed": true
   },
   "hard_gate_pass_rate": 1.0,
@@ -96,8 +102,39 @@
   "target_model": "deterministic-reference",
   "judge_provider": "anthropic",
   "judge_model": "deterministic-reference",
-  "target_capabilities": null,
-  "judge_capabilities": null,
+  "target_capabilities": {
+    "provider": "anthropic",
+    "tier": "tier_2_cloud_grade",
+    "supports_strict_schema": true,
+    "supports_json_object": true,
+    "supports_reasoning_profiles": true,
+    "supports_usage_accounting": true,
+    "supports_llm_judge": true,
+    "ship_grade_judge": true,
+    "supports_tools": false,
+    "experimental": false,
+    "placeholder": false,
+    "notes": [
+      "Deterministic reference stub; not a real API call."
+    ]
+  },
+  "judge_capabilities": {
+    "provider": "anthropic",
+    "tier": "tier_2_cloud_grade",
+    "supports_strict_schema": true,
+    "supports_json_object": true,
+    "supports_reasoning_profiles": true,
+    "supports_usage_accounting": true,
+    "supports_llm_judge": true,
+    "ship_grade_judge": true,
+    "supports_tools": false,
+    "experimental": false,
+    "placeholder": false,
+    "notes": [
+      "Deterministic reference stub; not a real API call."
+    ]
+  },
   "status": "OK",
-  "rationale": "deterministic stubs; reproducible reference artifact"
+  "rationale": "deterministic stubs; reproducible reference artifact",
+  "adaptation_summary": null
 }

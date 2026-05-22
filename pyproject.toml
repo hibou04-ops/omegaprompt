@@ -92,3 +92,6 @@ include = [
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-ra -q"
+markers = [
+    "live: opt-in provider smoke tests that may call live APIs only when explicitly enabled",
+]

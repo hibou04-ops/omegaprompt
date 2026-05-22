@@ -23,6 +23,27 @@ The eight tools mirror :mod:`omegaprompt.runtime`:
 
 from __future__ import annotations
 
-from omegaprompt.mcp.server import mcp_app
+MCP_MISSING_MESSAGE = (
+    "TOOLING_MISSING: omegaprompt MCP support requires the optional MCP "
+    "extra. Install with `pip install omegaprompt[mcp]`."
+)
 
-__all__ = ["mcp_app"]
+
+def _is_missing_mcp_dependency(exc: ModuleNotFoundError) -> bool:
+    missing_name = getattr(exc, "name", "") or ""
+    return missing_name == "mcp" or missing_name.startswith("mcp.")
+
+
+def __getattr__(name: str):
+    if name != "mcp_app":
+        raise AttributeError(name)
+    try:
+        from omegaprompt.mcp.server import mcp_app
+    except ModuleNotFoundError as exc:
+        if _is_missing_mcp_dependency(exc):
+            raise ModuleNotFoundError(MCP_MISSING_MESSAGE, name="mcp") from exc
+        raise
+    return mcp_app
+
+
+__all__ = ["mcp_app", "MCP_MISSING_MESSAGE"]

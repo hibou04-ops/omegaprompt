@@ -201,6 +201,15 @@ def calibrate(
         dir_okay=False,
         readable=True,
     ),
+    fail_on_gate: bool = typer.Option(  # noqa: B008
+        True,
+        "--fail-on-gate/--no-fail-on-gate",
+        help=(
+            "Exit 1 when the produced artifact is not CI-clean "
+            "(non-OK status or ship_recommendation in {hold, block}). "
+            "Use --no-fail-on-gate for advisory/local exploration."
+        ),
+    ),
 ) -> None:
     """Calibrate a prompt configuration against a dataset.
 
@@ -280,17 +289,24 @@ def calibrate(
         fg=typer.colors.BRIGHT_BLACK,
     )
 
-    artifact = runtime_calibrate(
-        train=dataset_path,
-        rubric=rubric_path,
-        variants=variants_path,
-        target=ProviderSpec(name=tp, model=target_model, base_url=target_base_url),
-        judge=ProviderSpec(name=jp, model=judge_model, base_url=judge_base_url),
-        test=test_path,
-        output=output_path,
-        tuning=tuning,
-        adaptation_plan=plan,
-    )
+    try:
+        artifact = runtime_calibrate(
+            train=dataset_path,
+            rubric=rubric_path,
+            variants=variants_path,
+            target=ProviderSpec(name=tp, model=target_model, base_url=target_base_url),
+            judge=ProviderSpec(name=jp, model=judge_model, base_url=judge_base_url),
+            test=test_path,
+            output=output_path,
+            tuning=tuning,
+            adaptation_plan=plan,
+        )
+    except RuntimeError as exc:
+        message = str(exc)
+        if "requires omega-lock" in message or "Install with" in message:
+            typer.secho(f"TOOLING_MISSING: {message}", fg=typer.colors.RED, err=True)
+            raise typer.Exit(code=2) from exc
+        raise
 
     color = (
         typer.colors.GREEN
@@ -310,5 +326,7 @@ def calibrate(
         fg=typer.colors.BRIGHT_BLACK,
     )
     typer.secho(f"Artifact written to: {output_path}", fg=typer.colors.BRIGHT_BLACK)
-    if artifact.status != "OK":
+    ship_value = getattr(artifact.ship_recommendation, "value", artifact.ship_recommendation)
+    blocks_ci = artifact.status != "OK" or ship_value in {"hold", "block"}
+    if fail_on_gate and blocks_ci:
         raise typer.Exit(code=1)

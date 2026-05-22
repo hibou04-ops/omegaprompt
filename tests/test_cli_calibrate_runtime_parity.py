@@ -36,6 +36,14 @@ def test_cli_calibrate_help_lists_adaptation_plan():
     assert "--adaptation-plan" in plain
 
 
+def test_cli_calibrate_help_lists_fail_on_gate_contract():
+    result = runner.invoke(app, ["calibrate", "--help"], env={"COLUMNS": "220"})
+    import re
+    plain = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
+    assert "--fail-on-gate" in plain
+    assert "--no-fail-on-gate" in plain
+
+
 def test_cli_calibrate_rejects_unknown_validation_mode(tmp_path, monkeypatch):
     """Misspelling exits 2 with a clean error, not a confusing later
     failure inside runtime.calibrate."""

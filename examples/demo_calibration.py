@@ -1,19 +1,16 @@
-"""End-to-end demo: walk through one calibration run from problem to artifact.
+"""Deterministic no-network demo for the examples gallery.
 
-Prints a curated walk-through of the calibration pipeline using the values
-that appear in `docs/demo/omegaprompt-demo.en.srt`. Real example fixtures
-(`sample_dataset.jsonl`, `rubric_example.json`, `variants_example.json`) are
-referenced; the per-step numbers (stress, fitness, walk-forward) are
-illustrative demo values aligned to the subtitle script.
+The demo reads the checked-in golden reference artifact and verifies it with
+the same integrity checker used by CI-oriented commands. It does not call LLM
+providers, does not need API keys, and does not depend on wall-clock state.
 
-Run this directly to see the full demo at machine speed::
+Run::
 
     PYTHONIOENCODING=utf-8 python examples/demo_calibration.py
 
-For the screencast cadence, capture once then replay paced::
+Refresh the replay snapshot after intentional output changes::
 
-    PYTHONIOENCODING=utf-8 python examples/demo_calibration.py > examples/_demo_output.txt 2>&1
-    PYTHONIOENCODING=utf-8 python examples/demo_replay.py
+    PYTHONIOENCODING=utf-8 python examples/demo_calibration.py > examples/_demo_output.txt
 """
 
 from __future__ import annotations
@@ -22,105 +19,114 @@ import json
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-REPO = HERE.parent
+from omegaprompt.core.artifact import load_artifact
+from omegaprompt.core.artifact_integrity import check_artifact_integrity
 
-# Real fixture files — these exist and are referenced by README/tests.
+HERE = Path(__file__).resolve().parent
+REFERENCE_DIR = HERE / "reference"
+
 DATASET = HERE / "sample_dataset.jsonl"
 RUBRIC = HERE / "rubric_example.json"
 VARIANTS = HERE / "variants_example.json"
-
-# Demo numbers aligned to the 60-second subtitle script. Treated as the
-# canonical illustrative run; they are the values an actual calibration on
-# this dataset produced in earlier validation. See README "Demo (60s)" caveat.
-NEUTRAL_FITNESS = 0.4250
-CALIBRATED_FITNESS = 0.9250
-TEST_FITNESS = 0.9180
-UPLIFT_PCT = (CALIBRATED_FITNESS - NEUTRAL_FITNESS) / NEUTRAL_FITNESS * 100
+REFERENCE_ARTIFACT = REFERENCE_DIR / "reference_artifact.json"
+MANIFEST = REFERENCE_DIR / "golden_manifest.json"
 
 
 def _section(label: str) -> None:
     print(f"\n---- {label} ----")
 
 
+def _metric(value: float) -> str:
+    return f"{value:.4f}"
+
+
+def _percent(value: float) -> str:
+    return f"{value:.2f}%"
+
+
+def _require_files(paths: list[Path]) -> bool:
+    missing = [path for path in paths if not path.exists()]
+    for path in missing:
+        print(f"ERROR: missing fixture {path}", file=sys.stderr)
+    return not missing
+
+
+def _load_json(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _manifest_case(manifest: dict, case_id: str) -> dict:
+    for case in manifest.get("cases", []):
+        if case.get("case_id") == case_id:
+            return case
+    raise KeyError(f"missing manifest case: {case_id}")
+
+
 def main() -> int:
-    for path in (DATASET, RUBRIC, VARIANTS):
-        if not path.exists():
-            print(f"ERROR: missing fixture {path}", file=sys.stderr)
-            return 1
+    if not _require_files([DATASET, RUBRIC, VARIANTS, REFERENCE_ARTIFACT, MANIFEST]):
+        return 1
 
-    # Count items in the dataset (real, deterministic).
-    items = sum(1 for _ in DATASET.open(encoding="utf-8") if _.strip())
-    rubric = json.loads(RUBRIC.read_text(encoding="utf-8"))
-    variants = json.loads(VARIANTS.read_text(encoding="utf-8"))
-    n_dims = len(rubric.get("dimensions", []))
-    n_sp = len(variants.get("system_prompts", []))
-    n_fs = len(variants.get("few_shot_examples", []))
+    report = check_artifact_integrity(REFERENCE_ARTIFACT)
+    if not report.valid:
+        print("ERROR: reference artifact failed integrity checks", file=sys.stderr)
+        for finding in report.findings:
+            print(f"{finding.severity} {finding.id}: {finding.message}", file=sys.stderr)
+        return 1
 
-    print("=== omegaprompt demo ===")
-    print("problem: prompt scored 4.8/5 on hand-picked examples.")
-    print("         day 2 in prod: collapses on the real distribution.")
+    artifact = load_artifact(REFERENCE_ARTIFACT)
+    manifest = _load_json(MANIFEST)
+    clean_case = _manifest_case(manifest, "clean_ok_ship")
+    rubric = _load_json(RUBRIC)
+    variants = _load_json(VARIANTS)
+    items = sum(1 for line in DATASET.read_text(encoding="utf-8").splitlines() if line.strip())
+    top_axes = artifact.sensitivity_ranking[:3]
 
-    _section("3 inputs")
+    print("=== omegaprompt deterministic offline demo ===")
+    print("mode: no API keys, no network, deterministic in-memory reference providers")
+    print("reproduce: python examples/reference/reproduce_reference_artifact.py")
+    print("report:    omegaprompt report examples/reference/reference_artifact.json")
+
+    _section("Inputs")
     print(f"dataset:  examples/sample_dataset.jsonl     ({items} items)")
-    print(f"rubric:   examples/rubric_example.json      ({n_dims} dimensions)")
-    print(f"variants: examples/variants_example.json    ({n_sp} system_prompts x {n_fs} few-shot)")
-
-    _section("Providers (cross-vendor)")
-    print("target: gpt-4o-2024-11-20      (OpenAI)")
-    print("judge:  claude-opus-4-7         (Anthropic)")
-
-    _section("Stress probe over 6 provider-neutral meta-axes")
-    print("        axis                   stress      effect")
-    print("        system_prompt_variant  0.4083    *** signal")
-    print("        few_shot_count         0.2150    **  signal")
-    print("        reasoning_profile      0.1521    *   signal")
-    print("        output_budget_bucket   0.0000        dead")
-    print("        response_schema_mode   0.0000        dead")
-    print("        tool_policy_variant    0.0000        dead")
-    print("3 axes carry signal. 3 are dead. Lock out the dead axes.")
-
-    _section("Grid search (top-K=3 unlocked subset)")
-    print("9 combinations, fitness on training set:")
-    print("  [1/9] sp=2 fs=1 rp=concise        -> 0.7250")
-    print("  [4/9] sp=1 fs=2 rp=standard       -> 0.8750")
-    print("  [7/9] sp=1 fs=2 rp=deliberate     -> 0.9250  *")
-    print(f"  [9/9] grid done. best train fitness: {CALIBRATED_FITNESS:.4f}")
-
-    _section("Walk-forward replay on held-out test set")
-    print("replay best (sp=1 fs=2 rp=deliberate) on test items...")
-    print(f"train fitness: {CALIBRATED_FITNESS:.4f}")
-    print(f"test fitness:  {TEST_FITNESS:.4f}")
-    gap_pct = abs(CALIBRATED_FITNESS - TEST_FITNESS) / CALIBRATED_FITNESS * 100
-    print(f"generalisation gap: {gap_pct:.1f}%   (KC-4 gate: PASS)")
-
-    _section("Baseline vs calibrated")
-    print(f"neutral_baseline_params:  defaults                         fitness={NEUTRAL_FITNESS:.4f}")
-    print(f"calibrated_params:        sp=1 fs=2 rp=deliberate          fitness={CALIBRATED_FITNESS:.4f}")
+    print(f"rubric:   examples/rubric_example.json      ({len(rubric.get('dimensions', []))} dimensions)")
     print(
-        f"uplift: +{CALIBRATED_FITNESS - NEUTRAL_FITNESS:.4f} absolute, "
-        f"+{int(UPLIFT_PCT)}% relative"
+        "variants: examples/variants_example.json    "
+        f"({len(variants.get('system_prompts', []))} system prompts, "
+        f"{len(variants.get('few_shot_examples', []))} few-shot examples)"
     )
 
-    _section("Schema v2.0 artifact (calibration_outcome.json)")
-    print('{')
-    print('  "schema_version": "2.0",')
-    print('  "neutral_baseline_params": { "system_prompt_variant": 0, "few_shot_count": 0, "reasoning_profile": "STANDARD" },')
-    print('  "calibrated_params":       { "system_prompt_variant": 1, "few_shot_count": 2, "reasoning_profile": "DELIBERATE" },')
-    print(f'  "neutral_fitness":    {NEUTRAL_FITNESS},')
-    print(f'  "calibrated_fitness": {CALIBRATED_FITNESS},')
-    print(f'  "walk_forward":       {{ "test_fitness": {TEST_FITNESS}, "kc4_pass": true }},')
-    print('  "selected_profile":   "guarded"')
-    print('}')
+    _section("Reference artifact integrity")
+    print(f"schema_version: {artifact.schema_version}")
+    print(f"status: {artifact.status.value}")
+    print(f"ship_recommendation: {artifact.ship_recommendation.value}")
+    print(f"release_approved: {report.release_approved}")
+    print(f"strict_blocking_findings: {report.strict_blocking_findings}")
+    print(f"normalized_hash: {clean_case['normalized_artifact_hash']}")
 
-    _section("Preflight (plug-in via mini-omega-lock + mini-antemortem-cli)")
-    print("for noisy environments where defaults under-fit:")
-    print("  pip install mini-omega-lock mini-antemortem-cli")
-    print("  -> adapt thresholds, stress-test calibration before commit")
+    _section("Deterministic metrics from the artifact")
+    print(f"neutral_fitness:    {_metric(artifact.neutral_fitness)}")
+    print(f"calibrated_fitness: {_metric(artifact.calibrated_fitness)}")
+    print(f"uplift_absolute:    {_metric(artifact.uplift_absolute)}")
+    print(f"uplift_percent:     {_percent(artifact.uplift_percent)}")
+    if artifact.walk_forward is not None:
+        print(f"walk_forward_mode:  {artifact.walk_forward.validation_mode}")
+        print(f"test_fitness:       {_metric(artifact.walk_forward.test_fitness)}")
+        print(f"generalization_gap: {_percent(artifact.walk_forward.generalization_gap * 100)}")
+        print(f"kc4_status:         {artifact.walk_forward.kc4_status}")
+        print(f"walk_forward_passed: {artifact.walk_forward.passed}")
 
-    _section("Install")
-    print("pip install omegaprompt")
-    print("Apache 2.0 - 149 tests - provider-neutral")
+    _section("Sensitivity ranking")
+    for row in top_axes:
+        axis = str(row.get("axis", "unknown"))
+        stress = float(row.get("gini_delta") or 0.0)
+        raw = float(row.get("raw_stress") or 0.0)
+        print(f"{int(row.get('rank', 0)) + 1}. {axis}: stress={stress:.4f}, raw={raw:.4f}")
+
+    _section("Live provider path")
+    print("offline demo: examples/demo_replay.py and examples/reference/*")
+    print("live examples: task directories under examples/; opt-in only, API keys required")
+    print("default CI: no live provider calls")
+    print("gallery: examples/README.md")
     return 0
 
 

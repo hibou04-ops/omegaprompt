@@ -30,6 +30,7 @@ def build_readiness_report(root: Path | str = ROOT, *, include_wheel: bool = Tru
         "final_status": audit["final_status"],
         "summary": audit["summary"],
         "release_audit": audit,
+        "deferred_external_checks": audit.get("deferred_external_checks", []),
         "mutations": {
             "pypi_publish": False,
             "git_tags_created": False,
@@ -57,6 +58,14 @@ def render_human(report: dict[str, object]) -> str:
             lines.append(f"- [{check['status']}] {check['id']}: {check['message']}")
             if check.get("remediation"):
                 lines.append(f"  remediation: {check['remediation']}")
+    deferred = report.get("deferred_external_checks", [])
+    if deferred:
+        lines.extend(["", "Deferred external checks:"])
+        for item in deferred:
+            assert isinstance(item, dict)
+            lines.append(f"- [{item.get('status')}] {item.get('id')}: {item.get('message')}")
+            if item.get("command"):
+                lines.append(f"  command: {item['command']}")
     lines.extend(
         [
             "",

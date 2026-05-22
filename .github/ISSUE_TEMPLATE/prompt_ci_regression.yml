@@ -1,0 +1,64 @@
+name: Prompt CI regression
+description: Report a regression detected by artifact integrity, diff, or release gates.
+title: "[Prompt CI regression]: "
+labels: ["prompt-ci", "regression"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when `omegaprompt diff`, `check-artifact`, release audit, or publish readiness blocks a candidate.
+        A failing gate is evidence to inspect, not a release approval failure to bypass.
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Failing gate
+      options:
+        - FAIL_KC4_GATE
+        - Hard gate failure
+        - HOLD or BLOCK ship recommendation
+        - Artifact integrity
+        - Diff regression
+        - Claim ledger or generated docs
+        - Wheel smoke or packaging
+        - Provider capability boundary
+        - MCP optional-extra boundary
+        - Other release audit gate
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Reproducible command(s)
+      description: Prefer deterministic offline commands. Do not include live provider calls unless explicitly marked opt-in.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Include redacted JSON or Markdown report snippets.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: artifacts
+    attributes:
+      label: Artifact paths
+      description: List baseline/candidate artifacts or reference files involved.
+      placeholder: |
+        baseline: examples/reference/reference_artifact.json
+        candidate: path/to/candidate.json
+    validations:
+      required: false
+  - type: checkboxes
+    id: discipline
+    attributes:
+      label: Regression discipline
+      options:
+        - label: I did not weaken train/test split, KC4, hard-gate, diff regression, or guarded/expedition semantics to make this pass.
+          required: true
+        - label: Live provider tests, if any, are explicitly gated behind OMEGAPROMPT_LIVE_PROVIDER_TESTS=1.
+          required: true
+        - label: Environment or tooling failures are classified as TOOLING_MISSING or ENVIRONMENT_BLOCKED, not release approval.
+          required: true

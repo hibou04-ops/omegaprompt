@@ -1,0 +1,72 @@
+name: Bug report
+description: Report a reproducible omegaprompt bug without live-provider requirements.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not include API keys, provider secrets, or private datasets.
+        Default reproduction steps should be offline whenever possible.
+  - type: input
+    id: version
+    attributes:
+      label: omegaprompt version
+      description: Output from `omegaprompt --version` or the installed package version.
+      placeholder: "1.7.4"
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Affected surface
+      options:
+        - CLI
+        - Python runtime
+        - CalibrationArtifact
+        - Provider adapter
+        - MCP optional extra
+        - Documentation
+        - Packaging
+        - CI/tooling
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Offline reproduction
+      description: Provide a minimal no-network command or fixture when possible.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: artifact
+    attributes:
+      label: Artifact or report excerpt
+      description: Paste a redacted `omegaprompt check-artifact --json` or relevant report excerpt if applicable.
+      render: json
+    validations:
+      required: false
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Boundary checks
+      options:
+        - label: I did not include API keys or provider secrets.
+          required: true
+        - label: This report does not require live provider calls by default, or live behavior is explicitly marked opt-in.
+          required: true
+        - label: I am not asking maintainers to publish to PyPI, push tags, or create/edit a GitHub Release from this issue.
+          required: true

@@ -43,6 +43,7 @@ def test_ci_runs_generated_reference_provider_mcp_and_wheel_checks() -> None:
 
     expected_commands = [
         "python tools/generate_readme_claims.py --check",
+        "python tools/check_markdown_links.py --strict --json-output build/markdown_links.json",
         "python tools/check_repo_consistency.py --strict",
         "python tools/reproduce_golden_reference.py --check",
         "omegaprompt check-artifact examples/reference/reference_artifact.json --strict",

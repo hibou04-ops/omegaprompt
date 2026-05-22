@@ -128,6 +128,7 @@ def test_clean_local_release_audit_has_only_ok_checks_and_deferred_external_visi
         ("_check_artifact_integrity", "REFERENCE_ARTIFACT_INTEGRITY", "artifact"),
         ("_check_provider_docs_code", "PROVIDER_DOCS_CODE_CONSISTENCY", "providers"),
         ("_check_readme_badges", "README_BADGE_COMPOSITION", "docs"),
+        ("_check_markdown_links", "MARKDOWN_LINKS", "docs"),
         ("_check_no_default_live_tests", "DEFAULT_CI_NO_LIVE_TESTS", "ci"),
         ("_check_repository_consistency", "REPOSITORY_CONSISTENCY", "repo"),
     ):
@@ -160,7 +161,7 @@ def test_clean_local_release_audit_has_only_ok_checks_and_deferred_external_visi
 
     assert report["final_status"] == "READY"
     assert report["summary"]["blocking_checks"] == 0
-    assert report["summary"]["status_counts"] == {"OK": 14}
+    assert report["summary"]["status_counts"] == {"OK": 15}
     assert {check["status"] for check in report["checks"]} == {"OK"}
     assert "WARNING" not in report["summary"]["status_counts"]
     assert "SKIPPED" not in report["summary"]["status_counts"]

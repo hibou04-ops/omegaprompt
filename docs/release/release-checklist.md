@@ -10,6 +10,7 @@ Run these from the repository root:
 ```bash
 python tools/release_audit.py --strict
 python tools/publish_readiness.py --strict --json-output build/publish_readiness.json
+python tools/check_markdown_links.py --strict --json-output build/markdown_links.json
 ```
 
 The readiness status must be `READY` before a human starts any separate
@@ -28,6 +29,8 @@ The audit checks:
 - README.md top badge composition
 - default CI/live-provider boundaries
 - repository consistency checker output
+- README/PyPI-safe Markdown link integrity, including local file targets,
+  anchors, case-sensitive paths, and no-network default behavior
 - local tag and local release-marker visibility
 - local wheel build
 - core and MCP wheel smoke checks

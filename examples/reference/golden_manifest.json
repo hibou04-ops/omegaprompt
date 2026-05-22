@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "description": "Deterministic no-network golden CalibrationArtifact harness.",
+  "network": "none",
+  "provider_mode": "deterministic in-memory stubs only",
+  "cases": [
+    {
+      "case_id": "clean_ok_ship",
+      "artifact": "examples/reference/reference_artifact.json",
+      "reproducible_command": "python examples/reference/reproduce_reference_artifact.py",
+      "expected_status": "OK",
+      "expected_ship_recommendation": "ship",
+      "expected_validation_mode": "auto",
+      "expected_integrity_classification": "release_approved",
+      "normalized_artifact_hash": "ac561b354215b1dc04c2e820680816aa6573539e885ed4c30f7cfe59456bfd9b",
+      "exact_metrics_may_be_displayed": true,
+      "diff_baseline_case_id": null,
+      "expected_diff_regression": null
+    },
+    {
+      "case_id": "fail_kc4_gate",
+      "artifact": "examples/reference/reference_fail_kc4_gate.json",
+      "reproducible_command": "python examples/reference/reproduce_reference_artifact.py",
+      "expected_status": "FAIL_KC4_GATE",
+      "expected_ship_recommendation": "hold",
+      "expected_validation_mode": "paired",
+      "expected_integrity_classification": "valid_non_release",
+      "normalized_artifact_hash": "020cadd982373036d1ed3ee25505db9daf9ad7f822c98d2d8075d89f956f8e8c",
+      "exact_metrics_may_be_displayed": true,
+      "diff_baseline_case_id": null,
+      "expected_diff_regression": null
+    },
+    {
+      "case_id": "fail_hard_gates",
+      "artifact": "examples/reference/reference_fail_hard_gates.json",
+      "reproducible_command": "python examples/reference/reproduce_reference_artifact.py",
+      "expected_status": "FAIL_HARD_GATES",
+      "expected_ship_recommendation": "block",
+      "expected_validation_mode": "auto",
+      "expected_integrity_classification": "valid_non_release",
+      "normalized_artifact_hash": "41d9db7bc323a6782952b1502393e65df192fd7e49b433ba4726225bdd3aa27e",
+      "exact_metrics_may_be_displayed": true,
+      "diff_baseline_case_id": null,
+      "expected_diff_regression": null
+    },
+    {
+      "case_id": "provider_degradation",
+      "artifact": "examples/reference/reference_provider_degradation.json",
+      "reproducible_command": "python examples/reference/reproduce_reference_artifact.py",
+      "expected_status": "OK",
+      "expected_ship_recommendation": "experiment",
+      "expected_validation_mode": "auto",
+      "expected_integrity_classification": "valid_non_release",
+      "normalized_artifact_hash": "b7c7fe102088d8d8a1438b42d2cf3c6981dfcdc8a0b78ea621c43fbc42f68bc6",
+      "exact_metrics_may_be_displayed": true,
+      "diff_baseline_case_id": null,
+      "expected_diff_regression": null
+    },
+    {
+      "case_id": "diff_regression_candidate",
+      "artifact": "examples/reference/reference_diff_regression.json",
+      "reproducible_command": "python examples/reference/reproduce_reference_artifact.py",
+      "expected_status": "OK",
+      "expected_ship_recommendation": "ship",
+      "expected_validation_mode": "auto",
+      "expected_integrity_classification": "release_approved",
+      "normalized_artifact_hash": "23fba3c0ef9bcf54fe3587085b2276f1353408ef90bc8a624a6d09c06f455d08",
+      "exact_metrics_may_be_displayed": true,
+      "diff_baseline_case_id": "clean_ok_ship",
+      "expected_diff_regression": true
+    }
+  ]
+}

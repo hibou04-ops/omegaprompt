@@ -17,9 +17,9 @@
     "reasoning_profile": 1
   },
   "neutral_fitness": 0.425,
-  "calibrated_fitness": 0.9249999999999999,
-  "uplift_absolute": 0.49999999999999994,
-  "uplift_percent": 117.64705882352939,
+  "calibrated_fitness": 0.7,
+  "uplift_absolute": 0.27499999999999997,
+  "uplift_percent": 64.70588235294117,
   "quality_per_cost_neutral": 0.0,
   "quality_per_cost_best": 0.0,
   "quality_per_latency_neutral": 0.0,
@@ -36,11 +36,11 @@
     "system_prompt_variant": 1,
     "reasoning_profile": 1
   },
-  "best_fitness": 0.9249999999999999,
+  "best_fitness": 0.7,
   "walk_forward": {
-    "train_best_fitness": 0.9249999999999999,
-    "test_fitness": 0.9249999999999999,
-    "generalization_gap": 0.0,
+    "train_best_fitness": 0.7,
+    "test_fitness": 0.68,
+    "generalization_gap": 0.02857142857142844,
     "gap_status": "OK",
     "validation_mode": "auto",
     "shared_item_count": 0,
@@ -135,6 +135,6 @@
     ]
   },
   "status": "OK",
-  "rationale": "deterministic stubs; reproducible reference artifact",
+  "rationale": "Individually shippable but regresses against the clean golden baseline.",
   "adaptation_summary": null
 }

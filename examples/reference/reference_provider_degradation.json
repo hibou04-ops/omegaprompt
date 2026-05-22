@@ -3,7 +3,7 @@
   "engine_name": "omegaprompt",
   "method": "p1",
   "unlock_k": 2,
-  "selected_profile": "guarded",
+  "selected_profile": "expedition",
   "neutral_baseline_params": {
     "system_prompt_variant": 0,
     "few_shot_count": 0,
@@ -25,12 +25,27 @@
   "quality_per_latency_neutral": 0.0,
   "quality_per_latency_best": 0.0,
   "boundary_warnings": [],
-  "degraded_capabilities": [],
-  "ship_recommendation": "ship",
-  "stayed_within_guarded_boundaries": true,
+  "degraded_capabilities": [
+    {
+      "capability": "strict_schema",
+      "requested": "strict_schema",
+      "applied": "json_object_parse",
+      "reason": "deterministic degradation fixture",
+      "user_visible_note": "Strict schema was unavailable in this fixture; local validation remained visible but the guarded boundary was crossed.",
+      "affects_guarded_boundary": true
+    }
+  ],
+  "ship_recommendation": "experiment",
+  "stayed_within_guarded_boundaries": false,
   "additional_uplift_from_boundary_crossing": 0.0,
-  "relaxed_safeguards": [],
-  "guarded_boundary_crossed": false,
+  "relaxed_safeguards": [
+    {
+      "name": "strict_schema_native_path",
+      "reason": "expedition fixture records provider capability degradation",
+      "increased_risk": "Structured output guarantee is weaker than guarded mode."
+    }
+  ],
+  "guarded_boundary_crossed": true,
   "cost_basis": "normalized_token_units",
   "best_params": {
     "system_prompt_variant": 1,
@@ -135,6 +150,6 @@
     ]
   },
   "status": "OK",
-  "rationale": "deterministic stubs; reproducible reference artifact",
+  "rationale": "Provider capability degradation is explicit; expedition-only artifact.",
   "adaptation_summary": null
 }

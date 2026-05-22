@@ -4,6 +4,7 @@ import typer
 
 from omegaprompt import __version__
 from omegaprompt.commands import calibrate as calibrate_cmd
+from omegaprompt.commands import check_artifact as check_artifact_cmd
 from omegaprompt.commands import diff as diff_cmd
 from omegaprompt.commands import report as report_cmd
 
@@ -49,6 +50,11 @@ app.command(
     name="diff",
     help="Compare two CalibrationArtifact JSONs (for CI regression detection).",
 )(diff_cmd.diff)
+
+app.command(
+    name="check-artifact",
+    help="Check CalibrationArtifact integrity without network/provider calls.",
+)(check_artifact_cmd.check_artifact)
 
 
 if __name__ == "__main__":

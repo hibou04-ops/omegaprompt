@@ -17,16 +17,16 @@
     "reasoning_profile": 1
   },
   "neutral_fitness": 0.425,
-  "calibrated_fitness": 0.9249999999999999,
-  "uplift_absolute": 0.49999999999999994,
-  "uplift_percent": 117.64705882352939,
+  "calibrated_fitness": 0.9,
+  "uplift_absolute": 0.47500000000000003,
+  "uplift_percent": 111.76470588235294,
   "quality_per_cost_neutral": 0.0,
   "quality_per_cost_best": 0.0,
   "quality_per_latency_neutral": 0.0,
   "quality_per_latency_best": 0.0,
   "boundary_warnings": [],
   "degraded_capabilities": [],
-  "ship_recommendation": "ship",
+  "ship_recommendation": "hold",
   "stayed_within_guarded_boundaries": true,
   "additional_uplift_from_boundary_crossing": 0.0,
   "relaxed_safeguards": [],
@@ -36,19 +36,19 @@
     "system_prompt_variant": 1,
     "reasoning_profile": 1
   },
-  "best_fitness": 0.9249999999999999,
+  "best_fitness": 0.9,
   "walk_forward": {
-    "train_best_fitness": 0.9249999999999999,
-    "test_fitness": 0.9249999999999999,
-    "generalization_gap": 0.0,
+    "train_best_fitness": 0.9,
+    "test_fitness": 0.86,
+    "generalization_gap": 0.04444444444444448,
     "gap_status": "OK",
-    "validation_mode": "auto",
-    "shared_item_count": 0,
-    "kc4_correlation": null,
-    "kc4_status": "MISSING_PER_ITEM_SCORES",
+    "validation_mode": "paired",
+    "shared_item_count": 4,
+    "kc4_correlation": -1.0,
+    "kc4_status": "COMPUTED",
     "max_gap_threshold": 0.3,
-    "min_kc4_threshold": null,
-    "passed": true
+    "min_kc4_threshold": 0.3,
+    "passed": false
   },
   "hard_gate_pass_rate": 1.0,
   "sensitivity_ranking": [
@@ -134,7 +134,7 @@
       "Deterministic reference stub; not a real API call."
     ]
   },
-  "status": "OK",
-  "rationale": "deterministic stubs; reproducible reference artifact",
+  "status": "FAIL_KC4_GATE",
+  "rationale": "KC-4 failed in paired validation: correlation fell below the pre-declared threshold.",
   "adaptation_summary": null
 }

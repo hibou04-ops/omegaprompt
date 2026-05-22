@@ -3,6 +3,8 @@
 > 본 문서는 [README_KR.md](README_KR.md)의 압축판입니다. 전체 reference가 필요하면 본 문서를 먼저 읽고 README_KR로 넘어가세요.
 > English: [EASY_README.md](EASY_README.md) · [README.md](README.md)
 
+Public claim과 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
+
 ---
 
 ## 한 줄 정의
@@ -11,13 +13,13 @@
 
 ## 해결 대상
 
-직접 고른 예제 20개에 prompt를 맞춰 92% 점수 → ship → 2주 뒤 production 지표 -15%. 이건 prompt 실력이 아니라 검증되지 않은 *generalization* 문제입니다. 대부분의 LLM eval 도구는 *어느* prompt가 best score인지만 알려주고, 그 score가 일반화되는지는 묻지 않습니다.
+직접 고른 소수 예제에 prompt를 맞춰 높은 점수 → ship → production 지표 악화. 이건 prompt 실력이 아니라 검증되지 않은 *generalization* 문제입니다. 대부분의 LLM eval 도구는 *어느* prompt가 best score인지만 알려주고, 그 score가 일반화되는지는 묻지 않습니다.
 
 omegaprompt가 강제하는 것:
 
 - **train/test split + 사전 선언 KC4 gate** — score를 본 뒤 threshold를 낮출 수 없습니다.
 - **walk-forward 검증** — `test_fitness`가 `train_fitness`를 따라가지 못하면 run이 flagged.
-- **cross-vendor judge** — Anthropic target을 OpenAI judge로 (또는 반대) 평가해 self-agreement bias를 구조적으로 제거.
+- **cross-vendor judge** — Anthropic target을 OpenAI judge로 (또는 반대) 평가해 self-agreement bias 위험을 구조적으로 줄임.
 - **provider-neutral meta-axes** — 벤더 고유 knob이 아니라 semantic 축(reasoning profile, output budget, schema mode, tool policy)에서 탐색. 마이그레이션에서 깨지지 않음.
 - **`CalibrationArtifact` schema v2.0** — PR diff에 그대로 들어가는 JSON. regression이면 CI fail.
 
@@ -43,6 +45,13 @@ provider/judge ───┘    budget, schema, ...)
 pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code, Cursor)
 ```
+
+`omegaprompt`는 PyPI distribution, primary import package, primary CLI입니다. `omegacal`은 compatibility alias이고, `omega-lock`은 별도 calibration engine dependency입니다.
+
+## Offline vs live
+
+- Offline deterministic path, key/network 불필요: `python examples/reference/reproduce_reference_artifact.py`.
+- Live provider path: provider API key를 설정한 뒤 `omegaprompt calibrate ...`를 실행합니다. 기본 test와 generated claim은 live API call을 하지 않습니다.
 
 ## 가장 짧은 경로 — CLI
 

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import ValidationError
 import typer
 
 from omegaprompt.runtime import diff as runtime_diff
@@ -49,11 +50,20 @@ def diff(
 ) -> None:
     """Diff two calibration artifacts."""
     # Markdown form is the human-readable view.
-    md = runtime_diff(old_path, new_path, format="markdown")
+    try:
+        md = runtime_diff(old_path, new_path, format="markdown")
+        structured = runtime_diff(old_path, new_path, format="json")
+    except (ValidationError, ValueError) as exc:
+        typer.secho(
+            "INVALID_ARTIFACT: one or both inputs failed CalibrationArtifact validation.",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=2) from exc
     typer.echo(md)
 
     # Structured form drives the exit code so CI gates honour the same
     # regression definition as Python callers.
-    structured = runtime_diff(old_path, new_path, format="json")
     if structured.regressed and fail_on_regression:
         raise typer.Exit(code=1)

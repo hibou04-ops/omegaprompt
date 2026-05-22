@@ -24,9 +24,18 @@
   "quality_per_cost_best": 0.0,
   "quality_per_latency_neutral": 0.0,
   "quality_per_latency_best": 0.0,
-  "boundary_warnings": [],
+  "boundary_warnings": [
+    {
+      "code": "hard_gate_failed",
+      "category": "deployment readiness",
+      "severity": "critical",
+      "summary": "A required hard gate failed in the deterministic fixture.",
+      "detail": "This artifact is intentionally blocked for golden harness coverage.",
+      "affects_guarded_boundary": true
+    }
+  ],
   "degraded_capabilities": [],
-  "ship_recommendation": "ship",
+  "ship_recommendation": "block",
   "stayed_within_guarded_boundaries": true,
   "additional_uplift_from_boundary_crossing": 0.0,
   "relaxed_safeguards": [],
@@ -50,7 +59,7 @@
     "min_kc4_threshold": null,
     "passed": true
   },
-  "hard_gate_pass_rate": 1.0,
+  "hard_gate_pass_rate": 0.0,
   "sensitivity_ranking": [
     {
       "axis": "system_prompt_variant",
@@ -134,7 +143,7 @@
       "Deterministic reference stub; not a real API call."
     ]
   },
-  "status": "OK",
-  "rationale": "deterministic stubs; reproducible reference artifact",
+  "status": "FAIL_HARD_GATES",
+  "rationale": "Required hard gate failed; artifact is blocked.",
   "adaptation_summary": null
 }

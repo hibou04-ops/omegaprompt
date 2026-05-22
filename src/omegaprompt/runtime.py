@@ -8,7 +8,7 @@ Designed for MCP wrappers, agent integrations, and Python callers who
 want a single function rather than the composable underlying API.
 
 Tier 1 (this module): calibrate, evaluate, report, diff.
-Tier 2 (forthcoming):  measure_sensitivity, judge, preflight, classify_traps.
+Tier 2: measure_sensitivity, grade, preflight, classify_traps.
 """
 
 from __future__ import annotations

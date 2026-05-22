@@ -5,17 +5,24 @@ on:
     branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  OMEGAPROMPT_LIVE_PROVIDER_TESTS: "0"
+
 jobs:
-  test:
-    name: pytest (${{ matrix.os }}, py${{ matrix.python-version }})
+  unit:
+    name: unit (${{ matrix.os }}, py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.11", "3.12"]
-    env:
-      PYTHONUTF8: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -26,5 +33,100 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev,mcp]"
-      - name: Run pytest
-        run: python -m pytest -q
+      - name: Run pytest without live provider tests
+        run: python -m pytest -q -m "not live"
+
+  generated-checks:
+    name: generated checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package + checker deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,mcp]"
+      - name: Generated README claims are fresh
+        run: python tools/generate_readme_claims.py --check
+      - name: Repository consistency
+        run: python tools/check_repo_consistency.py --strict
+
+  reference-artifacts:
+    name: reference artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package + test deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,mcp]"
+      - name: Golden reference artifacts are reproducible
+        run: python tools/reproduce_golden_reference.py --check
+      - name: Reference artifact integrity
+        run: omegaprompt check-artifact examples/reference/reference_artifact.json --strict
+      - name: Reference artifact tests
+        run: python -m pytest -q -m "not live" tests/test_reference_artifacts.py tests/test_artifact_integrity.py
+
+  provider-contract:
+    name: provider contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package + test deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,mcp]"
+      - name: Mock-only provider contracts
+        run: python -m pytest -q -m "not live" tests/test_provider_contracts.py tests/test_providers.py
+
+  mcp-contract:
+    name: mcp contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package with MCP extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,mcp]"
+      - name: MCP contracts
+        run: python -m pytest -q -m "not live" tests/test_mcp_server.py tests/test_mcp_execution.py tests/test_mcp_contracts.py tests/test_core_without_mcp.py
+
+  wheel-smoke:
+    name: wheel smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package + wheel tooling
+        run: |
+          python -m pip install --upgrade pip build
+          python -m pip install -e ".[dev,mcp]"
+      - name: Build wheel
+        run: python -m build
+      - name: Wheel smoke core
+        run: python tools/wheel_smoke.py --wheel dist/*.whl --mode core
+      - name: Wheel smoke MCP
+        run: python tools/wheel_smoke.py --wheel dist/*.whl --mode mcp

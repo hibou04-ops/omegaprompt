@@ -2,7 +2,7 @@
 
 ## Design Goal
 
-`omegacal` is a provider-neutral prompt calibration engine. The core decides how to search, score, validate, and ship. Adapters decide how to talk to a concrete provider.
+`omegaprompt` is a provider-neutral prompt calibration engine. The core decides how to search, score, validate, and ship. Adapters decide how to talk to a concrete provider. `omegacal` remains a compatibility CLI/import alias, not the PyPI distribution identity.
 
 That separation is the main structural defense in this refactor.
 
@@ -10,7 +10,7 @@ That separation is the main structural defense in this refactor.
 
 - `core/`: fitness, sensitivity ranking, walk-forward, profile policy, structural risk assessment
 - `domain/`: provider-neutral contracts, meta-axis types, artifacts, profile/risk schemas
-- `providers/`: Anthropic, OpenAI, Gemini placeholder, local OpenAI-compatible adapters
+- `providers/`: Anthropic, OpenAI, Gemini target adapter, local OpenAI-compatible adapters
 - `targets/`: `CalibrableTarget` protocol and `PromptTarget`
 - `judges/`: `RuleJudge`, `LLMJudge`, `EnsembleJudge`
 - `reporting/`: artifact rendering

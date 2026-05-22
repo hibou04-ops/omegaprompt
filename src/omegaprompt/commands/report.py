@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import ValidationError
 import typer
 
 from omegaprompt.core.artifact import load_artifact
@@ -31,7 +32,16 @@ def report(
     ),
 ) -> None:
     """Render a calibration artifact as Markdown."""
-    artifact = load_artifact(artifact_path)
+    try:
+        artifact = load_artifact(artifact_path)
+    except (ValidationError, ValueError) as exc:
+        typer.secho(
+            f"INVALID_ARTIFACT: {artifact_path} failed CalibrationArtifact validation.",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=2) from exc
     md = render_markdown(artifact)
     if output_path is None:
         typer.echo(md)

@@ -18,7 +18,13 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v1.6.0 (2026-05-06)** — Real Gemini 2.5 Flash adapter (was placeholder through 1.5.0). Live-verified against `gemini-2.5-flash` and `claude-opus-4-7`. See [§ 7.4 Gemini](#74-gemini) and [Troubleshooting](#troubleshooting).
+> **v1.7.4 (2026-05-07)** — Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md). Gemini is implemented as a target adapter; judge ship-grade status remains governed by provider capabilities.
+
+<!-- public-claim-ledger:start -->
+> Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
+<!-- public-claim-ledger:end -->
+
+Name boundaries: GitHub repo `hibou04-ops/omegaprompt`; PyPI distribution, primary import package, and primary CLI `omegaprompt`; compatibility package / CLI alias `omegacal`; separate parent calibration framework `omega-lock`.
 
 ---
 
@@ -26,13 +32,13 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 https://github.com/user-attachments/assets/d4308cc3-b8c1-4bb7-b67d-f763e6c26f11
 
-> 60-second walkthrough of `examples/demo_calibration.py`: 3 inputs (dataset, rubric, variants) → cross-vendor providers (target on `gpt-4o`, judge on Claude) → sensitivity probe over 6 meta-axes (3 carry signal, 3 dead) → grid 9 combinations → walk-forward replay (`train ≈ test`) → baseline `0.4250` → calibrated `0.9250` (+117% uplift) → schema v2.0 artifact → preflight via mini-omega-lock + mini-antemortem-cli. Reproducible with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`.
+> 60-second walkthrough of the deterministic offline path: dataset, rubric, variants → reference artifact integrity check → schema v2.0 artifact → artifact-backed metrics → live-provider path clearly separated. Exact deterministic reference metrics live in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md). Reproduce the demo with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`.
 
 ---
 
 ## TL;DR — what & why
 
-You tune a prompt against 50 examples, score 92%, ship. Two weeks later prod metrics drop 15%. **Most LLM eval tooling** tells you *which* prompt scores best — assuming your eval set is the ground truth. **`omegaprompt` tells you whether that score generalizes**, by enforcing the train/test discipline ML curricula have taught since the 1990s but many prompt workflows still ship without:
+You tune a prompt against a small hand-picked eval set, get a high score, ship, then later see production metrics degrade. **Most LLM eval tooling** tells you *which* prompt scores best — assuming your eval set is the ground truth. **`omegaprompt` tells you whether that score generalizes**, by enforcing the train/test discipline ML curricula have taught since the 1990s but many prompt workflows still ship without:
 
 - **Train/test split** with a pre-declared correlation gate (no post-hoc threshold lowering).
 - **Walk-forward validation** — `test_fitness` must hold up against `train_fitness`, or the run is flagged.
@@ -219,7 +225,7 @@ omegaprompt/
 ├── targets/       CalibrableTarget protocol + PromptTarget adapter. The
 │                  composition point where omega-lock's search layer plugs in.
 ├── reporting/     Artifact → Markdown renderer.
-├── commands/      Typer subcommands: calibrate, report, diff.
+├── commands/      Typer subcommands: calibrate, report, diff, check-artifact.
 └── cli.py         Top-level Typer application.
 ```
 
@@ -567,45 +573,50 @@ The schema is deliberately rich. The artifact is the system of record for the ru
     "reasoning_profile": "standard",
     "output_budget_bucket": "medium"
   },
-  "neutral_fitness": 0.612,
+  "neutral_fitness": "<float>",
 
   "calibrated_params": {
     "system_prompt_variant": 2,
     "few_shot_count": 1,
     "reasoning_profile": "deep"
   },
-  "calibrated_fitness": 0.876,
+  "calibrated_fitness": "<float>",
 
   "best_params": { "...": "mirror of calibrated_params for backward-compat" },
-  "best_fitness": 0.876,
+  "best_fitness": "<float>",
 
-  "uplift_absolute": 0.264,
-  "uplift_percent": 43.14,
-  "quality_per_cost_neutral":    0.00012,
-  "quality_per_cost_best":       0.00009,
-  "quality_per_latency_neutral": 0.00071,
-  "quality_per_latency_best":    0.00055,
+  "uplift_absolute": "<float>",
+  "uplift_percent": "<float>",
+  "quality_per_cost_neutral": "<float>",
+  "quality_per_cost_best": "<float>",
+  "quality_per_latency_neutral": "<float>",
+  "quality_per_latency_best": "<float>",
 
   "walk_forward": {
-    "train_best_fitness": 0.876,
-    "test_fitness":       0.841,
-    "generalization_gap": 0.040,
-    "kc4_correlation":    0.84,
+    "train_best_fitness": "<float>",
+    "test_fitness": "<float>",
+    "generalization_gap": "<float>",
+    "validation_mode": "auto | paired | disjoint",
+    "shared_item_count": "<integer>",
+    "kc4_status": "COMPUTED | MISSING_PER_ITEM_SCORES | ...",
+    "kc4_correlation": "<float-or-null>",
+    "max_gap_threshold": "<float>",
+    "min_kc4_threshold": "<float-or-null>",
     "passed": true
   },
 
-  "hard_gate_pass_rate": 1.00,
+  "hard_gate_pass_rate": "<float>",
   "sensitivity_ranking": [
-    { "axis": "system_prompt_variant", "gini_delta": 0.52, "rank": 0 },
-    { "axis": "reasoning_profile",     "gini_delta": 0.33, "rank": 1 },
-    { "axis": "few_shot_count",        "gini_delta": 0.11, "rank": 2 }
+    { "axis": "system_prompt_variant", "gini_delta": "<float>", "rank": 0 },
+    { "axis": "reasoning_profile",     "gini_delta": "<float>", "rank": 1 },
+    { "axis": "few_shot_count",        "gini_delta": "<float>", "rank": 2 }
   ],
 
   "boundary_warnings": [],
   "degraded_capabilities": [],
   "relaxed_safeguards": [],
   "stayed_within_guarded_boundaries": true,
-  "additional_uplift_from_boundary_crossing": 0.0,
+  "additional_uplift_from_boundary_crossing": "<float>",
   "guarded_boundary_crossed": false,
 
   "ship_recommendation": "ship",
@@ -619,19 +630,27 @@ The schema is deliberately rich. The artifact is the system of record for the ru
   "judge_model":    "claude-opus-4-7",
   "judge_capabilities": { "tier": "tier_2_cloud_grade", "supports_llm_judge": true, "ship_grade_judge": true, "...": "..." },
 
-  "usage_summary": { "input_tokens": 4820, "output_tokens": 2110, "cache_read_input_tokens": 12088 },
-  "latency_summary_ms": { "target_p50": 742, "judge_p50": 1103 },
+  "usage_summary": { "input_tokens": "<integer>", "output_tokens": "<integer>", "cache_read_input_tokens": "<integer>" },
+  "latency_summary_ms": { "target_p50": "<float>", "judge_p50": "<float>" },
   "cost_basis": "normalized_token_units",
-  "n_candidates_evaluated": 12,
-  "total_api_calls": 96
+  "n_candidates_evaluated": "<integer>",
+  "total_api_calls": "<integer>"
 }
 ```
 
-The key structural choice: `neutral_baseline` and `calibrated` are recorded side by side, with explicit `uplift_absolute` / `uplift_percent` fields. A reviewer sees not just "the best score was 0.876" but "the search moved this from 0.612 to 0.876, a 43% improvement, at a 33% cost increase per unit of quality." That framing is the difference between "we ran a calibration" and "calibration was worth it on this workload."
+The key structural choice: `neutral_baseline` and `calibrated` are recorded side by side, with explicit `uplift_absolute` / `uplift_percent` fields. Exact values belong in generated artifacts or the claim ledger; the snippet above documents shape, not benchmark performance.
 
 ---
 
 ## 9. CLI surface
+
+### 9.0 Exit-code contract
+
+All CLI commands use the same contract:
+
+- `0` — command completed and no requested gate/failure condition fired.
+- `1` — CI gate failure: calibration status is non-OK, KC4/hard-gate failure, `ship_recommendation` is `hold` or `block` in gate mode, artifact regression, or `check-artifact --strict` found integrity errors.
+- `2` — environment/config/tooling/input problem: missing provider env var, unknown provider, missing dependency, invalid CLI argument, unreadable file, or invalid artifact passed to a non-checker command. Where applicable stderr uses explicit prefixes such as `TOOLING_MISSING`, `ENVIRONMENT_BLOCKED`, or `INVALID_ARTIFACT`.
 
 ### 9.1 `omegaprompt calibrate`
 
@@ -649,11 +668,11 @@ omegaprompt calibrate train.jsonl \
   --output artifact.json
 ```
 
-Exit codes: `0` on success (regardless of `status`), `2` on environment problems (missing env var, unknown provider, missing `omega-lock`).
+Default behavior is CI-gate oriented. Exit codes: `0` when the artifact is CI-clean (`status == OK` and `ship_recommendation` is not `hold`/`block`), `1` when status is non-OK or `ship_recommendation` is `hold`/`block`, and `2` on CLI argument, environment, or tooling problems such as missing provider credentials, unknown providers, or missing dependencies. Use `--no-fail-on-gate` only when you want an advisory local run that still writes and prints the artifact.
 
 ### 9.2 `omegaprompt report <artifact.json>`
 
-Renders the artifact as Markdown (for PR descriptions, CI step outputs, human review).
+Renders a valid artifact as Markdown (for PR descriptions, CI step outputs, human review). It does not make a ship/no-ship decision: valid artifacts exit `0`; invalid artifact input exits `2`.
 
 ```bash
 omegaprompt report artifact.json > report.md
@@ -661,13 +680,17 @@ omegaprompt report artifact.json > report.md
 
 ### 9.3 `omegaprompt diff <old.json> <new.json>`
 
-Compares two artifacts. Exits non-zero when the new run regresses on any of: `calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, `quality_per_cost_best`, `quality_per_latency_best`, or `stayed_within_guarded_boundaries` (true-to-false is a regression). Intended for CI use.
+Compares two artifacts. Exits `1` when the new run regresses on any of: `calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, `quality_per_cost_best`, `quality_per_latency_best`, `stayed_within_guarded_boundaries` (true-to-false is a regression), non-OK status, or `ship_recommendation` in `{hold, block}`. Invalid artifact input exits `2`. Intended for CI use; `--no-fail-on-regression` prints the regression but exits `0`.
 
 ```bash
 omegaprompt diff previous.json artifact.json   # exit 1 on regression
 ```
 
-The `omegaprompt` CLI binary remains as a compatibility alias during migration.
+### 9.4 `omegaprompt check-artifact <artifact.json>`
+
+Runs the zero-network artifact integrity checker. Without `--strict`, it reports findings and exits `0` unless the file is inaccessible. With `--strict`, integrity errors exit `1`; inaccessible files / environment-blocked reads exit `2`. `--json` emits the machine-readable CI result.
+
+The `omegacal` CLI binary remains as a compatibility alias during migration. `omegaprompt` is the primary CLI and PyPI distribution name; `omegacal` is not the PyPI distribution identity.
 
 ---
 
@@ -884,86 +907,23 @@ The artifact records both candidates in the grid history, the failed KC-4, and `
 
 The repository ships a deterministic reference run (`examples/reference/reproduce_reference_artifact.py`) that drives the **real** `omega_lock.run_p1` against an in-memory target + judge whose fitness is a closed-form function of the meta-axis parameters. No LLM API calls, no network, no randomness. The same run produces byte-identical output on every machine.
 
-To reproduce the numbers below:
+To reproduce and check the offline golden harness:
 
 ```bash
 python examples/reference/reproduce_reference_artifact.py
-# writes examples/reference/reference_artifact.json
+python tools/reproduce_golden_reference.py --check
+omegaprompt check-artifact examples/reference/reference_artifact.json --strict
 ```
 
-The machine-produced artifact (trimmed; full file at `examples/reference/reference_artifact.json`):
+The harness writes `examples/reference/golden_manifest.json`, which records each case id, reproducible command, expected status, expected ship recommendation, expected validation mode, integrity classification, normalized artifact hash, and whether exact metrics may be displayed. It covers:
 
-```json
-{
-  "schema_version": "2.0",
-  "engine_name": "omegaprompt",
-  "method": "p1",
-  "unlock_k": 2,
-  "selected_profile": "guarded",
+- `clean_ok_ship` — the real `omega_lock.run_p1` path with deterministic target and judge stubs.
+- `fail_kc4_gate` — paired walk-forward with KC-4 below the pre-declared threshold.
+- `fail_hard_gates` — hard-gate failure with a BLOCK recommendation.
+- `provider_degradation` — explicit capability degradation and relaxed safeguard visibility.
+- `diff_regression_candidate` — an individually valid artifact that regresses against the clean baseline under `omegaprompt diff`.
 
-  "neutral_baseline_params": {
-    "system_prompt_variant": 0,
-    "few_shot_count": 0,
-    "reasoning_profile": 2,
-    "output_budget_bucket": 1,
-    "response_schema_mode": 0,
-    "tool_policy_variant": 0
-  },
-  "neutral_fitness":    0.425,
-
-  "calibrated_params":  { "system_prompt_variant": 1, "reasoning_profile": 1 },
-  "calibrated_fitness": 0.925,
-
-  "uplift_absolute": 0.500,
-  "uplift_percent":  117.65,
-
-  "walk_forward": {
-    "train_best_fitness": 0.925,
-    "test_fitness":       0.925,
-    "generalization_gap": 0.000,
-    "kc4_correlation":    null,
-    "passed":             true
-  },
-
-  "hard_gate_pass_rate": 1.00,
-  "sensitivity_ranking": [
-    { "axis": "system_prompt_variant", "gini_delta": 1.453, "raw_stress": 0.500, "rank": 0 },
-    { "axis": "reasoning_profile",     "gini_delta": 1.095, "raw_stress": 0.425, "rank": 1 },
-    { "axis": "few_shot_count",        "gini_delta": 0.259, "raw_stress": 0.250, "rank": 2 },
-    { "axis": "output_budget_bucket",  "gini_delta": -0.935, "raw_stress": 0.000, "rank": 3 },
-    { "axis": "response_schema_mode",  "gini_delta": -0.935, "raw_stress": 0.000, "rank": 4 },
-    { "axis": "tool_policy_variant",   "gini_delta": -0.935, "raw_stress": 0.000, "rank": 5 }
-  ],
-
-  "n_candidates_evaluated": 22,
-  "total_api_calls":        344,
-  "usage_summary": {
-    "input_tokens":             14262,
-    "output_tokens":             4620,
-    "cache_creation_input_tokens":  0,
-    "cache_read_input_tokens":  15840
-  },
-  "status": "OK"
-}
-```
-
-Notes a reader can verify from this artifact alone:
-
-- **Sensitivity unlocked two axes.** `system_prompt_variant` (Gini 1.45) and `reasoning_profile` (Gini 1.09) are both well above the next axis (`few_shot_count` at 0.26). With `--unlock-k 2`, only those two entered the grid. Budget / schema / tool axes had zero raw stress and negative Gini (the metric reports a signed value; negative means the axis contributed no useful signal beyond the baseline's natural variance), so locking them out saved 3× the grid combinations.
-- **Calibration earned +117.6% over the neutral baseline.** The neutral-baseline `fitness = 0.425` jumped to `0.925` after the search, recorded side by side on the artifact — not just the peak but the earn-over-doing-nothing.
-- **Walk-forward passed.** `train = test = 0.925`, gap = 0%. KC-4 Pearson is `null` because the deterministic stub produces identical per-item scores on both slices, which collapses the correlation variance. The `WalkForward.passed` flag still fires `true` because the gap check is satisfied and KC-4 is skipped (not failed) when undefined.
-- **Hard-gate pass rate is 1.0.** No `no_refusal` failures in any item. Any gate failure would have collapsed its item's fitness contribution to zero.
-
-The real calibration engine is not mocked anywhere above. `omega_lock.run_p1` ran with its production search logic; only the *target* and *judge* layers were replaced with deterministic stubs so the output is reproducible without API access. This is the same technique the integration test in `tests/test_calibrate_integration.py` uses to catch seams between the adapter layer and the search engine.
-
-The artifact is byte-deterministic:
-
-```
-$ md5sum examples/reference/reference_artifact.json
-dedab51a32b2ab5ff462c101438cccd8  examples/reference/reference_artifact.json
-```
-
-Two consecutive runs on any machine produce the same hash. If a change to the adapter layer, the fitness function, or the artifact schema alters the output, the hash shifts and the reviewer knows exactly where to look.
+The real calibration engine is not mocked for the clean case. `omega_lock.run_p1` runs with production search logic; only the *target* and *judge* layers are deterministic stubs so the output is reproducible without API access. Exact values belong in the generated artifact, golden manifest, or claim ledger rather than hand-maintained README prose.
 
 ### 11.3 Preflight + adaptation on a weak-infrastructure config
 
@@ -1021,7 +981,7 @@ Every override is *monotonic toward stricter* validation: `min_kc4` only rises, 
 
 ## 12. Validation
 
-The test suite runs with `pytest -q` in under one second on a laptop and issues **zero live API calls**. The current head of `main` passes **149 tests** (wall time ~0.4s). Every adapter test uses `SimpleNamespace` or `MagicMock` in place of an SDK client, and asserts the *exact* shape of the outgoing request payload (model, messages, cache headers, `response_format`, reasoning directives, few-shot ordering). The sub-tool repositories `mini-omega-lock` and `mini-antemortem-cli` carry their own test suites covering probe execution and analytical trap classification respectively.
+The default test suite runs with `pytest -q` and uses mocked provider clients rather than live provider/API calls. Exact test counts are intentionally not repeated in README prose; the static badge row is preserved separately and guarded by the consistency checker. Adapter tests use `SimpleNamespace` or `MagicMock` in place of SDK clients and assert the outgoing request payload shape (model, messages, cache headers, `response_format`, reasoning directives, few-shot ordering). The sub-tool repositories `mini-omega-lock` and `mini-antemortem-cli` carry their own test suites covering probe execution and analytical trap classification respectively.
 
 | Module | Coverage summary |
 |---|---|
@@ -1035,7 +995,7 @@ The test suite runs with `pytest -q` in under one second on a laptop and issues 
 | `providers/` | Factory rejects unknown names; respects `base_url`; lists `anthropic` / `openai` / `gemini` / `ollama`. Anthropic adapter: freeform uses `messages.create` with thinking config when reasoning enabled, omits it when OFF; strict schema uses `messages.parse`; refusal raises; JSON-object mode adds system-prompt suffix. OpenAI adapter: same paths on `chat.completions.create` / `beta.chat.completions.parse`; `reasoning_effort` rejected-retry records `CapabilityEvent`; `prompt_tokens_details.cached_tokens` normalised to `cache_read_input_tokens`; content-filter finish reason raises; missing `parsed` raises. Gemini adapter: freeform/json-object/strict-schema request shapes, guarded no-degrade rule, expedition JSON fallback with `CapabilityEvent`, malformed/schema-invalid JSON failures, and usage mapping. `ollama` alias reports tier `tier_3_local`, `supports_llm_judge=False`, `experimental=True`. |
 | `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / duplicate-check rejection / missing-check raise); `LLMJudge` (strict-schema dispatch, payload composition, non-`JudgeResult` response raise, guarded-mode ship-grade judge refusal); `EnsembleJudge` (rule-first short-circuit, LLM escalation on rule-pass, merged gate_results, non-`RuleJudge` rejection). |
 | `targets/` | `PromptTarget` end-to-end with mocked provider + judge; meta-axis resolution and clamping for out-of-range inputs; usage accumulation across evaluations; `evaluation_history` retention; latency measurement; degraded-capability propagation. |
-| `commands/` | CLI help lists `calibrate` / `report` / `diff`; `--version` shows `omegaprompt`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips. |
+| `commands/` | CLI help lists `calibrate` / `report` / `diff` / `check-artifact`; `--version` shows `omegaprompt`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips; `check-artifact` performs zero-network integrity checks. |
 | `preflight/` | **Plugin interface only** — no probe or classifier code inside `omegaprompt`. `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement; bounds on `JudgeQualityMeasurement.consistency` (0..1), `EndpointMeasurement.schema_reliability` (0..1). `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample gap widening; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). Sub-tool probe + classifier implementations (with their own test suites) live in the `mini-omega-lock` and `mini-antemortem-cli` repositories. |
 | `test_calibrate_integration.py` | **Drives the real `omega_lock.run_p1`** with a deterministic in-memory `CalibrableTarget` (no mocks on the search engine). Asserts the artifact's `calibrated_params`, `neutral_baseline_params`, `walk_forward`, and `sensitivity_ranking` match `P1Result`'s actual shape — the regression that this test catches is drift between the adapter layer and the search engine that per-module unit tests cannot reach. |
 
@@ -1073,7 +1033,7 @@ The fitness numbers reflect *your rubric applied to your dataset on the models y
 
 ### Judge drift is a real concern
 
-The LLM judge's scoring distribution can drift across model releases. The v1.1 roadmap includes a multi-judge validation pattern (`judge_v1` vs `judge_v2` on the top-K) so disagreement becomes a trust signal rather than a silent failure.
+The LLM judge's scoring distribution can drift across model releases. A planned multi-judge validation pattern (`judge_v1` vs `judge_v2` on the top-K) treats disagreement as a trust signal rather than a silent failure.
 
 ### Cost is non-trivial
 
@@ -1094,15 +1054,15 @@ Guarded mode blocks local providers in the judge position by policy. Gemini is i
 - `CalibrationArtifact` schema v2.0 (neutral baseline vs calibrated, capability events, boundary warnings, ship recommendation).
 - `RuleJudge` / `LLMJudge` / `EnsembleJudge`.
 - Native `gemini` adapter + `ollama` / `local` / `vllm` / `llama_cpp` local adapter family.
-- CLI: `calibrate` / `report` / `diff`. Backward-compat `omegaprompt` alias.
+- CLI: `calibrate` / `report` / `diff` / `check-artifact`. Backward-compat `omegacal` alias.
 - Integration test against real `omega_lock.run_p1`.
 
-**v1.1 (judge trust + tooling depth)**
+**Planned: judge trust + tooling depth**
 - Multi-judge validation pattern: `judge_v1` + `judge_v2` over top-K; disagreement as a first-class trust signal.
 - `--dry-run` with cost estimate before launching.
 - Additional rule-gate predicates (language detection, length bounds, schema validation against a supplied JSON Schema).
 
-**v1.2 (ecosystem)**
+**Planned: ecosystem**
 - Benchmark harness: multi (task × rubric × seed) scorecards.
 - GitHub Action for CI regression gating via `omegaprompt diff`.
 - HTML report rendering (`omegaprompt report --format html`).

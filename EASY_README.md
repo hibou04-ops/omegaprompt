@@ -3,13 +3,15 @@
 > The short version, for people who found the 16-section academic README intimidating.
 > Full doc: [README.md](README.md) · 한국어 Easy: [EASY_README_KR.md](EASY_README_KR.md)
 
+Public claims and exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
+
 ## What problem does it fix?
 
 You iterate prompt variants against 20 hand-picked examples. The top scorer gets shipped. **On day two in production, it fails on inputs the 20 examples didn't represent.**
 
 That's overfitting. ML has known the defense since the 1990s: a **held-out test slice**, a **pre-declared correlation threshold**, and a **gate that blocks ship if the numbers miss**. Every ML textbook teaches it. Most prompt-tuning tools skip it.
 
-omegaprompt is prompt calibration with those three defenses wired in. It's **provider-neutral** (same artifact replays across Anthropic / OpenAI / local / OpenAI-compatible) and it **records every degradation** so CI sees when a provider silently dropped a capability.
+omegaprompt is prompt calibration with those three defenses wired in. It's **provider-neutral** (same artifact replays across Anthropic / OpenAI / Gemini / local / OpenAI-compatible) and it **records every degradation** so CI sees when a provider silently dropped a capability.
 
 ## 60-second mental model
 
@@ -27,6 +29,13 @@ It returns: **a `CalibrationArtifact` JSON** with neutral-baseline vs calibrated
 ```bash
 pip install omegaprompt
 ```
+
+`omegaprompt` is the PyPI distribution, primary import package, and primary CLI. `omegacal` is a compatibility alias; `omega-lock` is the separate calibration engine dependency.
+
+## Offline vs live
+
+- Offline deterministic path, no keys or network: `python examples/reference/reproduce_reference_artifact.py`.
+- Live provider path: set the provider API key, then run `omegaprompt calibrate ...`. Default tests and generated claims do not make live API calls.
 
 ## The easiest path: the CLI
 

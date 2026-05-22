@@ -1,5 +1,9 @@
 # Profiles and Risk Boundaries
 
+Profiles define how much structural risk the run is allowed to take. They do
+not certify production success. For the full trust model, see
+[trust-model.md](trust-model.md).
+
 ## Why Profiles Exist
 
 Users do not always optimize for the same thing.
@@ -30,6 +34,8 @@ Typical behavior:
 - blocks unsupported strict-schema requests instead of silently degrading
 - uses stricter default walk-forward thresholds
 - recommends `hold` or `block` quickly when risk is visible
+- treats `FAIL_KC4_GATE`, hard-gate failures, and hidden provider degradation
+  as CI-relevant failure signals
 
 ## Expedition
 
@@ -41,6 +47,23 @@ Typical behavior:
 - records each relaxed safeguard
 - records the extra uplift gained by crossing guarded boundaries
 - downgrades ship advice when the result is still exploration-grade
+
+Expedition is not ship-grade by default. It is a way to measure boundary
+crossing honestly, not a way to suppress the boundary.
+
+## Validation Modes
+
+Walk-forward validation records a `validation_mode`:
+
+- `paired`: train/test slices are expected to share item ids. KC4 correlation
+  is part of the gate and fails closed when the shared set is insufficient.
+- `disjoint`: train/test slices intentionally do not share item ids. KC4 is not
+  applicable; the gate is gap-only.
+- `auto`: compatibility mode. KC4 is computed when enough shared ids exist, and
+  otherwise the artifact records why it was not computed.
+
+The profile does not make an unrepresentative holdout representative. A pass is
+evidence that the declared local gate passed, not a production guarantee.
 
 ## Beginner-Friendly Risk Language
 
@@ -69,3 +92,11 @@ Interpretation:
 - near zero: the boundary crossing was not worth much
 - clearly positive: expedition bought measurable uplift
 - positive but accompanied by critical warnings: keep it experimental, not ship-grade
+
+## Diff Regression Use
+
+`omegaprompt diff` should compare a baseline artifact against a candidate
+artifact in Prompt CI. A candidate that newly fails status, changes
+`ship_recommendation` to `hold` or `block`, regresses walk-forward fitness, or
+crosses a guarded boundary should block the CI gate even if one raw fitness
+number improved.

@@ -26,6 +26,8 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 Name boundaries: GitHub repo `hibou04-ops/omegaprompt`; PyPI distribution, primary import package, and primary CLI `omegaprompt`; compatibility package / CLI alias `omegacal`; separate parent calibration framework `omega-lock`.
 
+Trust docs: [trust model](docs/trust-model.md) · [toolkit positioning](docs/toolkit-positioning.md) · [provider capabilities](docs/provider-capabilities.md) · [profiles and risk boundaries](docs/profiles-and-risk-boundaries.md).
+
 ---
 
 ## Demo (60s)
@@ -154,6 +156,7 @@ Drop into your pipeline:
 - [14. Limitations and scope boundaries](#14-limitations-and-scope-boundaries)
 - [15. Roadmap](#15-roadmap)
 - [16. Prior art and credits](#16-prior-art-and-credits)
+- [Trust and toolkit docs](#trust-and-toolkit-docs)
 - [Appendix A: data contracts](#appendix-a-data-contracts)
 - [Appendix B: meta-axis to vendor-parameter mapping](#appendix-b-meta-axis-to-vendor-parameter-mapping)
 - [Appendix C: invariants](#appendix-c-invariants)
@@ -1149,6 +1152,19 @@ By design. Gemini is `ship_grade_judge=False`. Under guarded profile the judge t
 - Run under `--profile expedition`, which records a `RelaxedSafeguard` rather than failing — the artifact will reflect the relaxed boundary and downstream `diff` will surface it.
 
 Validate independently before flipping `ship_grade_judge=True` in any forked adapter.
+
+---
+
+## Trust and toolkit docs
+
+The trust-heavy details live in focused docs so README prose stays source-backed:
+
+- [Trust model](docs/trust-model.md) — what a `CalibrationArtifact` proves, what it does not prove, train/test discipline, walk-forward/KC4 limits, offline vs live evidence, the no-live-provider default CI rule, MCP optional boundary, and diff regression use.
+- [Toolkit positioning](docs/toolkit-positioning.md) — `omegaprompt` vs `omega-lock`, `antemortem-cli`, optional `mini-*` preflight plugins, the `omegacal` compatibility alias, and the no-dashboard/no-web-app scope.
+- [Provider capabilities](docs/provider-capabilities.md) — adapter capability claims tied to code and contract tests.
+- [Profiles and risk boundaries](docs/profiles-and-risk-boundaries.md) — guarded vs expedition behavior and validation-mode interpretation.
+
+Exact public claims remain governed by the claim ledger and deterministic artifacts.
 
 ---
 

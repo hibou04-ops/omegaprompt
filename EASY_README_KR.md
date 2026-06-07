@@ -5,6 +5,8 @@
 
 Public claim과 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
 
+> **참고:** omegaprompt는 omega-lock 0.3.0을 따릅니다(calibration engine이 결과 action count를 `sample_count`로 rename했고, omegaprompt가 그 alias를 노출해 calibration이 계속 동작합니다). consumer contract test와 scheduled canary가 omega-lock 의존성 seam을 지켜 producer 쪽 field rename을 release 전에 잡습니다.
+
 ---
 
 ## 한 줄 정의

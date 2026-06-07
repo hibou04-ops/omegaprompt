@@ -5,6 +5,8 @@
 
 Public claims and exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
 
+> **Note:** omegaprompt tracks omega-lock 0.3.0 (the calibration engine renamed the result action count to `sample_count`; omegaprompt exposes that alias so calibration keeps working). A consumer contract test plus a scheduled canary guard the omega-lock dependency seam so a producer-side field rename is caught before release.
+
 ## What problem does it fix?
 
 You iterate prompt variants against 20 hand-picked examples. The top scorer gets shipped. **On day two in production, it fails on inputs the 20 examples didn't represent.**

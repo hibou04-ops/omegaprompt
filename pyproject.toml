@@ -72,6 +72,11 @@ omegaprompt-mcp = "omegaprompt.mcp.__main__:main"
 packages = ["src/omegaprompt", "src/omegacal"]
 
 [tool.hatch.build.targets.sdist]
+exclude = [
+    ".uv-cache",
+    ".uv",
+    "dist",
+]
 include = [
     "src/omegaprompt",
     "src/omegacal",

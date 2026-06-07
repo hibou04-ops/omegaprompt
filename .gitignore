@@ -38,6 +38,7 @@ ENV/
 
 # ── Packaging / tooling ──
 .uv/
+.uv-cache/
 pip-log.txt
 pip-delete-this-directory.txt
 

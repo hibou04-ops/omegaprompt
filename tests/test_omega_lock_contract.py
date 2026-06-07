@@ -24,7 +24,16 @@ import inspect
 
 import omega_lock
 from omega_lock import EvalResult as OmegaLockEvalResult
-from omega_lock import KCThresholds, P1Result, check_kc4
+from omega_lock import (
+    CalibrableTarget,
+    KCThresholds,
+    P1Config,
+    P1Result,
+    ParamSpec,
+    check_kc4,
+    measure_stress,
+    run_p1,
+)
 from omega_lock.walk_forward import WalkForwardResult as OmegaLockWalkForwardResult
 
 from omegaprompt.domain.result import EvalResult as OmegaPromptEvalResult
@@ -49,20 +58,26 @@ def test_omegaprompt_evalresult_exposes_sample_count_alias() -> None:
     assert hasattr(r, "sample_count")
 
 
-def test_omega_lock_evalresult_has_sample_count_and_n_trials_alias() -> None:
-    """omega-lock's own ``EvalResult`` must expose ``sample_count`` (the field
-    its stress/grid/walk_forward consumers read) and accept ``n_trials`` as the
-    deprecated alias omegaprompt still constructs with."""
+def test_omega_lock_evalresult_exposes_sample_count() -> None:
+    """omega-lock's own ``EvalResult`` must expose ``sample_count`` — the canonical
+    field its stress/grid/walk_forward consumers read. Construct with the canonical
+    name (NOT the deprecated ``n_trials`` alias) so a clean alias removal in a
+    future omega-lock does not false-fail this guard. omegaprompt's OWN result keeps
+    the ``n_trials`` field; that round-trip is asserted separately above."""
     assert "sample_count" in _field_names(OmegaLockEvalResult)
-    r = OmegaLockEvalResult(fitness=1.0, n_trials=5)
+    r = OmegaLockEvalResult(fitness=1.0, sample_count=5)
     assert r.sample_count == 5
 
 
-def test_walkforwardresult_exposes_keys_adoption_spine_records() -> None:
-    """The adoption spine records these ``WalkForwardResult`` keys onto the
-    artifact as provenance (consumed via ``P1Result.walk_forward = wf.to_dict()``).
-    ``pearson_computable``/``pearson_status`` and ``test_best_*`` are 0.3.0
-    additions the plan consumes rather than rebuilds — drift silently drops them."""
+def test_walkforwardresult_keys_provenance_forward_tripwire() -> None:
+    """FORWARD TRIPWIRE (not yet a live guard). A future provenance-recording
+    path WILL record these ``WalkForwardResult`` keys via
+    ``P1Result.walk_forward = wf.to_dict()``; omegaprompt does not consume
+    omega-lock's ``WalkForwardResult`` yet (grep src: zero hits — every current
+    ``.walk_forward`` access is on omegaprompt's OWN per-item type).
+    ``pearson_computable``/``pearson_status``/``test_best_*`` are 0.3.0 additions
+    that path will consume rather than rebuild — assert now so it cannot land
+    against a drifted surface."""
     expected = {
         "train_fitnesses",
         "test_fitnesses",
@@ -73,30 +88,104 @@ def test_walkforwardresult_exposes_keys_adoption_spine_records() -> None:
         "test_best_params",
         "trade_ratio_scaled",
     }
-    missing = expected - _field_names(OmegaLockWalkForwardResult)
-    assert not missing, f"omega-lock WalkForwardResult dropped consumed fields: {missing}"
+    # Assert OUTPUT keys (wf.to_dict() — what the provenance path actually records),
+    # not dataclasses.fields(): survives a perf-motivated representation swap that
+    # preserves to_dict() output (friction-review item 2, third flip).
+    wf = OmegaLockWalkForwardResult(
+        top_n=1,
+        train_fitnesses=[1.0],
+        test_fitnesses=[1.0],
+        test_n_trials=[1],
+        pearson=0.0,
+        pearson_status="OK",
+        pearson_computable=True,
+        train_best_trades_mean=1.0,
+        test_best_trades=1,
+        test_best_fitness=1.0,
+        test_best_params={},
+        trade_ratio_scaled=1.0,
+    )
+    missing = expected - set(wf.to_dict())
+    assert not missing, f"omega-lock WalkForwardResult.to_dict() dropped consumed keys: {missing}"
 
 
-def test_p1result_exposes_fields_runtime_reads() -> None:
-    """omegaprompt reads these off ``P1Result``: ``grid_best`` (runtime calibrate),
-    ``walk_forward`` / ``kc_reports`` / ``omega_lock_version`` (adoption spine +
-    version stamp), ``holdout_result`` (deferred-conditional). Drift breaks
-    calibrate or silently drops provenance."""
-    expected = {"grid_best", "walk_forward", "holdout_result", "kc_reports", "omega_lock_version"}
+def test_p1result_currently_consumed_fields() -> None:
+    """LIVE GUARD. omegaprompt reads these off ``P1Result`` TODAY: ``grid_best``
+    (runtime.py:325) and ``stress_results`` (runtime.py:359 -> _sensitivity_rows
+    -> sensitivity_ranking). A rename of either is the exact silent-drift class
+    (n_trials -> sample_count) this file guards: a ``stress_results`` rename would
+    silently empty ``sensitivity_ranking``."""
+    expected = {"grid_best", "stress_results"}
     missing = expected - _field_names(P1Result)
-    assert not missing, f"omega-lock P1Result dropped consumed fields: {missing}"
+    assert not missing, f"omega-lock P1Result dropped a CURRENTLY-consumed field: {missing}"
 
 
-def test_check_kc4_signature_stable() -> None:
-    """The adoption spine reasons about ``check_kc4``'s inputs: it records the
-    per-CANDIDATE pearson as provenance (never equated with omegaprompt's own
-    per-item gate). A signature change means the recorded statistic changed."""
-    assert list(inspect.signature(check_kc4).parameters) == [
-        "train_fitnesses",
-        "test_fitnesses",
-        "trade_ratio",
-        "thresholds",
-    ]
+def test_grid_best_unlocked_wire_key_consumed() -> None:
+    """LIVE GUARD (nested wire-key — the silent class). omegaprompt reads
+    ``grid_best.get("unlocked")`` off ``P1Result.grid_best`` (runtime.py:327),
+    which is ``GridPoint.to_summary()`` output (omega_lock/orchestrator.py:633).
+    ``"unlocked"`` is a MANUAL literal in ``to_summary`` (omega_lock/grid.py:38),
+    so ``_field_names``/``dataclasses.fields`` is structurally blind to it: a
+    rename would silently empty ``best_unlocked`` and fall the calibrated winner
+    back to neutral with NO error and a valid-looking artifact. Assert the OUTPUT
+    key directly (build a real GridPoint; never reflect on fields)."""
+    from omega_lock.grid import GridPoint
+
+    summary = GridPoint(
+        idx=0,
+        unlocked={"a": 1},
+        params={"a": 1},
+        result=OmegaLockEvalResult(fitness=1.0, sample_count=3),
+    ).to_summary()
+    assert "unlocked" in summary, (
+        "omega-lock GridPoint.to_summary() dropped the 'unlocked' wire-key that "
+        "omegaprompt reads at runtime.py:327 — the calibrated winner would silently "
+        "fall back to neutral."
+    )
+
+
+def test_stressresult_surface_consumed_by_sensitivity() -> None:
+    """LIVE GUARD. The sensitivity path reads ``name`` / ``normalized_stress`` /
+    ``raw_stress`` off omega-lock ``StressResult`` (runtime.py:752,758-760, and the
+    dict form via ``P1Result.stress_results`` -> _sensitivity_rows). A rename
+    silently empties or mis-ranks ``sensitivity_ranking``."""
+    from omega_lock.stress import StressResult
+
+    missing = {"name", "normalized_stress", "raw_stress"} - _field_names(StressResult)
+    assert not missing, f"omega-lock StressResult dropped a consumed field: {missing}"
+    # Also assert the OUTPUT wire form the consumer actually reads
+    # (P1Result.stress_results = [s.to_dict() ...] -> _sensitivity_rows reads the
+    # dict keys). A representation swap that kept the dataclass-field check green
+    # could still drop a to_dict() key.
+    wire = StressResult(
+        name="x",
+        baseline_fitness=1.0,
+        plus_fitness=1.0,
+        minus_fitness=1.0,
+        epsilon=0.1,
+        raw_stress=0.0,
+    ).to_dict()
+    wire_missing = {"name", "normalized_stress", "raw_stress"} - set(wire)
+    assert not wire_missing, f"omega-lock StressResult.to_dict() dropped a consumed key: {wire_missing}"
+
+
+def test_p1result_provenance_fields_forward_tripwire() -> None:
+    """FORWARD TRIPWIRE (not yet a live guard). A future provenance-recording path
+    WILL record these off ``P1Result`` once wired; omegaprompt does not consume
+    them yet (grep src: zero hits). Asserting now so it cannot land against a
+    surface that already drifted."""
+    expected = {"walk_forward", "kc_reports", "omega_lock_version", "holdout_result"}
+    missing = expected - _field_names(P1Result)
+    assert not missing, f"omega-lock P1Result missing adoption-spine fields: {missing}"
+
+
+def test_check_kc4_signature_subset() -> None:
+    """A future provenance path reasons about ``check_kc4``'s inputs: it would
+    record the per-CANDIDATE pearson as provenance (never equated with omegaprompt's
+    own per-item gate). Assert SUBSET, not ``==``: omegaprompt does not CALL
+    check_kc4, so a backward-compatible parameter ADD must not false-fail this guard."""
+    params = set(inspect.signature(check_kc4).parameters)
+    assert {"train_fitnesses", "test_fitnesses", "trade_ratio", "thresholds"} <= params
 
 
 def test_kcthresholds_consumed_surface() -> None:
@@ -113,6 +202,36 @@ def test_kcthresholds_consumed_surface() -> None:
     base = KCThresholds()
     assert base.trade_ratio_min == 0.5
     assert base.pearson_min == 0.3
+
+
+def test_consumed_callable_signatures_subset() -> None:
+    """A3 net-new (a). omegaprompt drives these omega-lock callables; assert the
+    consumed parameters are PRESENT (subset, not ``==``, so a backward-compatible
+    parameter add does not false-fail). Mirrors the producer-side manifest (A1/A2)."""
+
+    def _params(fn) -> set[str]:
+        return set(inspect.signature(fn).parameters)
+
+    assert {"train_target", "config", "test_target"} <= _params(run_p1)
+    assert {"unlock_k"} <= _params(P1Config)
+    assert {"target", "baseline_params", "baseline_result"} <= _params(measure_stress)
+    assert {"name", "dtype", "neutral", "low", "high"} <= _params(ParamSpec)
+
+
+def test_calibrabletarget_protocol_method_presence() -> None:
+    """A3 net-new (b). omegaprompt's PromptTarget must satisfy omega-lock's
+    ``@runtime_checkable`` ``CalibrableTarget`` protocol. The check is method-name
+    presence only (``param_space`` / ``evaluate``); a producer-side protocol method
+    rename would break the seam and is caught here."""
+
+    class _Stub:
+        def param_space(self):
+            return []
+
+        def evaluate(self, params):
+            return OmegaLockEvalResult(fitness=1.0, sample_count=1)
+
+    assert isinstance(_Stub(), CalibrableTarget)
 
 
 def test_installed_omega_lock_within_verified_contract_range() -> None:

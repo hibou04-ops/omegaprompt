@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-06-07
+
+### Fixed
+
+- **omega-lock 0.3.0 compatibility.** omega-lock 0.3.0 renamed the target-result action count `n_trials` -> `sample_count` (KC-3 action floor) and reads `.sample_count` off the result `PromptTarget.evaluate` returns (in `stress.py`, `grid.py`, and `walk_forward.py`). `EvalResult` now exposes `sample_count` as a read-only property aliasing the stored `n_trials` field, so the calibration path no longer crashes with an `AttributeError` against the 0.3.0 seam. The stored field stays `n_trials`, so serialized artifacts and golden reference hashes are unchanged.
+
+### Added
+
+- **Consumer docking hardlock.** A fail-loud contract test (`tests/test_omega_lock_contract.py`) asserts the omega-lock dependency seam — the specific fields and call signatures omegaprompt consumes off omega-lock's result types — so a future producer-side rename fails LOUD (named, located, pre-merge) instead of surfacing as a silent mid-run `AttributeError`. A scheduled consumer canary workflow (`.github/workflows/omega-lock-compat.yml`) runs omegaprompt's own consumer contract and integration tests against `omega-lock@main`, ahead of the pinned release, so a producer rename of any consumed field is caught before omegaprompt bumps its pin. Isolated from the PR gate on purpose: it triggers only on a schedule / manual dispatch.
+
+### Notes
+
+- Package version is `2.0.1`; `CalibrationArtifact.schema_version` remains `2.0`. The omega-lock dependency pin remains `>=0.3.0,<0.4.0`.
+- This release-preparation change edits the working tree only; it does not publish to PyPI, push tags, or create/edit GitHub Releases.
+
 ## [2.0.0] - 2026-05-23
 
 ### Added

@@ -5,7 +5,7 @@
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-2.0.0-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![PyPI](https://img.shields.io/badge/pypi-2.0.1-blue.svg)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)
 [![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
@@ -53,7 +53,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.0.0 (2026-05-23)** — Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md). Release gates cover repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, and local/post-release verification.
+> **v2.0.1 (2026-06-07)** — **What's new:** omega-lock 0.3.0 compatibility — omega-lock 0.3.0 reads `.sample_count` off the result `PromptTarget.evaluate` returns; `EvalResult` now exposes `sample_count` as a read-only alias of the stored `n_trials` so calibration no longer crashes on the 0.3.0 seam. Plus a consumer **docking hardlock**: a fail-loud contract test (`tests/test_omega_lock_contract.py`) and a scheduled consumer canary (`.github/workflows/omega-lock-compat.yml`) that run omegaprompt's own consumer reads against omega-lock@main so a producer-side field rename is caught before it reaches a release. Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md). Release gates cover repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, and local/post-release verification.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -1118,7 +1118,7 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md).
 - **Train / test split with a pre-declared gate.** The foundational ML defence against overfitting, documented in every undergraduate curriculum. The specific implementation here (Pearson rank correlation threshold, pre-declared and unmodifiable) is `omega-lock`'s KC-4 kill criterion.
 - **LLM-as-judge.** Pattern formalised in *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (Zheng et al., 2023). `omegaprompt` implements the pattern with schema enforcement at the SDK boundary (Pydantic via each vendor's native parse path) so malformed judge responses raise before polluting the fitness.
 - **Winchester defence.** A quant-finance discipline: *kill criteria declared before the run cannot be relaxed after.* Used here to argue that `--max-gap` and `--min-kc4` must be enforced in configuration, not retroactively tuned on inspection of scores.
-- **Sensitivity-driven coordinate descent.** Stress measurement and top-K unlock are the parameter-calibration primitives introduced by `omega-lock` (v0.1.4), originally for trading-strategy calibration, ported here to prompt configuration.
+- **Sensitivity-driven coordinate descent.** Stress measurement and top-K unlock are the parameter-calibration primitives introduced by `omega-lock` (v0.3.0), originally for trading-strategy calibration, ported here to prompt configuration.
 - **Antemortem discipline.** The pre-implementation reconnaissance methodology under which this project was designed and built. Every non-trivial change runs through [`antemortem-cli`](https://github.com/hibou04-ops/antemortem-cli) before the first keystroke. The case studies in the [methodology repository](https://github.com/hibou04-ops/Antemortem) record the recon for this codebase.
 
 Naming: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration). The family branding is intentional. `omega-lock` was extracted from a trading-strategy calibration that ended in `KC-4 FAIL` — the overfitting defence firing exactly as designed. `omegaprompt` is the same defence applied one layer up, and the sub-tools `mini-omega-lock` / `mini-antemortem-cli` extend the pattern to preflight measurement.
@@ -1531,7 +1531,7 @@ Every override carries its `parameter`, `default`, `applied`, and `reason`. The 
 Short form:
 
 ```
-omegaprompt v1.0.0 — provider-neutral prompt calibration engine.
+omegaprompt v2.0.1 — provider-neutral prompt calibration engine.
 https://github.com/hibou04-ops/omegaprompt, 2026.
 ```
 
@@ -1543,7 +1543,7 @@ BibTeX:
   title   = {{omegaprompt}: Provider-neutral prompt calibration engine
              with sensitivity-ranked meta-axes, walk-forward ship gates,
              and structural capability reporting},
-  version = {1.0.0},
+  version = {2.0.1},
   year    = {2026},
   url     = {https://github.com/hibou04-ops/omegaprompt}
 }
@@ -1553,7 +1553,7 @@ BibTeX:
   title   = {{omega-lock}: Sensitivity-driven coordinate-descent
              calibration framework with walk-forward validation and
              pre-declared kill criteria},
-  version = {0.1.4},
+  version = {0.3.0},
   year    = {2026},
   url     = {https://github.com/hibou04-ops/omega-lock}
 }

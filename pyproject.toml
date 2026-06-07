@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omegaprompt"
-version = "2.0.0"
+version = "2.0.1"
 description = "Provider-neutral prompt calibration engine with sensitivity-ranked meta-axes, hard-gate x soft-score fitness, walk-forward ship gates, guarded/expedition profiles, and explicit capability/risk reporting across Anthropic, OpenAI, Gemini, and local OpenAI-compatible backends. Optional sub-tools (mini-omega-lock, mini-antemortem-cli) distribute separately and plug in via the omegaprompt.preflight interface."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,7 +36,7 @@ classifiers = [
 dependencies = [
     "typer>=0.12.0",
     "pydantic>=2.6.0",
-    "omega-lock>=0.1.4",
+    "omega-lock>=0.3.0,<0.4.0",
     "anthropic>=0.40.0",
     "openai>=1.50.0",
     "google-genai>=1.0.0",

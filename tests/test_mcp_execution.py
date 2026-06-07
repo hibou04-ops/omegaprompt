@@ -19,6 +19,12 @@ from pathlib import Path
 
 import pytest
 
+# Optional 'mcp' dependency: skip the whole module when it is absent, matching
+# test_mcp_server.py / test_mcp_contracts.py. Without this, the module-level
+# MCP-server import below raises ModuleNotFoundError at COLLECTION time and the
+# default (no-mcp) `pytest` run shows 11 red ERRORs that mask real failures.
+mcp = pytest.importorskip("mcp")
+
 from omegaprompt.domain import ShipRecommendation
 from omegaprompt.domain.result import CalibrationArtifact
 from omegaprompt.preflight.contracts import PreflightStatus

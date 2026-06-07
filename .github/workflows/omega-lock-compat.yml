@@ -1,0 +1,83 @@
+name: omega-lock compat (consumer canary)
+
+# Early-warning docking hardlock: run omegaprompt's OWN consumer contract test
+# against the bleeding-edge omega-lock (@main), ahead of the pinned release.
+# This executes the REAL consumer reads, so it catches a producer rename of any
+# consumed field before omegaprompt bumps its pin -- single source of truth, the
+# consumer's own test, cannot silently stale.
+#
+# ISOLATED from the PR gate (ci.yml) on purpose: it triggers only on a schedule
+# / manual dispatch, never on pull_request, so an @main-only break or a
+# transient install hiccup reds ONLY this signal, never a PR. The PR gate keeps
+# the pinned range (omega-lock>=0.3.0,<0.4.0) unchanged.
+
+on:
+  schedule:
+    - cron: "17 6 * * *"   # daily ~06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compat:
+    name: contract test vs omega-lock@main
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout omegaprompt
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install omegaprompt (pinned deps)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,mcp]"
+
+      - name: Force-install omega-lock@main (override the pinned release)
+        # A plain `pip install "omega-lock @ git+...@main"` is a no-op when the
+        # pinned PyPI build already satisfies the requirement (pip prints
+        # "already satisfied" and KEEPS the release) -> the canary would
+        # silently test PyPI, not @main. --force-reinstall --no-deps swaps it.
+        # Retry: @main is git-cloned every run; transient network is the
+        # dominant scheduled-run failure.
+        run: |
+          for i in 1 2 3; do
+            python -m pip install --force-reinstall --no-deps \
+              "omega-lock @ git+https://github.com/hibou04-ops/omega-lock@main" && break
+            echo "omega-lock@main install attempt $i failed; retrying in 15s..." && sleep 15
+          done
+
+      - name: Verify @main is actually installed (guard against false-green)
+        run: |
+          python - <<'PY'
+          import os
+          import omega_lock
+          print("omega_lock.__version__:", omega_lock.__version__)
+          print("omega_lock path:", os.path.dirname(omega_lock.__file__))
+          PY
+
+      - name: Run consumer contract + integration tests against @main
+        # Two payloads, both run against @main:
+        #  - test_omega_lock_contract.py: structural surface (fields, signatures,
+        #    round-trip) — catches renames of known consumed names.
+        #  - test_calibrate_integration.py: drives the REAL run_p1 path (stubs
+        #    provider+judge, offline) and asserts best_fitness>0 /
+        #    sensitivity_ranking>=1 — EXECUTES the actual consumer reads
+        #    (grid_best['unlocked'], stress dict keys, the Dir-1 .sample_count
+        #    read), so it catches both the hard AND the silent break classes.
+        #    This is what makes the canary execute the contract, not just assert
+        #    its shape.
+        # Deselect the version-range guard: it asserts __version__ starts with
+        # "0.3." and would auto-red on a legitimate 0.4.0 bump (the exact
+        # breaking boundary), independent of any real field drift. A major bump
+        # is handled by separate re-verification, not this canary.
+        run: |
+          python -m pytest -q \
+            tests/test_omega_lock_contract.py \
+            tests/test_calibrate_integration.py \
+            --deselect "tests/test_omega_lock_contract.py::test_installed_omega_lock_within_verified_contract_range"

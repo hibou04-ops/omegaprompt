@@ -63,7 +63,7 @@ README_BADGES = [
     ("CI", "actions/workflows/ci.yml/badge.svg"),
     ("License: Apache 2.0", "license-Apache--2.0-blue.svg"),
     ("Python", "python-3.11%2B-blue.svg"),
-    ("PyPI", "pypi-2.0.0-blue.svg"),
+    ("PyPI", "pypi-2.0.1-blue.svg"),
     ("Tests", "tests-317%20passing-brightgreen.svg"),
     ("Artifact schema", "artifact-schema%20v2.0-blueviolet.svg"),
     ("MCP", "MCP-server-blueviolet.svg"),
@@ -814,32 +814,132 @@ def check_artifact_schema_and_reference(ctx: Context) -> None:
             ctx.missing_file(rel, "Reference support file is absent.", category="examples")
 
 
+def _workflow_is_release_gated(text: str) -> bool:
+    """True when a workflow's ``on:`` triggers are a SUBSET of the deliberate
+    release surface (``release`` + ``workflow_dispatch``).
+
+    This distinguishes the canonical, opt-in ``publish.yml`` (fires ONLY when a
+    human cuts a GitHub Release or manually dispatches it, via PyPI trusted
+    publishing) from a publish/tag/release command smuggled into a workflow that
+    runs on every PR/push -- directly (``push``/``pull_request``/``schedule``) OR
+    INDIRECTLY (``workflow_run`` after CI, ``repository_dispatch``, ``create``).
+    A publish VECTOR is tolerated only inside a release-gated workflow; in any
+    other workflow it is still flagged.
+
+    Conservative by construction: ANY trigger outside {release, workflow_dispatch}
+    -- including unrecognized ones -- disqualifies release-gating, so an
+    accidental publish vector still trips the guard. A workflow with no
+    recognizable ``on:`` block is NOT release-gated. We must NOT drop unknown
+    triggers (a closed allowlist would silently widen the guard).
+    """
+    release_triggers = {"release", "workflow_dispatch"}
+
+    lines = text.splitlines()
+    keys: set[str] = set()
+    # Inline form: `on: [release, workflow_dispatch]` or `on: push`.
+    on_inline_seen = False
+    for line in lines:
+        inline = re.match(r"on:\s*\[([^\]]*)\]\s*$", line)
+        if inline:
+            on_inline_seen = True
+            keys |= {k.strip() for k in inline.group(1).split(",") if k.strip()}
+            break
+        inline_map = re.match(r"on:\s*(\w+)\s*$", line)  # `on: push`
+        if inline_map:
+            on_inline_seen = True
+            keys.add(inline_map.group(1))
+            break
+    if not on_inline_seen:
+        # Block form: collect ONLY the top-level trigger keys -- those indented
+        # one level directly under a bare `on:` line. The first such key sets the
+        # trigger indent; deeper-nested keys (``types``/``branches``/``cron``/
+        # ``workflows`` under a trigger) are NOT triggers and are skipped, so we
+        # can classify on the real trigger set WITHOUT a vocabulary filter. The
+        # scan stops at the next column-0 key, so job names under `jobs:` are out.
+        in_on_block = False
+        trigger_indent: int | None = None
+        for line in lines:
+            if re.match(r"on:\s*$", line):
+                in_on_block = True
+                continue
+            if in_on_block:
+                if re.match(r"\S", line):  # back to column 0 -> on-block ended
+                    break
+                if not line.strip() or line.lstrip().startswith("#"):
+                    continue
+                m = re.match(r"(\s+)(\w+):", line)
+                if m:
+                    indent = len(m.group(1))
+                    if trigger_indent is None:
+                        trigger_indent = indent
+                    if indent == trigger_indent:
+                        keys.add(m.group(2))
+
+    # Do NOT drop unknown triggers: any trigger outside the release surface means
+    # the workflow can fire outside a deliberate release and is not release-gated.
+    if not keys:
+        return False
+    return keys <= release_triggers
+
+
 def check_workflows_and_tests(ctx: Context) -> None:
     workflows = sorted((ctx.root / ".github" / "workflows").glob("*.yml"))
     workflows += sorted((ctx.root / ".github" / "workflows").glob("*.yaml"))
     if not workflows:
         ctx.missing_file(".github/workflows", "No GitHub workflow files found.", category="ci")
+    workflow_texts: list[tuple[str, str]] = []
     combined = ""
     for path in workflows:
         rel = path.relative_to(ctx.root).as_posix()
         text = ctx.read_text(rel, category="ci")
         if text:
+            workflow_texts.append((rel, text))
             combined += "\n" + text
 
-    forbidden = ["twine upload", "pypi", "gh release", "git tag", "create-release"]
-    hits = [token for token in forbidden if token.lower() in combined.lower()]
+    # Publish/release VECTORS only -- NOT the bare token "pypi", which would
+    # false-match the literal "PyPI" in the prose/comments of a read-only
+    # consumer canary that merely INSTALLS from PyPI -- consumption, not a
+    # publish workflow (see .github/workflows/omega-lock-compat.yml). Real
+    # vectors: twine, the pypa `pypi-publish` action, uv/poetry/flit/hatch
+    # publish, the `gh release` CLI + action-gh-release/release-action,
+    # create-release, `git tag`, and `git push --tags`. NOT bare "build"
+    # (`python -m build` in wheel-smoke is legit) nor bare " publish"
+    # ("publishes nothing" in comments). Coverage locked by
+    # test_workflow_publish_check_flags_real_vectors; false-positive regression
+    # by test_workflow_publish_check_is_publish_precise.
+    #
+    # A publish vector is TOLERATED only inside a release-gated workflow (the
+    # canonical `publish.yml`: triggers limited to release + workflow_dispatch,
+    # PyPI trusted publishing). The same vector in a default-CI workflow (one
+    # that runs on pull_request / push / schedule) is still flagged -- that is
+    # the accidental-publish class this guard exists for.
+    forbidden = [
+        "twine upload", "pypi-publish",
+        "uv publish", "poetry publish", "flit publish", "hatch publish",
+        "gh release", "gh-release", "release-action", "create-release",
+        "git tag", "push --tags",
+    ]
+    hits: list[str] = []
+    for rel, text in workflow_texts:
+        if _workflow_is_release_gated(text):
+            # Deliberate, opt-in release workflow; its publish vectors are the
+            # intended path, not accidental-publish risk.
+            continue
+        for token in forbidden:
+            if token.lower() in text.lower() and token not in hits:
+                hits.append(token)
     if hits:
         ctx.drift(
             "WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS",
-            "Workflow contains publish/tag/release-like commands.",
+            "A non-release-gated workflow contains publish/tag/release-like commands.",
             category="ci",
             path=".github/workflows",
-            expected="default CI only runs offline tests",
+            expected="default CI only runs offline tests; publish vectors live only in a release-gated workflow",
             actual=hits,
-            remediation="Remove publishing/release/tagging from default workflows for this task.",
+            remediation="Move publishing/release/tagging into a workflow triggered only by release + workflow_dispatch, or remove it from default CI.",
         )
     else:
-        ctx.ok("WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS", "Workflows do not publish to PyPI, push tags, or create releases.", category="ci", path=".github/workflows")
+        ctx.ok("WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS", "No default-CI workflow publishes to PyPI, pushes tags, or creates releases; publish vectors are confined to the release-gated workflow.", category="ci", path=".github/workflows")
 
     live_excluding_pytest = (
         'python -m pytest -q -m "not live"' in combined

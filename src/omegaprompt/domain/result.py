@@ -85,6 +85,21 @@ class EvalResult(BaseModel):
     ship_recommendation: ShipRecommendation = ShipRecommendation.HOLD
     metadata: dict[str, Any] = Field(default_factory=dict)
 
+    @property
+    def sample_count(self) -> int:
+        """Canonical action-count field name expected by omega-lock >=0.3.0.
+
+        omega-lock 0.3.0 renamed ``EvalResult.n_trials`` -> ``sample_count``
+        (KC-3 action floor) and reads ``.sample_count`` off the target's
+        returned result in stress.py, grid.py, and walk_forward.py. We keep
+        ``n_trials`` as the stored field (so serialized artifacts and golden
+        hashes are unchanged) and expose ``sample_count`` as a read-only
+        alias. omega-lock never writes this attribute back, so a property
+        suffices. See tests/test_omega_lock_contract.py for the guard that
+        fails loud if this seam drifts on a future upgrade.
+        """
+        return self.n_trials
+
 
 class WalkForwardResult(BaseModel):
     """Train/test generalization assessment for one candidate.

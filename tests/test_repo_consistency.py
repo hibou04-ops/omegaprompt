@@ -6,6 +6,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "tools" / "check_repo_consistency.py"
 SPEC = importlib.util.spec_from_file_location("check_repo_consistency", SCRIPT_PATH)
@@ -36,7 +38,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omegaprompt"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
   "typer>=0.12.0",
   "pydantic>=2.6.0",
@@ -69,7 +71,7 @@ packages = ["src/omegaprompt", "src/omegacal"]
         root,
         "src/omegaprompt/__init__.py",
         '''
-__version__ = "2.0.0"
+__version__ = "2.0.1"
 __all__ = [
     "calibrate",
     "evaluate",
@@ -91,7 +93,7 @@ __all__ = [
             "[![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)",
             "[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)",
             "[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)",
-            "[![PyPI](https://img.shields.io/badge/pypi-2.0.0-blue.svg)](https://pypi.org/project/omegaprompt/)",
+            "[![PyPI](https://img.shields.io/badge/pypi-2.0.1-blue.svg)](https://pypi.org/project/omegaprompt/)",
             "[![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)",
             "[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)",
             "[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)",
@@ -109,7 +111,7 @@ __all__ = [
 pip install omegaprompt
 ```
 
-> **v2.0.0 (2026-05-23)** - current package version.
+> **v2.0.1 (2026-06-07)** - current package version.
 
 Exit codes: `0` when the artifact status is OK, `1` when the artifact status is not OK, `2` on argument or environment problems.
 
@@ -118,10 +120,10 @@ The `omegacal` CLI binary remains as a compatibility alias during migration.
 The test suite runs with `pytest -q` and the badge records the current exact count.
 """,
     )
-    write(root, "README_KR.md", "# omegaprompt\n\n> **v2.0.0 (2026-05-23)** - current package version.\n")
+    write(root, "README_KR.md", "# omegaprompt\n\n> **v2.0.1 (2026-06-07)** - current package version.\n")
     write(root, "EASY_README.md", "# omegaprompt Easy Start\n")
     write(root, "EASY_README_KR.md", "# omegaprompt Korean Easy Start\n")
-    write(root, "CHANGELOG.md", "## [Unreleased]\n\n## [2.0.0] - 2026-05-23\n")
+    write(root, "CHANGELOG.md", "## [Unreleased]\n\n## [2.0.1] - 2026-06-07\n")
     write(
         root,
         "docs/provider-capabilities.md",
@@ -263,9 +265,11 @@ def test_checker_accepts_consistent_fixture(tmp_path: Path) -> None:
 def test_checker_detects_known_drift_fixture(tmp_path: Path) -> None:
     make_consistent_repo(tmp_path)
     pyproject = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
-    write(tmp_path, "pyproject.toml", pyproject.replace('version = "2.0.0"', 'version = "2.0.1"'))
+    # Introduce a pyproject-vs-__init__ version mismatch from the consistent
+    # base so __VERSION_MATCH drifts (the fixture base now uses 2.0.1 for both).
+    write(tmp_path, "pyproject.toml", pyproject.replace('version = "2.0.1"', 'version = "2.0.2"'))
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
-    readme = readme.replace("v2.0.0", "v1.6.0")
+    readme = readme.replace("v2.0.1", "v1.6.0")
     readme = readme.replace(
         "Exit codes: `0` when the artifact status is OK, `1` when the artifact status is not OK, `2` on argument or environment problems.",
         "Exit codes: `0` on success (regardless of `status`), `2` on environment problems.",
@@ -341,3 +345,107 @@ def test_file_error_classification() -> None:
     assert checker.classify_file_error(FileNotFoundError()) == "MISSING_FILE"
     assert checker.classify_file_error(PermissionError()) == "ENVIRONMENT_BLOCKED"
     assert checker.classify_file_error(OSError()) == "ENVIRONMENT_BLOCKED"
+
+
+def test_workflow_publish_check_is_publish_precise(tmp_path: Path) -> None:
+    """WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS must flag REAL publish vectors, not
+    the bare token 'pypi'. A scheduled, read-only consumer canary (the docking
+    hardlock) that INSTALLS from PyPI and mentions 'PyPI' in comments is not a
+    publish workflow and must pass; a real `twine upload` must still be caught.
+    Regression guard for the bare-'pypi'-substring false positive that flagged
+    the literal 'PyPI' in the canary's comments."""
+    make_consistent_repo(tmp_path)
+
+    # Docking consumer canary: installs deps from PyPI + omega-lock@main,
+    # read-only permissions, no publish/tag/release command. Mentions "PyPI" in
+    # comments (the exact thing the old bare-"pypi" heuristic false-flagged).
+    write(
+        tmp_path,
+        ".github/workflows/omega-lock-compat.yml",
+        '''name: omega-lock compat (consumer canary)
+# Installs the pinned PyPI build, then force-reinstalls omega-lock@main so the
+# consumer contract runs against PyPI vs @main. Read-only; publishes nothing.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compat:
+    steps:
+      - run: pip install -e ".[dev,mcp]"
+      - run: pip install --force-reinstall --no-deps "omega-lock @ git+https://example/omega-lock@main"
+      - run: python -m pytest -q tests/test_omega_lock_contract.py
+''',
+    )
+    assert "WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS" not in check_ids(checker.run_checks(tmp_path))
+
+
+@pytest.mark.parametrize(
+    "step_line",
+    [
+        "run: twine upload dist/*",
+        "uses: pypa/gh-action-pypi-publish@release/v1",
+        "run: uv publish",
+        "run: poetry publish",
+        "run: flit publish",
+        "run: hatch publish",
+        "run: gh release create v1.0.0",
+        "uses: softprops/action-gh-release@v2",
+        "uses: ncipollo/release-action@v1",
+        "uses: actions/create-release@v1",
+        "run: git tag v1.0.0",
+        "run: git push --tags",
+    ],
+)
+def test_workflow_publish_check_flags_real_vectors(tmp_path: Path, step_line: str) -> None:
+    """Every real publish / release / tag VECTOR must trip the guard, so the
+    bare-'pypi' precision fix did not weaken real-publish coverage."""
+    make_consistent_repo(tmp_path)
+    write(
+        tmp_path,
+        ".github/workflows/publish.yml",
+        f"name: publish\njobs:\n  release:\n    steps:\n      - {step_line}\n",
+    )
+    assert "WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS" in check_ids(checker.run_checks(tmp_path))
+
+
+def _publish_vector_workflow(on_block: str) -> str:
+    """A workflow carrying a real publish vector (twine upload) under on_block."""
+    return f"name: publish\n{on_block}\njobs:\n  release:\n    steps:\n      - run: twine upload dist/*\n"
+
+
+def test_release_gated_publish_workflow_is_tolerated(tmp_path: Path) -> None:
+    """The canonical opt-in publish.yml (triggers limited to release +
+    workflow_dispatch, PyPI trusted publishing) is the intended publish path --
+    its publish vector must NOT be flagged."""
+    make_consistent_repo(tmp_path)
+    write(
+        tmp_path,
+        ".github/workflows/publish.yml",
+        _publish_vector_workflow("on:\n  release:\n    types: [published]\n  workflow_dispatch:"),
+    )
+    assert "WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS" not in check_ids(checker.run_checks(tmp_path))
+
+
+@pytest.mark.parametrize(
+    "on_block",
+    [
+        # indirect triggers that fire on push/PR -- must NOT be read as release-gated
+        'on:\n  release:\n    types: [published]\n  workflow_run:\n    workflows: ["ci"]\n    types: [completed]',
+        "on:\n  release:\n    types: [published]\n  repository_dispatch:",
+        "on:\n  release:\n    types: [published]\n  create:",
+        # direct default-CI triggers paired with release
+        "on: [push, release]",
+        "on:\n  push:\n    branches: [main]\n  release:\n    types: [published]",
+    ],
+)
+def test_publish_vector_with_non_release_trigger_is_flagged(tmp_path: Path, on_block: str) -> None:
+    """A publish vector paired with ANY trigger outside {release, workflow_dispatch}
+    -- including indirect ones (workflow_run / repository_dispatch / create) that
+    fire on push -- must STILL be flagged. The release-gated allowance must not
+    silently widen by dropping unknown triggers."""
+    make_consistent_repo(tmp_path)
+    write(tmp_path, ".github/workflows/publish.yml", _publish_vector_workflow(on_block))
+    assert "WORKFLOW_RELEASE_OR_PUBLISH_COMMANDS" in check_ids(checker.run_checks(tmp_path))

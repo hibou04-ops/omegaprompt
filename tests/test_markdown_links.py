@@ -122,14 +122,14 @@ def test_readme_top_navigation_exposes_all_readme_variants() -> None:
         assert link in top
 
 
-def test_readme_top_badge_row_is_preserved_for_2_0_0() -> None:
+def test_readme_top_badge_row_is_preserved_for_2_0_1() -> None:
     lines = (ROOT / "README.md").read_text(encoding="utf-8").splitlines()
 
     assert lines[4:12] == [
         "[![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)",
         "[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)",
         "[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)",
-        "[![PyPI](https://img.shields.io/badge/pypi-2.0.0-blue.svg)](https://pypi.org/project/omegaprompt/)",
+        "[![PyPI](https://img.shields.io/badge/pypi-2.0.1-blue.svg)](https://pypi.org/project/omegaprompt/)",
         "[![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)",
         "[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)",
         "[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)",

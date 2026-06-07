@@ -38,7 +38,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "omegaprompt"
-version = "2.0.1"
+version = "2.0.2"
 dependencies = [
   "typer>=0.12.0",
   "pydantic>=2.6.0",
@@ -71,7 +71,7 @@ packages = ["src/omegaprompt", "src/omegacal"]
         root,
         "src/omegaprompt/__init__.py",
         '''
-__version__ = "2.0.1"
+__version__ = "2.0.2"
 __all__ = [
     "calibrate",
     "evaluate",
@@ -93,8 +93,8 @@ __all__ = [
             "[![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)",
             "[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)",
             "[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)",
-            "[![PyPI](https://img.shields.io/badge/pypi-2.0.1-blue.svg)](https://pypi.org/project/omegaprompt/)",
-            "[![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)",
+            "[![PyPI](https://img.shields.io/badge/pypi-2.0.2-blue.svg)](https://pypi.org/project/omegaprompt/)",
+            "[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)",
             "[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)",
             "[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)",
             "[![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)",
@@ -111,7 +111,7 @@ __all__ = [
 pip install omegaprompt
 ```
 
-> **v2.0.1 (2026-06-07)** - current package version.
+> **v2.0.2 (2026-06-08)** - current package version.
 
 Exit codes: `0` when the artifact status is OK, `1` when the artifact status is not OK, `2` on argument or environment problems.
 
@@ -120,10 +120,10 @@ The `omegacal` CLI binary remains as a compatibility alias during migration.
 The test suite runs with `pytest -q` and the badge records the current exact count.
 """,
     )
-    write(root, "README_KR.md", "# omegaprompt\n\n> **v2.0.1 (2026-06-07)** - current package version.\n")
+    write(root, "README_KR.md", "# omegaprompt\n\n> **v2.0.2 (2026-06-08)** - current package version.\n")
     write(root, "EASY_README.md", "# omegaprompt Easy Start\n")
     write(root, "EASY_README_KR.md", "# omegaprompt Korean Easy Start\n")
-    write(root, "CHANGELOG.md", "## [Unreleased]\n\n## [2.0.1] - 2026-06-07\n")
+    write(root, "CHANGELOG.md", "## [Unreleased]\n\n## [2.0.2] - 2026-06-08\n")
     write(
         root,
         "docs/provider-capabilities.md",
@@ -266,10 +266,10 @@ def test_checker_detects_known_drift_fixture(tmp_path: Path) -> None:
     make_consistent_repo(tmp_path)
     pyproject = (tmp_path / "pyproject.toml").read_text(encoding="utf-8")
     # Introduce a pyproject-vs-__init__ version mismatch from the consistent
-    # base so __VERSION_MATCH drifts (the fixture base now uses 2.0.1 for both).
-    write(tmp_path, "pyproject.toml", pyproject.replace('version = "2.0.1"', 'version = "2.0.2"'))
+    # base so __VERSION_MATCH drifts (the fixture base now uses 2.0.2 for both).
+    write(tmp_path, "pyproject.toml", pyproject.replace('version = "2.0.2"', 'version = "2.0.3"'))
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
-    readme = readme.replace("v2.0.1", "v1.6.0")
+    readme = readme.replace("v2.0.2", "v1.6.0")
     readme = readme.replace(
         "Exit codes: `0` when the artifact status is OK, `1` when the artifact status is not OK, `2` on argument or environment problems.",
         "Exit codes: `0` on success (regardless of `status`), `2` on environment problems.",

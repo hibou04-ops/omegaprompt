@@ -7,6 +7,8 @@ Public claims and exact deterministic reference metrics are tracked in the gener
 
 > **Note:** omegaprompt tracks omega-lock 0.3.0 (the calibration engine renamed the result action count to `sample_count`; omegaprompt exposes that alias so calibration keeps working). A consumer contract test plus a scheduled canary guard the omega-lock dependency seam so a producer-side field rename is caught before release.
 
+> **Speed note (optional):** calibration can evaluate dataset items in parallel with `--concurrency N` (CLI) or `CalibrateTuning(max_workers=N)`. It is off by default (serial), and any speedup depends entirely on what your provider account allows concurrently — set N to fit your account's rate limits, or leave it at the default.
+
 ## What problem does it fix?
 
 You iterate prompt variants against 20 hand-picked examples. The top scorer gets shipped. **On day two in production, it fails on inputs the 20 examples didn't represent.**

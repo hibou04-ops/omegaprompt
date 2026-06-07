@@ -5,8 +5,8 @@
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-2.0.1-blue.svg)](https://pypi.org/project/omegaprompt/)
-[![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)
+[![PyPI](https://img.shields.io/badge/pypi-2.0.2-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 [![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
@@ -53,7 +53,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.0.1 (2026-06-07)** — **What's new:** omega-lock 0.3.0 compatibility — omega-lock 0.3.0 reads `.sample_count` off the result `PromptTarget.evaluate` returns; `EvalResult` now exposes `sample_count` as a read-only alias of the stored `n_trials` so calibration no longer crashes on the 0.3.0 seam. Plus a consumer **docking hardlock**: a fail-loud contract test (`tests/test_omega_lock_contract.py`) and a scheduled consumer canary (`.github/workflows/omega-lock-compat.yml`) that run omegaprompt's own consumer reads against omega-lock@main so a producer-side field rename is caught before it reaches a release. Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md). Release gates cover repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, and local/post-release verification.
+> **v2.0.2 (2026-06-08)** — **What's new:** **opt-in parallel item evaluation** — `--concurrency N` (CLI) / `CalibrateTuning(max_workers=N)` evaluates dataset items concurrently within each candidate via a local thread pool. Each item still runs its target and judge calls sequentially, so concurrent calls to any one provider never exceed N. The default (`1`) is serial and produces byte-identical artifacts to prior versions. Wall-clock speedup is **entirely conditional on your provider account's concurrency ceiling (RPM/TPM)**: roughly 50% at N=2 when the account permits it, and **zero** if your account effectively serializes calls. Also: `PromptTarget.evaluate()` is now **memoized by resolved params**, so the final best-candidate evaluation reuses the grid-search result instead of re-calling the providers — fewer live API calls during `calibrate()`, with no public-surface or artifact-schema change. omega-lock pin unchanged (`>=0.3.0,<0.4.0`); `CalibrationArtifact.schema_version` stays `2.0`; golden reference artifacts are unchanged. Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md). Release gates cover repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, and local/post-release verification.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -1531,7 +1531,7 @@ Every override carries its `parameter`, `default`, `applied`, and `reason`. The 
 Short form:
 
 ```
-omegaprompt v2.0.1 — provider-neutral prompt calibration engine.
+omegaprompt v2.0.2 — provider-neutral prompt calibration engine.
 https://github.com/hibou04-ops/omegaprompt, 2026.
 ```
 
@@ -1543,7 +1543,7 @@ BibTeX:
   title   = {{omegaprompt}: Provider-neutral prompt calibration engine
              with sensitivity-ranked meta-axes, walk-forward ship gates,
              and structural capability reporting},
-  version = {2.0.1},
+  version = {2.0.2},
   year    = {2026},
   url     = {https://github.com/hibou04-ops/omegaprompt}
 }

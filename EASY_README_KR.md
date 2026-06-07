@@ -7,6 +7,8 @@ Public claim과 deterministic reference metric은 생성된 [claim ledger](docs/
 
 > **참고:** omegaprompt는 omega-lock 0.3.0을 따릅니다(calibration engine이 결과 action count를 `sample_count`로 rename했고, omegaprompt가 그 alias를 노출해 calibration이 계속 동작합니다). consumer contract test와 scheduled canary가 omega-lock 의존성 seam을 지켜 producer 쪽 field rename을 release 전에 잡습니다.
 
+> **속도 참고 (선택):** calibration은 `--concurrency N`(CLI) 또는 `CalibrateTuning(max_workers=N)`으로 dataset item을 병렬 평가할 수 있습니다. 기본값은 off(serial)이며, 속도 향상은 전적으로 provider 계정이 동시에 허용하는 한도에 달려 있습니다 — 계정의 rate limit에 맞춰 N을 정하거나 기본값으로 두세요.
+
 ---
 
 ## 한 줄 정의

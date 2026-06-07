@@ -5,10 +5,10 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-2.0.1-blue.svg)](https://pypi.org/project/omegaprompt/)
-[![Tests](https://img.shields.io/badge/tests-317%20passing-brightgreen.svg)](tests/)
-[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#calibrationartifact-schema-v20)
-[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#mcp-서버)
+[![PyPI](https://img.shields.io/badge/pypi-2.0.2-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
+[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#10-calibrationartifact-schema-v20)
+[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#18-mcp-서버)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
 문서: [English](README.md) · [한국어](README_KR.md) · [Easy English](EASY_README.md) · [쉬운 한국어](EASY_README_KR.md)
@@ -26,7 +26,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server
 ```
 
-> **v2.0.1 (2026-06-07)** — **새 내용:** omega-lock 0.3.0 호환 — omega-lock 0.3.0은 `PromptTarget.evaluate`가 반환하는 결과에서 `.sample_count`를 읽습니다. `EvalResult`는 이제 저장 필드 `n_trials`의 read-only alias로 `sample_count`를 노출하므로 0.3.0 seam에서 calibration이 더 이상 깨지지 않습니다. 또한 consumer **docking hardlock**: fail-loud contract test(`tests/test_omega_lock_contract.py`)와 scheduled consumer canary(`.github/workflows/omega-lock-compat.yml`)가 omegaprompt 자신의 consumer read를 omega-lock@main에 대해 실행해, producer 쪽 field rename을 release 전에 잡습니다. public README/PyPI claim과 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다. release gate는 repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, local/post-release verification을 확인합니다.
+> **v2.0.2 (2026-06-08)** — **새 내용:** **opt-in 병렬 item 평가** — `--concurrency N`(CLI) / `CalibrateTuning(max_workers=N)`이 각 candidate 안에서 dataset item을 local thread pool로 동시에 평가합니다. 각 item은 여전히 target 호출 후 judge 호출을 순차로 실행하므로, 어느 한 provider에 대한 동시 호출 수는 N을 넘지 않습니다. 기본값(`1`)은 serial이며 이전 버전과 byte-identical한 artifact를 만듭니다. wall-clock 속도 향상은 **전적으로 사용 중인 provider 계정의 동시성 한도(RPM/TPM)에 따라 달라집니다**: 계정이 허용하면 N=2에서 대략 50%, 계정이 사실상 호출을 직렬화하면 **0%**입니다. 또한 `PromptTarget.evaluate()`가 이제 **resolved params 기준으로 memoize**되어, 마지막 best-candidate 평가가 provider를 다시 호출하는 대신 grid-search 결과를 재사용합니다 — `calibrate()` 동안 live API 호출이 줄며 public surface나 artifact schema 변경은 없습니다. omega-lock pin은 그대로(`>=0.3.0,<0.4.0`)이고 `CalibrationArtifact.schema_version`은 `2.0`을 유지하며 golden reference artifact는 변경되지 않습니다. public README/PyPI claim과 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다. release gate는 repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, local/post-release verification을 확인합니다.
 
 이름 경계: GitHub repo는 `hibou04-ops/omegaprompt`; PyPI distribution, primary import package, primary CLI는 `omegaprompt`; compatibility package / CLI alias는 `omegacal`; 별도 parent calibration framework는 `omega-lock`입니다.
 

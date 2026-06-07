@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-06-08
+
+### Added
+
+- **Opt-in parallel item evaluation.** `CalibrateTuning.max_workers` (Python) / `--concurrency` (CLI) parallelize per-item target+judge evaluation within each candidate via a local `concurrent.futures.ThreadPoolExecutor`. Each item still runs its target call then its judge call sequentially, so the number of concurrent calls to any one provider never exceeds the configured value. Default `1` (serial) produces byte-identical artifacts to prior versions. Wall-clock speedup is bounded by — and conditional on — your provider account's concurrency ceiling (RPM/TPM): roughly ~50% at `2`, ~75% at `4`, ~85% at `8` when the account permits it, and **none** if the account effectively serializes calls. No cross-provider rate-limit handling; configure per your account (a value above your real ceiling produces 429s, not speedups).
+
+### Changed
+
+- **Best-candidate evaluation is memoized.** `PromptTarget.evaluate()` now caches results keyed on the resolved params, so the final best-candidate evaluation reuses the grid-search result instead of re-calling the providers. This reduces live API calls during `calibrate()`. No public-surface change (`EvalResult` / `CalibrationArtifact` / `CalibrableTarget` unchanged) and no artifact-schema change.
+
+### Notes
+
+- Package version is `2.0.2`; `CalibrationArtifact.schema_version` remains `2.0`. The omega-lock dependency pin remains `>=0.3.0,<0.4.0`.
+- Golden reference artifacts are **unchanged** — the deterministic harness uses fixed counts/latency and builds artifacts directly (not via `runtime.calibrate()`), so neither feature affects the golden hash.
+- This release-preparation change edits the working tree only; it does not publish to PyPI, push tags, or create/edit GitHub Releases.
+
 ## [2.0.1] - 2026-06-07
 
 ### Fixed

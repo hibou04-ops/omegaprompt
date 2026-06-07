@@ -778,19 +778,19 @@ wheels = [
 
 [[package]]
 name = "omega-lock"
-version = "0.3.0"
+version = "0.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/be/12/41079a0034b989722cb90bb43cc10fccd4d25292cbd7b4d6c475ce96524a/omega_lock-0.3.0.tar.gz", hash = "sha256:b6db536bc76e256871a99e32342e1de66de717e874fe839520dd916b651d5073", size = 131808, upload-time = "2026-06-06T11:20:56.656Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/f9/56076709a6280c1fe5a0bdfb7d7eb62edffe0946290a05c96a76ff93d326/omega_lock-0.3.2.tar.gz", hash = "sha256:903bd0243208fc9c17f9fd050bb5598bbf947e6c959aebaf12bd53bc5263bc96", size = 201663, upload-time = "2026-06-07T14:23:34.221Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/2f/ee51eabff72abdf17dee6ef466bd1645af07f735f7955013cf23b9d5adb0/omega_lock-0.3.0-py3-none-any.whl", hash = "sha256:3bc511e11abf81da212e7d9bb211b4ad02c5811fe115b40345f628229bfbbc6e", size = 75828, upload-time = "2026-06-06T11:20:55.224Z" },
+    { url = "https://files.pythonhosted.org/packages/91/3a/aa42f2df1ee0256311ef247f64870cf26769ad8481b14a9971be5b9a94bb/omega_lock-0.3.2-py3-none-any.whl", hash = "sha256:9452aed4f28f81d08103229b7badffe1dfa6b9db8b2cb5491f767e5e28ab6383", size = 80232, upload-time = "2026-06-07T14:23:33.023Z" },
 ]
 
 [[package]]
 name = "omegaprompt"
-version = "2.0.1"
+version = "2.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },

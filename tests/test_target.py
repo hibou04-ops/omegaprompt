@@ -324,8 +324,12 @@ def test_usage_accumulates_across_evaluations():
         rubric=_rubric(),
         variants=_variants(),
     )
-    t.evaluate({})
+    # Two evaluations of DISTINCT resolved configurations. (H1 memoizes by
+    # resolved params, so a repeat of the SAME config is a cache hit that
+    # accumulates nothing — covered by test_memoization.py. Here we assert the
+    # cross-evaluation accumulation that still holds for genuinely new configs.)
+    t.evaluate({"system_prompt_variant": 0})
     first_total = t.last_usage["input_tokens"]
-    t.evaluate({})
+    t.evaluate({"system_prompt_variant": 1})
     assert t.last_usage["input_tokens"] > first_total
     assert t.total_api_calls == 8

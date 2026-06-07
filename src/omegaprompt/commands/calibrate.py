@@ -157,6 +157,18 @@ def calibrate(
         min=1,
         help="How many top-stress meta-axes to unlock for grid search.",
     ),
+    concurrency: int = typer.Option(  # noqa: B008
+        1,
+        "--concurrency",
+        min=1,
+        help=(
+            "Max concurrent dataset items per evaluation. Each item runs its "
+            "target then judge call sequentially, so concurrent calls to any "
+            "one provider never exceed this value. Default 1 (serial). Set per "
+            "your provider account's RPM/TPM ceiling; above the real ceiling "
+            "you get 429s, not speedups. See README."
+        ),
+    ),
     space_path: Path | None = typer.Option(  # noqa: B008
         None,
         "--space",
@@ -276,6 +288,7 @@ def calibrate(
         min_kc4=min_kc4,
         profile=selected_profile,
         validation_mode=vmode,  # type: ignore[arg-type]
+        max_workers=concurrency,
     )
 
     typer.secho(

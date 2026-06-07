@@ -227,6 +227,22 @@
       "drift_risk": "medium",
       "exact_numeric_values_allowed": false,
       "owner_surface": "artifact"
+    },
+    {
+      "claim_id": "perf.parallel_item_eval",
+      "claim": "Opt-in parallel item evaluation (--concurrency N / CalibrateTuning(max_workers=N)) speeds up calibration only in proportion to the provider account's concurrency ceiling (roughly 50% at N=2 when permitted, zero if the account serializes calls); the default (1) is serial and produces byte-identical artifacts to prior versions.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "PyPI description (project.readme=README.md)"
+      ],
+      "evidence_type": "qualitative_marker",
+      "source": "tests/test_parallel_determinism.py; benchmarks/bench_calibration_concurrency.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": false,
+      "owner_surface": "CLI"
     }
   ]
 }

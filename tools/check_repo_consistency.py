@@ -63,8 +63,8 @@ README_BADGES = [
     ("CI", "actions/workflows/ci.yml/badge.svg"),
     ("License: Apache 2.0", "license-Apache--2.0-blue.svg"),
     ("Python", "python-3.11%2B-blue.svg"),
-    ("PyPI", "pypi-2.0.1-blue.svg"),
-    ("Tests", "tests-317%20passing-brightgreen.svg"),
+    ("PyPI", "pypi-2.0.2-blue.svg"),
+    ("Tests", "tests-passing-brightgreen.svg"),
     ("Artifact schema", "artifact-schema%20v2.0-blueviolet.svg"),
     ("MCP", "MCP-server-blueviolet.svg"),
     ("Parent framework", "framework-omega--lock-blueviolet.svg"),
@@ -508,19 +508,34 @@ def check_readme_badges_and_versions(ctx: Context, py_version: str | None) -> No
             continue
         badge_count = _extract_test_badge_count(text)
         prose_claims = _extract_readme_test_count_claims(text)
-        mismatches = [claim for claim in prose_claims if claim["count"] != badge_count]
-        if badge_count is not None and mismatches:
+        if badge_count is None:
+            # The test badge is intentionally count-free (e.g. tests-passing), so
+            # it can never go stale. With no badge count to anchor against, any
+            # exact prose test count is itself unanchored and will re-stale on the
+            # next release, so it is disallowed outright.
+            mismatches = prose_claims
+        else:
+            mismatches = [claim for claim in prose_claims if claim["count"] != badge_count]
+        if mismatches:
             ctx.drift(
                 f"{rel.upper().replace('.', '_')}_TEST_COUNT_PROSE_DRIFT",
-                f"{rel} has exact prose test-count claims that disagree with its badge.",
+                (
+                    f"{rel} has exact prose test-count claims but the test badge declares no count."
+                    if badge_count is None
+                    else f"{rel} has exact prose test-count claims that disagree with its badge."
+                ),
                 category="docs",
                 path=rel,
                 expected={"badge_tests_passing": badge_count},
                 actual=mismatches,
-                remediation="Update prose or remove exact current test-count claims; do not alter README.md badge composition in this task.",
+                remediation=(
+                    "Remove exact prose test-count claims; the test badge is intentionally count-free so prose counts cannot be anchored."
+                    if badge_count is None
+                    else "Update prose or remove exact current test-count claims; do not alter README.md badge composition in this task."
+                ),
                 severity="WARNING",
             )
-        elif badge_count is not None:
+        else:
             ctx.ok(f"{rel.upper().replace('.', '_')}_TEST_COUNT_PROSE", f"{rel} has no prose test-count drift against its badge.", category="docs", path=rel, expected=badge_count, actual=prose_claims)
 
         callouts = _extract_top_version_callouts(text)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from time import perf_counter
 from typing import Any
@@ -58,6 +60,7 @@ class PromptTarget:
         variants: PromptVariants,
         space: MetaAxisSpace | None = None,
         execution_profile: ExecutionProfile = ExecutionProfile.GUARDED,
+        max_workers: int = 1,
     ) -> None:
         if not variants.system_prompts:
             raise ValueError("PromptTarget requires at least one system prompt variant.")
@@ -87,10 +90,21 @@ class PromptTarget:
             validate_space_against_variants(space, variants)
         self.space = space
 
+        # C2 (opt-in, default off): bounds how many dataset items are
+        # evaluated concurrently within a single evaluate() pass. Each item
+        # still runs its target call then its judge call sequentially, so the
+        # number of concurrent calls to any one provider never exceeds
+        # max_workers. Default 1 = serial = byte-identical to prior versions.
+        self.max_workers = max(1, int(max_workers))
         self._fitness = CompositeFitness(rubric)
         self.last_usage: dict[str, int] = empty_usage()
         self.total_api_calls = 0
         self.evaluation_history: list[EvalResult] = []
+        # H1: memoize evaluate() results keyed on RESOLVED params so a repeat
+        # eval of an already-seen configuration (e.g. the best-candidate
+        # re-eval at the end of calibrate()) reuses the prior result instead
+        # of re-calling the providers. Per-instance, GC'd with the target.
+        self._eval_cache: dict[str, EvalResult] = {}
 
     def param_space(self) -> list:
         try:
@@ -164,6 +178,27 @@ class PromptTarget:
 
     def evaluate(self, params: dict | None) -> EvalResult:
         resolved, param_clamp_warnings = self._resolve_params(params)
+
+        # H1: return the memoized result for an already-evaluated resolved
+        # configuration. The key is the resolved params (typed + clamped), so
+        # two different raw param dicts that resolve to the same configuration
+        # share a cache entry. A hit performs zero provider calls and does not
+        # increment total_api_calls / usage (it returns the prior EvalResult
+        # verbatim). Downstream consumers (runtime.py) read only fitness,
+        # within_guarded_boundaries, degraded_capabilities, and resolved_params
+        # off the returned result, never the raw .params, so reusing the prior
+        # result is safe. If the grid never re-evaluates an identical resolved
+        # configuration this is a harmless no-op.
+        _cache_key = json.dumps(
+            resolved.model_dump(mode="json"),
+            sort_keys=True,
+            separators=(",", ":"),
+            default=str,
+        )
+        cached = self._eval_cache.get(_cache_key)
+        if cached is not None:
+            return cached
+
         system_prompt = self.variants.system_prompts[resolved.system_prompt_variant]
         few_shots = self.variants.few_shot_examples[: resolved.few_shot_count]
 
@@ -175,7 +210,14 @@ class PromptTarget:
         item_results: list[EvalItemResult] = []
         degraded_capabilities = []
 
-        for item in self.dataset.items:
+        def _eval_one(item):
+            """Evaluate one dataset item (target call then judge call).
+
+            Mutates nothing shared: providers and the judge are stateless
+            request->response Protocols, so this is safe to run concurrently
+            across items. All accumulation into shared run state happens in
+            the single-threaded fold below, in dataset order.
+            """
             target_request = ProviderRequest(
                 system_prompt=system_prompt,
                 user_message=item.input,
@@ -190,8 +232,6 @@ class PromptTarget:
             target_started = perf_counter()
             target_response = self.target_provider.call(target_request)
             target_wall_ms = (perf_counter() - target_started) * 1000.0
-            target_call_count += 1
-            _accumulate_usage(run_usage, target_response.usage)
 
             judge_started = perf_counter()
             judge_outcome = self.judge.score(
@@ -201,8 +241,6 @@ class PromptTarget:
             )
             judge_result, judge_usage = judge_outcome
             judge_wall_ms = (perf_counter() - judge_started) * 1000.0
-            judge_call_count += 1
-            _accumulate_usage(run_usage, judge_usage)
 
             # Reviewer P0: judge provider degradation must surface in
             # the artifact. Pre-fix only target_response.degraded_*
@@ -215,6 +253,37 @@ class PromptTarget:
             )
 
             item_latency_ms = max(target_response.latency_ms, target_wall_ms) + judge_wall_ms
+            return (
+                item,
+                target_response,
+                judge_result,
+                judge_usage,
+                judge_degraded,
+                item_latency_ms,
+            )
+
+        if self.max_workers > 1:
+            # ThreadPoolExecutor.map yields results in INPUT order regardless
+            # of completion order, so the fold below is identical to the serial
+            # path — the artifact is byte-stable across worker counts.
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                computed = list(executor.map(_eval_one, self.dataset.items))
+        else:
+            # Serial path: byte-identical to prior versions (default).
+            computed = [_eval_one(item) for item in self.dataset.items]
+
+        for (
+            item,
+            target_response,
+            judge_result,
+            judge_usage,
+            judge_degraded,
+            item_latency_ms,
+        ) in computed:
+            target_call_count += 1
+            _accumulate_usage(run_usage, target_response.usage)
+            judge_call_count += 1
+            _accumulate_usage(run_usage, judge_usage)
             total_latency_ms += item_latency_ms
             degraded_capabilities.extend(target_response.degraded_capabilities)
             degraded_capabilities.extend(judge_degraded)
@@ -296,6 +365,7 @@ class PromptTarget:
             },
         )
         self.evaluation_history.append(result)
+        self._eval_cache[_cache_key] = result
         return result
 
     def unique_param_count(self) -> int:

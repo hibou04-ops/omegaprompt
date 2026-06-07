@@ -96,6 +96,19 @@ class CalibrateTuning(BaseModel):
     max_gap: float | None = None
     min_kc4: float | None = None
     profile: ExecutionProfile = ExecutionProfile.GUARDED
+    max_workers: int = Field(
+        default=1,
+        ge=1,
+        description=(
+            "Max dataset items evaluated concurrently within each candidate "
+            "evaluation (opt-in; default 1 = serial). Each item runs its "
+            "target then judge call sequentially, so concurrent calls to any "
+            "one provider never exceed this value. Default produces "
+            "byte-identical artifacts to prior versions. Wall-clock speedup is "
+            "bounded by — and conditional on — your provider account's "
+            "concurrency ceiling (RPM/TPM)."
+        ),
+    )
     validation_mode: Literal["auto", "paired", "disjoint"] = Field(
         default="auto",
         description=(
@@ -301,6 +314,7 @@ def calibrate(
         variants=variants_obj,
         space=tuning.space,
         execution_profile=profile,
+        max_workers=tuning.max_workers,
     )
     test_target = (
         PromptTarget(
@@ -311,6 +325,7 @@ def calibrate(
             variants=variants_obj,
             space=tuning.space,
             execution_profile=profile,
+            max_workers=tuning.max_workers,
         )
         if test_ds is not None
         else None

@@ -24,6 +24,9 @@ def test_applied_parameters_set_is_documented():
     assert "min_kc4" in APPLIED_PARAMETERS
     assert "max_gap" in APPLIED_PARAMETERS
     assert "unlock_k" in APPLIED_PARAMETERS
+    # T6: rescore_count is now wired through apply_adaptation_plan into the
+    # per-item scoring path (median-of-N judge replays), so it is applied.
+    assert "rescore_count" in APPLIED_PARAMETERS
 
 
 def test_split_overrides_partitions_known_advisory():
@@ -40,9 +43,10 @@ def test_split_overrides_partitions_known_advisory():
         ],
     )
     applied, advisory = plan.split_overrides()
-    assert {ov.parameter for ov in applied} == {"min_kc4", "unlock_k"}
+    # T6: rescore_count moved from advisory to applied (wired into scoring).
+    assert {ov.parameter for ov in applied} == {"min_kc4", "unlock_k", "rescore_count"}
     assert {ov.parameter for ov in advisory} == {
-        "rescore_count", "schema_mode", "judge_ensemble_shift",
+        "schema_mode", "judge_ensemble_shift",
     }
 
 
@@ -77,14 +81,16 @@ def test_adaptation_summary_helper_renders_split_for_artifact():
     plan = AdaptationPlan(
         overrides=[
             ParameterOverride(parameter="min_kc4", default=0.5, applied=0.6, reason="x"),
-            ParameterOverride(parameter="rescore_count", default=1, applied=3, reason="x"),
+            # T6: rescore_count is now applied; use schema_mode as the
+            # advisory-only example so the split assertion stays meaningful.
+            ParameterOverride(parameter="schema_mode", default="strict_schema", applied="json_object", reason="x"),
         ],
         require_manual_review_reasons=["small sample held-out"],
     )
     summary = _build_adaptation_summary(plan)
     assert summary is not None
     assert summary["applied"] == ["min_kc4"]
-    assert summary["advisory_not_applied"] == ["rescore_count"]
+    assert summary["advisory_not_applied"] == ["schema_mode"]
     assert summary["manual_review_required"] is True
     assert summary["manual_review_reasons"] == ["small sample held-out"]
 
@@ -146,8 +152,9 @@ def test_advisory_overrides_have_no_runtime_consumer():
     # Parameters derive_adaptation_plan emits as advisory (no runtime
     # consumer wired today). If runtime.py starts reading any of these,
     # move the name into APPLIED_PARAMETERS.
+    # T6: rescore_count is no longer advisory — it is wired into
+    # apply_adaptation_plan -> PromptTarget per-item scoring.
     advisory_names = {
-        "rescore_count",
         "schema_mode",  # schema_mode_fallback in plan, but ParameterOverride.parameter is "schema_mode"
         "judge_ensemble_shift",
         "skip_axes",

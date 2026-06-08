@@ -37,7 +37,7 @@ _POLICIES = {
         allow_experimental_providers=True,
         allow_non_ship_grade_judge=True,
         default_max_gap=0.35,
-        default_min_kc4=0.3,
+        default_min_kc4=0.5,
     ),
 }
 

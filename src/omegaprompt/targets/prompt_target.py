@@ -15,7 +15,7 @@ from omegaprompt.domain.enums import (
     REASONING_ORDINALS,
     ReasoningProfile,
 )
-from omegaprompt.domain.judge import JudgeRubric
+from omegaprompt.domain.judge import JudgeResult, JudgeRubric
 from omegaprompt.domain.params import (
     MetaAxisSpace,
     PromptVariants,
@@ -61,6 +61,7 @@ class PromptTarget:
         space: MetaAxisSpace | None = None,
         execution_profile: ExecutionProfile = ExecutionProfile.GUARDED,
         max_workers: int = 1,
+        rescore_count: int = 1,
     ) -> None:
         if not variants.system_prompts:
             raise ValueError("PromptTarget requires at least one system prompt variant.")
@@ -96,6 +97,14 @@ class PromptTarget:
         # number of concurrent calls to any one provider never exceeds
         # max_workers. Default 1 = serial = byte-identical to prior versions.
         self.max_workers = max(1, int(max_workers))
+        # T6: per-item judge-replay count. When >1, each item is scored by
+        # ``rescore_count`` independent judge calls and the lower-median
+        # result (by weighted_score) is kept — a noise-robust point estimate
+        # for judges with low scoring consistency. The target is called ONCE
+        # per item regardless (only the judge is re-run), so target cost is
+        # unchanged and only judge cost scales with N. Default 1 = single
+        # judge call = byte-identical to prior versions.
+        self.rescore_count = max(1, int(rescore_count))
         self._fitness = CompositeFitness(rubric)
         self.last_usage: dict[str, int] = empty_usage()
         self.total_api_calls = 0
@@ -233,24 +242,40 @@ class PromptTarget:
             target_response = self.target_provider.call(target_request)
             target_wall_ms = (perf_counter() - target_started) * 1000.0
 
+            # T6: score the FIXED target response with ``rescore_count``
+            # independent judge calls and keep the lower-median result.
+            # Only the judge is re-run (the target was already called once
+            # above), so target cost is unchanged and judge cost scales with
+            # N. Usage is summed across all N calls (real $ cost) and
+            # degradation events are unioned (an intermittent judge fallback
+            # must not be hidden by a later clean call). rescore_count==1 is
+            # byte-identical to a single judge call.
             judge_started = perf_counter()
-            judge_outcome = self.judge.score(
-                rubric=self.rubric,
-                item=item,
-                target_response=target_response.text,
-            )
-            judge_result, judge_usage = judge_outcome
+            judge_results: list[JudgeResult] = []
+            judge_usage = empty_usage()
+            judge_degraded: list = []
+            for _ in range(self.rescore_count):
+                judge_outcome = self.judge.score(
+                    rubric=self.rubric,
+                    item=item,
+                    target_response=target_response.text,
+                )
+                one_result, one_usage = judge_outcome
+                judge_results.append(one_result)
+                _accumulate_usage(judge_usage, one_usage)
+                # Reviewer P0: judge provider degradation must surface in
+                # the artifact. Pre-fix only target_response.degraded_*
+                # was accumulated; a judge that fell back from STRICT_SCHEMA
+                # to JSON_OBJECT was invisible downstream — even though
+                # judge-side fallbacks affect fitness reliability MORE than
+                # target-side fallbacks.
+                judge_degraded.extend(
+                    getattr(judge_outcome, "degraded_capabilities", []) or []
+                )
             judge_wall_ms = (perf_counter() - judge_started) * 1000.0
 
-            # Reviewer P0: judge provider degradation must surface in
-            # the artifact. Pre-fix only target_response.degraded_*
-            # was accumulated; a judge that fell back from STRICT_SCHEMA
-            # to JSON_OBJECT was invisible downstream — even though
-            # judge-side fallbacks affect fitness reliability MORE than
-            # target-side fallbacks.
-            judge_degraded = list(
-                getattr(judge_outcome, "degraded_capabilities", []) or []
-            )
+            judge_result = _select_median_result(judge_results, self.rubric)
+            judge_calls = len(judge_results)
 
             item_latency_ms = max(target_response.latency_ms, target_wall_ms) + judge_wall_ms
             return (
@@ -259,6 +284,7 @@ class PromptTarget:
                 judge_result,
                 judge_usage,
                 judge_degraded,
+                judge_calls,
                 item_latency_ms,
             )
 
@@ -278,11 +304,12 @@ class PromptTarget:
             judge_result,
             judge_usage,
             judge_degraded,
+            judge_calls,
             item_latency_ms,
         ) in computed:
             target_call_count += 1
             _accumulate_usage(run_usage, target_response.usage)
-            judge_call_count += 1
+            judge_call_count += judge_calls
             _accumulate_usage(run_usage, judge_usage)
             total_latency_ms += item_latency_ms
             degraded_capabilities.extend(target_response.degraded_capabilities)
@@ -539,3 +566,27 @@ def _merge_usage(left: dict[str, int], right: dict[str, int]) -> dict[str, int]:
     out = dict(left or {})
     _accumulate_usage(out, right or {})
     return out
+
+
+def _select_median_result(
+    results: list[JudgeResult], rubric: JudgeRubric
+) -> JudgeResult:
+    """Return the lower-median ``JudgeResult`` by ``weighted_score``.
+
+    T6 median-of-N rescoring. Selecting a *real* result (rather than
+    synthesizing per-dimension medians) sidesteps the ``dict[str, int]``
+    integer constraint on ``JudgeResult.scores`` and the gate
+    majority-vote question — gate outcomes ride along with the selected
+    result. The lower median (index ``(n-1)//2`` of the ascending sort)
+    is deterministic and conservative: for ``n=2`` it picks the lower of
+    the two, for ``n=3`` the middle, for ``n=1`` the only result.
+
+    Ties on ``weighted_score`` are broken by sort stability (original
+    call order), so the choice is reproducible run-to-run.
+    """
+    if not results:
+        raise ValueError("_select_median_result requires at least one result.")
+    if len(results) == 1:
+        return results[0]
+    ordered = sorted(results, key=lambda r: r.weighted_score(rubric))
+    return ordered[(len(ordered) - 1) // 2]

@@ -223,7 +223,7 @@ def test_apply_plan_never_weakens_kc4():
     plan = derive_adaptation_plan(report=report, default_min_kc4=0.4)
     # Force a "weaker" override to test the guard
     plan = plan.model_copy(update={"min_kc4_override": 0.3})
-    kc4, _gap, _k = apply_adaptation_plan(plan, min_kc4=0.6, max_gap=0.25, unlock_k=3)
+    kc4, _gap, _k, _r = apply_adaptation_plan(plan, min_kc4=0.6, max_gap=0.25, unlock_k=3)
     assert kc4 == 0.6  # caller's default preserved
 
 
@@ -231,14 +231,14 @@ def test_apply_plan_never_widens_max_gap():
     report = _report()
     plan = derive_adaptation_plan(report=report, default_max_gap=0.25)
     plan = plan.model_copy(update={"max_gap_override": 0.99})  # attempted widening
-    _kc4, gap, _k = apply_adaptation_plan(plan, min_kc4=0.5, max_gap=0.10, unlock_k=3)
+    _kc4, gap, _k, _r = apply_adaptation_plan(plan, min_kc4=0.5, max_gap=0.10, unlock_k=3)
     assert gap == 0.10  # caller's stricter value preserved
 
 
 def test_apply_plan_never_raises_unlock_k():
     plan = derive_adaptation_plan(report=_report())
     plan = plan.model_copy(update={"unlock_k_override": 10})  # attempted widening
-    _kc4, _gap, k = apply_adaptation_plan(plan, min_kc4=0.5, max_gap=0.25, unlock_k=2)
+    _kc4, _gap, k, _r = apply_adaptation_plan(plan, min_kc4=0.5, max_gap=0.25, unlock_k=2)
     assert k == 2
 
 

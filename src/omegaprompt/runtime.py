@@ -283,17 +283,24 @@ def calibrate(
         tuning.min_kc4 if tuning.min_kc4 is not None else policy.default_min_kc4
     )
     resolved_unlock_k = tuning.unlock_k
+    resolved_rescore_count = 1
 
     # Apply the adaptation plan's discipline-tightening overrides BEFORE the
     # search runs. apply_adaptation_plan enforces the invariant that the plan
-    # never weakens the caller's defaults — only raises kc4, lowers gap, or
-    # reduces unlock_k.
+    # never weakens the caller's defaults — only raises kc4, lowers gap,
+    # reduces unlock_k, or raises rescore_count.
     if adaptation_plan is not None:
-        resolved_min_kc4, resolved_max_gap, resolved_unlock_k = apply_adaptation_plan(
+        (
+            resolved_min_kc4,
+            resolved_max_gap,
+            resolved_unlock_k,
+            resolved_rescore_count,
+        ) = apply_adaptation_plan(
             adaptation_plan,
             min_kc4=resolved_min_kc4,
             max_gap=resolved_max_gap,
             unlock_k=resolved_unlock_k,
+            rescore_count=resolved_rescore_count,
         )
 
     train_ds = _resolve_dataset(train)
@@ -315,6 +322,7 @@ def calibrate(
         space=tuning.space,
         execution_profile=profile,
         max_workers=tuning.max_workers,
+        rescore_count=resolved_rescore_count,
     )
     test_target = (
         PromptTarget(
@@ -326,6 +334,7 @@ def calibrate(
             space=tuning.space,
             execution_profile=profile,
             max_workers=tuning.max_workers,
+            rescore_count=resolved_rescore_count,
         )
         if test_ds is not None
         else None
@@ -1037,8 +1046,8 @@ def _merge_usage(left: dict[str, int], right: dict[str, int]) -> dict[str, int]:
 def _build_adaptation_summary(plan: AdaptationPlan | None) -> dict | None:
     """Render the adaptation plan's applied vs advisory split for the artifact.
 
-    Reviewer P0: a recorded ``ParameterOverride`` for ``rescore_count``
-    or ``schema_mode_fallback`` looked equally authoritative as one for
+    Reviewer P0: a recorded ``ParameterOverride`` for
+    ``schema_mode_fallback`` looked equally authoritative as one for
     ``min_kc4`` even though only the latter actually flowed through
     ``apply_adaptation_plan``. This summary tells the reviewer exactly
     which overrides changed pipeline behaviour and which were recorded

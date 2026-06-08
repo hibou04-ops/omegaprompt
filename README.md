@@ -1507,11 +1507,13 @@ def apply_adaptation_plan(
     min_kc4: float,
     max_gap: float,
     unlock_k: int,
-) -> tuple[float, float, int]:
-    applied_kc4   = max(min_kc4,  plan.min_kc4_override  or min_kc4)
-    applied_gap   = min(max_gap,  plan.max_gap_override  or max_gap)
-    applied_unlock = min(unlock_k, plan.unlock_k_override or unlock_k)
-    return applied_kc4, applied_gap, applied_unlock
+    rescore_count: int = 1,
+) -> tuple[float, float, int, int]:
+    applied_kc4     = max(min_kc4,  plan.min_kc4_override  or min_kc4)
+    applied_gap     = min(max_gap,  plan.max_gap_override  or max_gap)
+    applied_unlock  = min(unlock_k, plan.unlock_k_override or unlock_k)
+    applied_rescore = max(rescore_count, plan.rescore_count)
+    return applied_kc4, applied_gap, applied_unlock, applied_rescore
 ```
 
 Three clipping rules encode a single principle: **an AdaptationPlan may tighten, never loosen**. A malicious or buggy plan that tries to lower `min_kc4` from 0.6 to 0.4 is silently clipped to 0.6 — the caller's strictness wins.

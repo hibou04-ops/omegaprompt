@@ -15,6 +15,8 @@ Invariant (enforced by :func:`derive_adaptation_plan`):
 - ``schema_mode_fallback`` only moves STRICT_SCHEMA -> JSON_OBJECT, never
   the other direction.
 - ``unlock_k_override`` is never larger than the caller-supplied default.
+- ``rescore_count`` is never lower than the caller-supplied default (more
+  judge replays per item only tighten the signal, never loosen it).
 """
 
 from __future__ import annotations
@@ -88,12 +90,13 @@ class AdaptationPlan(BaseModel):
 
         Reviewer P0: pre-fix every entry on ``self.overrides`` looked
         equally authoritative, but ``runtime.calibrate`` only consumes
-        a subset (min_kc4, max_gap, unlock_k via apply_adaptation_plan).
-        Other recorded overrides — rescore_count, schema_mode_fallback,
-        skip_axes, judge_ensemble_shift, rubric_weight_overrides,
-        candidate_budget_cap, dataset_reorder_for_cache — are advisory
-        because no consumer wires them through. A reviewer reading the
-        artifact can't tell which is which without this split.
+        a subset (min_kc4, max_gap, unlock_k, rescore_count via
+        apply_adaptation_plan). Other recorded overrides —
+        schema_mode_fallback, skip_axes, judge_ensemble_shift,
+        rubric_weight_overrides, candidate_budget_cap,
+        dataset_reorder_for_cache — are advisory because no consumer
+        wires them through. A reviewer reading the artifact can't tell
+        which is which without this split.
 
         ``applied`` entries reach the search loop. ``advisory`` entries
         are recorded for reviewers but the pipeline behaviour is
@@ -112,12 +115,14 @@ class AdaptationPlan(BaseModel):
 
 # Parameters whose AdaptationPlan overrides actually flow through
 # ``runtime.calibrate`` -> ``apply_adaptation_plan`` -> the search
-# loop or the ship-gate escalation. Anything else recorded on
-# ``AdaptationPlan.overrides`` is advisory-only as of v1.x.
+# loop, the per-item scoring path, or the ship-gate escalation.
+# Anything else recorded on ``AdaptationPlan.overrides`` is
+# advisory-only.
 APPLIED_PARAMETERS: frozenset[str] = frozenset({
     "min_kc4",
     "max_gap",
     "unlock_k",
+    "rescore_count",
     "manual_review",
 })
 
@@ -359,17 +364,25 @@ def apply_adaptation_plan(
     min_kc4: float,
     max_gap: float,
     unlock_k: int,
-) -> tuple[float, float, int]:
+    rescore_count: int = 1,
+) -> tuple[float, float, int, int]:
     """Apply the plan's walk-forward and search overrides to the caller's defaults.
 
-    Returns the (min_kc4, max_gap, unlock_k) the main pipeline should
-    actually use. Invariants are enforced here: the plan never weakens
-    the discipline relative to the caller's configuration.
+    Returns the ``(min_kc4, max_gap, unlock_k, rescore_count)`` the main
+    pipeline should actually use. Invariants are enforced here: the plan
+    never weakens the discipline relative to the caller's configuration.
+
+    ``rescore_count`` is the per-item judge-replay count consumed by the
+    scoring path (``PromptTarget.evaluate`` takes the lower-median of N
+    judge scores per item). ``plan.rescore_count`` is a direct int field
+    (default 1), so the monotone guard is a plain ``max`` — the applied
+    value is never below the caller's default.
     """
     applied_kc4 = max(min_kc4, plan.min_kc4_override or min_kc4)
     applied_gap = min(max_gap, plan.max_gap_override or max_gap)
     applied_unlock = min(unlock_k, plan.unlock_k_override or unlock_k)
-    return applied_kc4, applied_gap, applied_unlock
+    applied_rescore = max(rescore_count, plan.rescore_count)
+    return applied_kc4, applied_gap, applied_unlock, applied_rescore
 
 
 def apply_ship_gate_escalation(

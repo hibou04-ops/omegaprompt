@@ -218,8 +218,14 @@ def _version_facts(root: Path) -> dict[str, Any]:
 
     try:
         readme = (root / "README.md").read_text(encoding="utf-8")
-        badge_match = re.search(r"pypi-([0-9]+\.[0-9]+\.[0-9]+)-blue\.svg", readme)
-        facts["readme_badge_version"] = badge_match.group(1) if badge_match else None
+        # A dynamic shields.io pypi/v badge has no baked-in version; the version
+        # is read live from PyPI and cannot drift. Treat it as aligned.
+        if re.search(r"img\.shields\.io/pypi/v/omegaprompt", readme):
+            facts["readme_badge_version"] = "dynamic"
+            facts["readme_badge_dynamic"] = True
+        else:
+            badge_match = re.search(r"pypi-([0-9]+\.[0-9]+\.[0-9]+)-blue\.svg", readme)
+            facts["readme_badge_version"] = badge_match.group(1) if badge_match else None
     except Exception as exc:
         facts["readme_error"] = str(exc)
 
@@ -246,7 +252,13 @@ def _check_version_alignment(facts: dict[str, Any]) -> AuditCheck:
             category="version",
             details=facts,
         )
-    versions = set(required.values())
+    # A dynamic README PyPI badge has no baked-in version (it reads live from
+    # PyPI); it cannot drift, so it is excluded from the equality comparison.
+    comparable = {
+        k: v for k, v in required.items()
+        if not (k == "readme_badge_version" and v == "dynamic")
+    }
+    versions = set(comparable.values())
     if len(versions) == 1:
         return ok("VERSION_ALIGNMENT", "pyproject, __version__, README badge, and CHANGELOG align.", category="version", details=required)
     return not_ready(

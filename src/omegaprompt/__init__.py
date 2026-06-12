@@ -17,14 +17,20 @@ do not need them.
 
 from omegaprompt.core import (
     CompositeFitness,
+    GateResult,
+    OverfitMetrics,
     assess_run_risk,
     aggregate_fitness,
     evaluate_walk_forward,
+    extract_overfit_metrics,
     item_fitness,
     load_artifact,
     measure_sensitivity,
+    overfit_metrics_dict,
     policy_for,
     relaxed_safeguards_for,
+    render_gate_report,
+    run_gate,
     save_artifact,
     select_unlocked_axes,
 )
@@ -108,7 +114,7 @@ from omegaprompt.runtime import (
     report,
 )
 
-__version__ = "2.0.2"
+__version__ = "2.1.0"
 
 __all__ = [
     # domain
@@ -148,6 +154,14 @@ __all__ = [
     "select_unlocked_axes",
     "save_artifact",
     "load_artifact",
+    # overfit surfacing (2.1.0) — train<->holdout transfer metrics
+    "OverfitMetrics",
+    "extract_overfit_metrics",
+    "overfit_metrics_dict",
+    # ship gate (2.1.0) — integrity + holdout transfer/gap verdict
+    "GateResult",
+    "run_gate",
+    "render_gate_report",
     # providers
     "LLMProvider",
     "CapabilityEvent",

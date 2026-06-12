@@ -155,6 +155,7 @@ app.command(name="calibrate")(lambda: None)
 app.command(name="report")(lambda: None)
 app.command(name="diff")(lambda: None)
 app.command(name="check-artifact")(lambda: None)
+app.command(name="gate")(lambda: None)
 '''.strip(),
     )
     write(

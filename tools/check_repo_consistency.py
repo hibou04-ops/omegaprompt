@@ -55,15 +55,22 @@ EXPECTED = {
         "preflight",
         "classify_traps",
     },
-    "cli_commands": {"calibrate", "report", "diff", "check-artifact"},
+    "cli_commands": {"calibrate", "report", "diff", "check-artifact", "gate"},
     "wheel_packages": {"src/omegaprompt", "src/omegacal"},
 }
 
+# Badge-composition tokens are version-AGNOSTIC on purpose: the PyPI badge's
+# exact version is owned by the separate README_PYPI_BADGE_VERSION check
+# (which compares the badge version to pyproject's source-of-truth version).
+# Encoding the literal version here too created a coupling where every
+# release bump broke README_BADGE_COMPOSITION even though the badge was
+# correct. The composition check only needs a stable structural token to
+# confirm "this is the PyPI badge" — ``pypi-`` does that for any version.
 README_BADGES = [
     ("CI", "actions/workflows/ci.yml/badge.svg"),
     ("License: Apache 2.0", "license-Apache--2.0-blue.svg"),
     ("Python", "python-3.11%2B-blue.svg"),
-    ("PyPI", "pypi-2.0.2-blue.svg"),
+    ("PyPI", "pypi-"),
     ("Tests", "tests-passing-brightgreen.svg"),
     ("Artifact schema", "artifact-schema%20v2.0-blueviolet.svg"),
     ("MCP", "MCP-server-blueviolet.svg"),

@@ -81,12 +81,23 @@ def _build_local(**kwargs: Any) -> LLMProvider:
     return LocalOpenAICompatibleProvider(backend=backend, **kwargs)
 
 
+def _build_ollama(**kwargs: Any) -> LLMProvider:
+    # Distinct, discoverable named adapter (keyless local OpenAI-compatible
+    # endpoint). Behaviour is backward-compatible with the prior
+    # backend="ollama" local alias; the difference is a clearly-named class
+    # with Ollama defaults (local base URL, sentinel key).
+    from omegaprompt.providers.ollama_provider import OllamaProvider
+
+    kwargs.pop("backend", None)
+    return OllamaProvider(**kwargs)
+
+
 _REGISTRY = {
     "anthropic": _build_anthropic,
     "openai": _build_openai,
     "gemini": _build_gemini,
     "local": _build_local,
-    "ollama": lambda **kwargs: _build_local(backend="ollama", **kwargs),
+    "ollama": _build_ollama,
     "vllm": lambda **kwargs: _build_local(backend="vllm", **kwargs),
     "llama_cpp": lambda **kwargs: _build_local(backend="llama_cpp", **kwargs),
 }

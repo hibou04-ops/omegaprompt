@@ -6,6 +6,7 @@ from omegaprompt import __version__
 from omegaprompt.commands import calibrate as calibrate_cmd
 from omegaprompt.commands import check_artifact as check_artifact_cmd
 from omegaprompt.commands import diff as diff_cmd
+from omegaprompt.commands import gate as gate_cmd
 from omegaprompt.commands import report as report_cmd
 
 app = typer.Typer(
@@ -55,6 +56,11 @@ app.command(
     name="check-artifact",
     help="Check CalibrationArtifact integrity without network/provider calls.",
 )(check_artifact_cmd.check_artifact)
+
+app.command(
+    name="gate",
+    help="CI ship gate: integrity + holdout transfer/gap verdict, exit 0/1/2.",
+)(gate_cmd.gate)
 
 
 if __name__ == "__main__":

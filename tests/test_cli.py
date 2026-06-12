@@ -93,6 +93,7 @@ def test_help_lists_subcommands():
     assert "report" in result.stdout
     assert "diff" in result.stdout
     assert "check-artifact" in result.stdout
+    assert "gate" in result.stdout
 
 
 def test_version_flag_prints_version():

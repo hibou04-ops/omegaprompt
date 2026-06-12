@@ -7,6 +7,12 @@ that *must* stay vendor-agnostic for the discipline to hold.
 
 from omegaprompt.core.artifact import load_artifact, save_artifact
 from omegaprompt.core.fitness import CompositeFitness, aggregate_fitness, item_fitness
+from omegaprompt.core.gate import GateResult, render_gate_report, run_gate
+from omegaprompt.core.overfit import (
+    OverfitMetrics,
+    extract_overfit_metrics,
+    overfit_metrics_dict,
+)
 from omegaprompt.core.profiles import (
     enforce_profile_policy,
     policy_for,
@@ -20,6 +26,12 @@ __all__ = [
     "CompositeFitness",
     "aggregate_fitness",
     "item_fitness",
+    "OverfitMetrics",
+    "extract_overfit_metrics",
+    "overfit_metrics_dict",
+    "GateResult",
+    "run_gate",
+    "render_gate_report",
     "load_artifact",
     "save_artifact",
     "policy_for",

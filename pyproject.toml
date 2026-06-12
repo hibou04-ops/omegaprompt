@@ -18,6 +18,13 @@ keywords = [
     "llm-as-judge",
     "walk-forward",
     "overfitting",
+    "llm-evaluation",
+    "prompt-optimization",
+    "prompt-testing",
+    "evals",
+    "prompt-regression-testing",
+    "mcp",
+    "llmops",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

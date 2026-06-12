@@ -77,5 +77,5 @@ def test_action_indentation_is_block_structured() -> None:
 def test_example_workflow_exists_and_uses_pinned_action() -> None:
     assert EXAMPLE.exists()
     text = EXAMPLE.read_text(encoding="utf-8")
-    assert "uses: hibou04-ops/omegaprompt@v2.1.0" in text
+    assert "uses: hibou04-ops/omegaprompt@v2.1.1" in text
     assert "artifact:" in text

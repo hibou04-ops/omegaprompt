@@ -20,7 +20,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.1.0 (2026-06-12)** — new `omegaprompt gate` CI ship-gate command (one exit code: ship or block on held-out transfer + overfit gap), `--format json` on `report`/`diff` for stable CI summaries, `--format html` single-file scorecard, a keyless **`ollama`** local provider, a GitHub composite **Action** (`uses: hibou04-ops/omegaprompt@v2.1.0`), and a machine-readable **overfit-metrics** block (`extract_overfit_metrics`). MCP tool set is unchanged (frozen at 8 — no `gate` MCP tool); artifact schema stays `2.0`; backward compatible. Exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
+> **v2.1.1 (2026-06-12)** — metadata-only release: the composite **Action**'s `action.yml` `description` was shortened to under GitHub's 125-character Marketplace limit so it can be published to the GitHub Marketplace and consumed as `uses: hibou04-ops/omegaprompt@v2.1.1`. No library/API changes — the `omegaprompt gate` CI ship-gate command, `--format json`/`--format html` outputs, the keyless **`ollama`** provider, and the machine-readable **overfit-metrics** block (`extract_overfit_metrics`) shipped in v2.1.0 are unchanged. MCP tool set stays frozen at 8 (no `gate` MCP tool); artifact schema stays `2.0`; backward compatible. Exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -150,7 +150,7 @@ A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.1.0
+- uses: hibou04-ops/omegaprompt@v2.1.1
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

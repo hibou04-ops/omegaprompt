@@ -24,12 +24,12 @@ jobs:
       # the committed reference artifact path.
       - name: Ship gate
         id: ship_gate
-        uses: hibou04-ops/omegaprompt@v2.1.0
+        uses: hibou04-ops/omegaprompt@v2.1.1
         with:
           artifact: examples/reference/reference_artifact.json
           format: json
           require-generalization: "true"
-          version: "2.1.0"
+          version: "2.1.1"
 
       - name: Report verdict
         if: always()

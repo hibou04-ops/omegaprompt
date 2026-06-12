@@ -1,177 +1,291 @@
 # omegaprompt
 
-> **omegaprompt is Prompt CI.** It adds train/test split, pre-declared gates, holdout correlation checks, and CI-failing artifacts to prompt engineering. If a prompt overfits the calibration set, the build fails.
+**The overfit gate for your prompts.** Your prompt aced your eval set — that's exactly why you can't trust it yet. `omegaprompt` re-tests the winning prompt on examples it never tuned on, and **fails your CI build** if it doesn't hold up.
 
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)
-[![PyPI](https://img.shields.io/badge/pypi-2.0.2-blue.svg)](https://pypi.org/project/omegaprompt/)
+[![License: Apache 2.0](https://img.shields.io/pypi/l/omegaprompt?color=blue&label=license&cacheSeconds=3600)](LICENSE)
+[![Python](https://img.shields.io/pypi/pyversions/omegaprompt?color=blue&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
+[![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
 [![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)
 [![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
-Documentation: [English](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [Easy English](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md)
+Docs: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (trust evidence)](docs/claims/README_CLAIMS.generated.md)
 
-Verification / trust evidence: [generated README claims](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md) · [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/public_claim_ledger.json) · [trust model](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/trust-model.md) · [toolkit positioning](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/toolkit-positioning.md) · [provider capabilities](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/provider-capabilities.md) · [profiles and risk boundaries](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/profiles-and-risk-boundaries.md) · [golden reference artifacts](https://github.com/hibou04-ops/omegaprompt/blob/main/examples/reference/README.md) · [release checklist](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md) · [post-release verification](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md#post-release-network-verification)
-
-Use it when:
-
-- You need Prompt CI around prompt changes, not just an eval score.
-- You need train/test split discipline and pre-declared gates for prompt calibration.
-- You want CI to fail on prompt/artifact regressions before a prompt ships.
-- You need provider-neutral calibration/evaluation artifacts that can be reviewed in JSON.
-- You want a deterministic offline smoke/demo path before any live provider use.
-
-Trust loop:
-
-1. Reproduce the deterministic [reference artifact](https://github.com/hibou04-ops/omegaprompt/blob/main/examples/reference/README.md).
-2. Run `calibrate`, `evaluate`, `report`, and `diff` through the same runtime/CLI/MCP semantics.
-3. Check artifact integrity before treating a `CalibrationArtifact` as release evidence.
-4. Run [release audit and publish readiness](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md#required-local-gates) before any external release action.
-5. Run [post-release network verification](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/release/release-checklist.md#post-release-network-verification) only after a human publishes and creates release surfaces.
-6. Keep the [MCP optional-extra boundary](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md#103-mcp-server-claude-code-cursor) explicit: core install does not require the MCP server dependency.
-
-Demo / replay: the 60-second demo below shows the deterministic offline path. Reproduce it with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`, then inspect `examples/reference/reference_artifact.json` with `omegaprompt check-artifact examples/reference/reference_artifact.json --strict`.
-
-How is this different?
-
-| Adjacent path | Scope difference |
-|---|---|
-| Ad-hoc prompt engineering | `omegaprompt` records pre-declared gates, train/test split behavior, and JSON audit artifacts instead of relying on one-off iteration notes. |
-| "Ask an LLM to judge prompts" | LLM judging can be one input; `omegaprompt` adds holdout discipline, capability recording, and artifact integrity checks around it. |
-| Eval-only scripts | Eval scores are preserved as evidence, but `omegaprompt diff` also gates regressions across walk-forward, hard-gate, cost/latency, and guarded-boundary fields. |
-| Provider-specific prompt tools | The artifact uses provider-neutral axes and records provider capability degradation instead of treating vendor knobs as portable facts. |
-| `omega-lock` | `omega-lock` is the parent audit framework; `omegaprompt` is the prompt-calibration package and PyPI distribution in this repository. |
-| `antemortem-cli` | `antemortem-cli` is pre-implementation reconnaissance; `omegaprompt` is runtime prompt calibration and Prompt CI. |
-| `mini-omega-lock` / `mini-antemortem-cli` | These optional preflight plugins distribute separately and can feed `omegaprompt.preflight`; they are not required for the core install. |
-
-> **Part of the omegaprompt toolkit** — [omegaprompt](https://github.com/hibou04-ops/omegaprompt) (calibration engine, this repo) · [omega-lock](https://github.com/hibou04-ops/omega-lock) (audit framework) · [antemortem-cli](https://github.com/hibou04-ops/antemortem-cli) (pre-implementation recon CLI) · [mini-omega-lock](https://github.com/hibou04-ops/mini-omega-lock) (empirical preflight) · [mini-antemortem-cli](https://github.com/hibou04-ops/mini-antemortem-cli) (analytical preflight) · [Antemortem](https://github.com/hibou04-ops/Antemortem) (methodology). Cross-toolkit cookbook (when-to-call-which-tool, 9 agent scenarios): [AGENT_TRIGGERS.md](https://github.com/hibou04-ops/omegaprompt/blob/main/AGENT_TRIGGERS.md).
+Keywords: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
 
 ```bash
 pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.0.2 (2026-06-08)** — **What's new:** **opt-in parallel item evaluation** — `--concurrency N` (CLI) / `CalibrateTuning(max_workers=N)` evaluates dataset items concurrently within each candidate via a local thread pool. Each item still runs its target and judge calls sequentially, so concurrent calls to any one provider never exceed N. The default (`1`) is serial and produces byte-identical artifacts to prior versions. Wall-clock speedup is **entirely conditional on your provider account's concurrency ceiling (RPM/TPM)**: roughly 50% at N=2 when the account permits it, and **zero** if your account effectively serializes calls. Also: `PromptTarget.evaluate()` is now **memoized by resolved params**, so the final best-candidate evaluation reuses the grid-search result instead of re-calling the providers — fewer live API calls during `calibrate()`, with no public-surface or artifact-schema change. omega-lock pin unchanged (`>=0.3.0,<0.4.0`); `CalibrationArtifact.schema_version` stays `2.0`; golden reference artifacts are unchanged. The project's PyPI Development Status is now **4 - Beta**. Public README/PyPI-facing claims and exact deterministic reference metrics are tracked in the generated [claim ledger](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/README_CLAIMS.generated.md). Release gates cover repository consistency, generated claims, golden reference artifacts, artifact integrity, wheel smoke, and local/post-release verification.
+> **v2.1.0 (2026-06-12)** — new `omegaprompt gate` CI ship-gate command (one exit code: ship or block on held-out transfer + overfit gap), `--format json` on `report`/`diff` for stable CI summaries, `--format html` single-file scorecard, a keyless **`ollama`** local provider, a GitHub composite **Action** (`uses: hibou04-ops/omegaprompt@v2.1.0`), and a machine-readable **overfit-metrics** block (`extract_overfit_metrics`). MCP tool set is unchanged (frozen at 8 — no `gate` MCP tool); artifact schema stays `2.0`; backward compatible. Exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
 
 <!-- public-claim-ledger:start -->
-> Claim evidence source: [docs/claims/public_claim_ledger.json](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
+> Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
 <!-- public-claim-ledger:end -->
 
-Name boundaries: GitHub repo `hibou04-ops/omegaprompt`; PyPI distribution, primary import package, and primary CLI `omegaprompt`; compatibility package / CLI alias `omegacal`; separate parent calibration framework `omega-lock`.
-
-Trust docs: [trust model](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/trust-model.md) · [toolkit positioning](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/toolkit-positioning.md) · [provider capabilities](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/provider-capabilities.md) · [profiles and risk boundaries](https://github.com/hibou04-ops/omegaprompt/blob/main/docs/profiles-and-risk-boundaries.md).
+Trust docs: [trust model](docs/trust-model.md) · [toolkit positioning](docs/toolkit-positioning.md) · [provider capabilities](docs/provider-capabilities.md) · [profiles and risk boundaries](docs/profiles-and-risk-boundaries.md) · [release checklist](docs/release/release-checklist.md) · [post-release verification](docs/release/release-checklist.md#post-release-network-verification).
 
 ---
 
-## Demo (60s)
+## Your prompt is overfit to your eval set — and you don't know it
+
+You tune a handful of prompt variants against your 30-example eval set. Variant #5 wins — 4.8/5. You ship it.
+
+A week later, production quality is *worse* than before. Why?
+
+Because 4.8 was the score on **the exact examples you tuned against**. You didn't measure a prompt — you memorized an answer key. That's overfitting, and your eval tool reported PASS because that's all it was asked to do. ML solved this in the 1990s with a train/test split. Most prompt workflows still ship without one.
+
+`omegaprompt` is the 60-second check that catches this **before** you ship:
+
+1. It tunes your prompt on a **train** slice (across system prompt, few-shot, reasoning effort, output budget, response-schema mode, tool policy).
+2. It **re-tests the winner on a held-out slice it never tuned on**.
+3. It **ships only if held-out performance tracks train performance** — two thresholds you declare *before* scoring, so nobody quietly lowers the bar to make a prompt pass.
+
+Then one line in CI makes a "small prompt tweak" fail the build if it silently degrades quality.
+
+> **Your eval says PASS. omegaprompt says it won't generalize.** That sentence is the whole product.
+
+---
+
+## It sits on top of your eval — it doesn't replace it
+
+omegaprompt does **not** compete with promptfoo, DSPy, deepeval, Braintrust, or your hand-rolled harness. Those tools *find and score* the best prompt. omegaprompt does the one thing they leave out: a **train/held-out split with a transfer gate** that tells you whether that best prompt survives data it wasn't tuned on — plus a **ship/block CI verdict** so the next PR's "tiny wording tweak" can't silently tank production.
+
+| | promptfoo / DSPy / your harness | Just eyeball the eval | **omegaprompt** |
+|---|---|---|---|
+| Run prompts against test cases | ✓ | manual | reuses yours as input |
+| Find / optimize the best prompt | ✓ (that's their job) | by hand | not its job |
+| Train / held-out split | ✗ (one set, scored once) | ✗ | ✓ pre-declared; tuner never sees held-out |
+| Held-out transfer gate (does train score predict held-out score?) | ✗ | ✗ | ✓ per-item correlation gate |
+| Max train↔held-out gap gate | ✗ | ✗ | ✓ pre-declared threshold |
+| Single-command CI ship/block verdict | partial | ✗ | ✓ `gate` / `diff` exit non-zero |
+| Machine-readable "is it overfit?" number | ✗ | ✗ | ✓ `extract_overfit_metrics` |
+| Overfit caught **before** ship | ✗ | ✗ | ✓ that's the entire point |
+
+> **One line for your tech lead:** promptfoo/DSPy tell you *which* prompt scored best. omegaprompt tells you *whether that prompt holds up* on held-out data — and gives CI a single exit code to ship or block on it.
+
+Your existing eval outputs plug straight in — assertions become rule-based gates, your dataset becomes the train/held-out source. omegaprompt is **audit-first, not search-first**: it assumes you already picked candidates and answers the question downstream of search — *did you actually generalize?*
+
+---
+
+## 30-second demo — no API keys, no network
 
 https://github.com/user-attachments/assets/d4308cc3-b8c1-4bb7-b67d-f763e6c26f11
 
-> 60-second walkthrough of the deterministic offline path: dataset, rubric, variants → reference artifact integrity check → schema v2.0 artifact → artifact-backed metrics → live-provider path clearly separated. Exact deterministic reference metrics live in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md). Reproduce the demo with `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`.
-
----
-
-## TL;DR — what & why
-
-You tune a prompt against a small hand-picked eval set, get a high score, ship, then later see production metrics degrade. **Most LLM eval tooling** tells you *which* prompt scores best — assuming your eval set is the ground truth. **`omegaprompt` tells you whether that score generalizes**, by enforcing the train/test discipline ML curricula have taught since the 1990s but many prompt workflows still ship without:
-
-- **Train/test split** with a pre-declared correlation gate (no post-hoc threshold lowering).
-- **Walk-forward validation** — `test_fitness` must hold up against `train_fitness`, or the run is flagged.
-- **Cross-vendor judge** — break self-agreement bias by grading Anthropic targets with OpenAI judges (or vice-versa).
-- **Provider-neutral meta-axes** — calibrate over semantic axes (reasoning profile, output budget, schema mode, tool policy), not vendor-specific knobs that break on migration.
-- **`CalibrationArtifact` schema v2.0** — JSON that diffs cleanly in PRs, fails CI on regression.
-
-> **What's KC4?** The holdout correlation gate. It fails when train performance looks good but test no longer tracks the declared target — the prompt overfit the calibration set. Thresholds are declared *before* scoring (`--min-kc4`, `--max-gap`), not adjusted after seeing results. `status = FAIL_KC4_GATE` is a ship-blocker by construction.
-
----
-
-## Quick start
-
-### 0. Smoke test — no API keys, no network (deterministic)
-
-Try the full audit flow without any LLM calls — useful for CI sanity, first-time exploration, and reproducibility checks:
+The fastest way to watch the gate run is the deterministic offline replay. It uses built-in in-memory model + judge stand-ins, so it needs **no provider keys and makes no network calls** — every run is byte-identical:
 
 ```bash
 git clone https://github.com/hibou04-ops/omegaprompt.git
 cd omegaprompt && pip install -e .
 
-# Reproduce the reference artifact (in-memory target + judge, no network, no randomness)
-python examples/reference/reproduce_reference_artifact.py
-
-# Render the audit report from the included reference artifact
-omegaprompt report examples/reference/reference_artifact.json
+# Replay the deterministic offline calibration (no keys, no network)
+PYTHONIOENCODING=utf-8 python examples/demo_replay.py
 ```
 
-This path is fully deterministic — every run produces the same `CalibrationArtifact`. Use it to wire CI before adding API keys.
+You'll see the actual gate output:
 
-### 1. Real calibration — cloud target + cross-vendor judge
+```
+status: OK
+ship_recommendation: ship
 
-Set API keys for the providers you want to use, then run end-to-end:
+neutral_fitness:    0.4250     # baseline prompt, no tuning
+calibrated_fitness: 0.9250     # winner on the TRAIN slice
+uplift_percent:     117.65%    # how much tuning helped on TRAIN
+test_fitness:       0.9250     # SAME winner on the HELD-OUT slice
+generalization_gap: 0.00%      # train vs held-out — small gap = it transferred
+kc4_status:         MISSING_PER_ITEM_SCORES
+```
+
+**Honest read of this demo:** the bundled demo dataset has *disjoint* train/held-out items (no shared item ids), so the per-item transfer gate cannot fire — it reports `MISSING_PER_ITEM_SCORES` and the gate degenerates to the gap check alone (which here is 0.00%). The per-item transfer gate is what *actually* fires on a real **paired** dataset (train and held-out sharing item ids). So don't read this demo's clean numbers as "the transfer gate passed" — read it as "the gap check passed and the transfer gate had nothing to score." See *How it works*.
+
+Turn that same artifact into a one-command CI verdict:
 
 ```bash
-export ANTHROPIC_API_KEY=...
-export OPENAI_API_KEY=...
-export GEMINI_API_KEY=...   # or GOOGLE_API_KEY — free tier at https://aistudio.google.com/apikey
+omegaprompt gate examples/reference/reference_artifact.json
+# exit 0 = clear to ship · 1 = ship-blocked (overfit / unmeasured) · 2 = environment/load error
 
-omegaprompt calibrate examples/sample_dataset.jsonl \
-  --rubric examples/rubric_example.json \
-  --variants examples/variants_example.json \
+omegaprompt gate examples/reference/reference_artifact.json --format json   # machine summary for CI
+```
+
+Inspect any shipped artifact's integrity offline, anytime:
+
+```bash
+omegaprompt check-artifact examples/reference/reference_artifact.json --strict
+```
+
+---
+
+## Run it for real — your dataset, your provider
+
+```bash
+export ANTHROPIC_API_KEY=...      # or OPENAI_API_KEY / GEMINI_API_KEY — or run keyless against Ollama
+
+omegaprompt calibrate train.jsonl \
+  --test test.jsonl \                    # held-out slice the winner is re-tested on
+  --rubric rubric.json \                 # your judging rubric
+  --variants variants.json \             # candidate system prompts + few-shot
   --target-provider anthropic \
-  --judge-provider openai \
+  --judge-provider openai \              # cross-vendor judge avoids self-grading bias
+  --min-kc4 0.5 \                        # held-out transfer gate, declared up front
+  --max-gap 0.25 \                       # max allowed train↔held-out gap
   --output artifact.json
 ```
 
-### 2. Render an audit report (for PR descriptions, CI logs, human review)
+`--min-kc4` is the **held-out transfer gate** and `--max-gap` is the **max train↔held-out gap** — both are thresholds you set *before* scoring. Output is a single JSON `CalibrationArtifact` with a verdict: `.status` is `OK` / `FAIL_KC4_GATE` / `FAIL_HARD_GATES`, and `.ship_recommendation` is `ship` / `hold` / `experiment` / `block`. `calibrate` **exits non-zero** when the verdict isn't ship-clean, so it gates straight from the command line. Render it for a PR or review:
 
 ```bash
-omegaprompt report artifact.json > report.md
+omegaprompt report artifact.json > report.md            # Markdown (default)
+omegaprompt report artifact.json --format html > report.html   # self-contained scorecard, no JS
+omegaprompt report artifact.json --format json          # stable, schema-versioned CI summary
 ```
 
-### 3. CI regression gate
+---
 
-`omegaprompt diff` exits non-zero when the new run regresses on `calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, cost/latency frontiers, or guarded-mode boundary compliance:
+## Drop it into CI — a prompt A/B test that fails the build
 
-```bash
-omegaprompt diff previous.json artifact.json
-```
-
-Drop into your pipeline:
+A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt gate`** command is the CI hero: it fuses an offline integrity audit with the held-out transfer/gap (overfit) verdict and **exits `0` (ship) / `1` (block) / `2` (environment)**. The repo ships a GitHub composite Action so it's one `uses:` line:
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- run: omegaprompt diff previous.json artifact.json
+- uses: hibou04-ops/omegaprompt@v2.1.0
+  with:
+    artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
+    format: json                     # machine-readable gate summary
+    require-generalization: "true"   # an absent/unverifiable transfer verdict blocks the build
+```
+
+Prefer a raw step? It's the same command:
+
+```yaml
+- run: pip install omegaprompt
+- run: |
+    omegaprompt calibrate train.jsonl --test test.jsonl \
+      --rubric rubric.json --variants variants.json \
+      --target-provider anthropic --output new.json
+- run: omegaprompt gate new.json --format json    # exit 1 on overfit/unverified — fails the build
+- run: omegaprompt diff baseline.json new.json    # exit 1 on regression vs a known-good baseline
+```
+
+`gate` answers "is *this* artifact clear to ship?"; `diff` answers "did this PR regress against last time?" Now "I just tweaked the system prompt" is a reviewable, gated change — not a roll of the dice. A complete example workflow lives at [`examples/ci/ship-gate.yml`](examples/ci/ship-gate.yml).
+
+---
+
+## The five commands
+
+| Command | What it does |
+|---|---|
+| `omegaprompt calibrate` | Tune on train, re-test the winner on held-out, write the artifact + ship verdict. Non-zero exit on gate failure. |
+| `omegaprompt report` | Render an artifact as Markdown, a single-file HTML scorecard (`--format html`), or a stable CI JSON summary (`--format json`). |
+| `omegaprompt diff` | CI regression gate between two artifacts. **Non-zero exit on regression.** `--format json` for a deterministic machine diff. |
+| `omegaprompt check-artifact` | Zero-network integrity check before you trust an artifact as ship evidence (`--strict` for CI). |
+| `omegaprompt gate` | **CI ship gate** (new in 2.1.0): integrity + held-out transfer/gap verdict in one command, exit `0/1/2`, `--format json`. The thing you actually wire into CI. |
+
+Also installed: `omegaprompt-mcp` (the agent server launcher) and `omegacal` (a compatibility alias for the same CLI).
+
+---
+
+## "Is my prompt overfit?" — one machine-readable number
+
+The two numbers that answer this — the **transfer correlation** (per-item train↔held-out agreement) and the **train↔held-out gap** — are surfaced as one prominent block you can read from code or CI:
+
+```python
+from omegaprompt import extract_overfit_metrics
+import json
+
+artifact = json.load(open("artifact.json"))
+m = extract_overfit_metrics(artifact)
+print(m.overfit_verdict)        # GENERALIZES / OVERFIT / UNVERIFIABLE / UNKNOWN
+print(m.transfer_correlation)   # per-item r, or None when the split is disjoint
+print(m.generalization_gap)     # train fitness minus held-out fitness
+```
+
+The same block is embedded in `omegaprompt report --format json` and `omegaprompt gate --format json`, so a CI step (or a coding agent) can read the verdict without parsing prose. This is a **pure read** over the existing artifact — it adds no field, so the artifact schema stays `2.0` and every golden hash is byte-stable.
+
+---
+
+## How it works
+
+You give it a **dataset + a judging rubric + candidate prompts**. It searches structured, provider-neutral variation axes and scores candidates on the train slice:
+
+| Axis | What it varies |
+|---|---|
+| System-prompt variant | which of your system prompts |
+| Few-shot count | how many examples to include |
+| Reasoning effort | off / light / standard / deep |
+| Output budget | small / medium / large token ceiling |
+| Response-schema mode | freeform / JSON object / strict schema |
+| Tool policy | no tools / optional / required *(declared; not yet wired in providers)* |
+
+Then it re-tests the winning configuration on the **held-out** slice and applies two pre-declared gates:
+
+- **Held-out transfer gate** (`--min-kc4`): per-item held-out scores must still track the target. If train looks great but the held-out items stop correlating, the prompt overfit — the run is flagged `FAIL_KC4_GATE`. *(This needs train and held-out to share item ids — a "paired" replay. On an ordinary disjoint split it degrades to the gap check below, which still catches overfit — that's exactly what the offline demo above shows.)*
+- **Max gap gate** (`--max-gap`): the train↔held-out fitness gap must stay under your declared ceiling.
+
+Both thresholds are set **before** scoring. There's no lowering the bar after you see results.
+
+> **On terminology:** this is **held-out validation** — a held-out test slice, not time-series forecasting. Prompts aren't a time series, so there's no real "future" to walk into; it's a holdout split. (The underlying calibration engine still names the routine `walk-forward` internally; in plain terms, read it as *holdout*.)
+
+### Two modes
+
+- **Strict mode** (default) — silent schema fallbacks, placeholder providers, or non-ship-grade judges **raise** instead of passing quietly, and the held-out gates use tight defaults. Use this for anything you'll ship.
+- **Fast mode** — allows those relaxations for quick local exploration, but **records every one** on the artifact so the looser run stays auditable. Looser default gates.
+
+### Providers and agents
+
+- **Provider adapters:** Anthropic, OpenAI, Gemini, a generic `local` OpenAI-compatible adapter, and a dedicated keyless **`ollama`** adapter (local `http://localhost:11434/v1`). Other OpenAI-compatible backends (vLLM, llama.cpp, and any `base_url`: Azure, Groq, Together, OpenRouter) are reached through the `local` adapter — so the full provider set is `anthropic / openai / gemini / local / ollama / vllm / llama_cpp`. The same artifact replays across vendors because the axes are semantic, not vendor-specific knobs. Use a **cross-vendor judge** (e.g. Anthropic target, OpenAI judge) so the grader isn't a peer of the thing it's grading.
+- **MCP server (8 tools):** `calibrate`, `evaluate`, `report`, `diff`, `measure_sensitivity`, `grade`, `preflight`, `classify_traps` — so a coding agent can run the gate and read the verdict before opening a PR. *(The MCP tool set is frozen at 8; the new `gate` command is CLI- and Python-only, not an MCP tool.)*
+
+```bash
+pip install "omegaprompt[mcp]"
+python -m omegaprompt.mcp           # stdio; Claude Code / Cursor spawn it as a subprocess
+```
+
+```json
+{ "mcpServers": { "omegaprompt": { "command": "python", "args": ["-m", "omegaprompt.mcp"] } } }
 ```
 
 ---
 
-## How is this different?
+## When to use it
 
-| Capability | omegaprompt | Typical eval runners | Optimizers | Vendor dashboards |
-|---|:-:|:-:|:-:|:-:|
-| Eval execution | ✓ | ✓ | ✓ | ✓ |
-| **Walk-forward ship gate** | ✓ | usually manual | usually manual | ✗ |
-| **Pre-declared kill criteria** | ✓ | usually manual | partial | ✗ |
-| **Cross-vendor judge discipline** | ✓ | configurable | manual | ✗ |
-| Provider-neutral calibration axes | ✓ | varies | partial | ✗ |
-| JSON-diff audit artifact | ✓ | logs | varies | ✗ |
-| MCP tool surface (Claude Code / Cursor) | ✓ | varies | ✗ | ✗ |
+**Worth it:** you have (or can make) a real train/held-out split; someone downstream has to trust the prompt — ops, compliance, future-you; you want to replay the same calibration on another vendor; you want a prompt PR to fail CI on regression.
 
-> **Position**: `omegaprompt` is **audit-first**, not search-first. It assumes you already picked candidates — often from an eval runner or optimizer — and asks "did you actually generalize?" — the question downstream of search. Existing tools' outputs plug in *as inputs* (assertion-style checks as `RuleJudge`, optimizer outputs as `PromptVariants`).
+**Overkill:** a one-off demo prompt; no held-out set and nobody reviewing the result; you're fine eyeballing 10 outputs. Then just iterate in a playground — this tool buys you nothing.
+
+**Honest scope:** offline held-out is a cheap *screen*, not production ground truth. The numbers reflect *your rubric on your dataset on your models* — not a vendor benchmark. It's not a safety classifier and not a substitute for production A/B telemetry. See [Limitations](#14-limitations-and-scope-boundaries).
 
 ---
 
-📖 **Want depth?** Full architecture, schema, validation, worked examples, and 4 appendices below — paper-grade reference for serious adopters.
-👋 **Want simpler?** [EASY_README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) (English) · [EASY_README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md)
+## Under the hood
 
-> **Note**: Two optional sub-tools (`mini-omega-lock`, `mini-antemortem-cli`) distribute **separately** and plug in via `omegaprompt.preflight` to add empirical and analytical preflight measurements. Standalone users do not need them — see §5.8.
+```python
+# calibrate / report / diff / check-artifact / gate are the omegaprompt CLI commands.
+# run_p1 / P1Config come from the underlying omega-lock calibration engine:
+from omega_lock import run_p1, P1Config   # run_p1 = the engine's core calibration run; the CLI wraps it
+```
+
+The calibration engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), a parameter-calibration kernel hardened on quant-trading calibration before this prompt adapter existed. `omegaprompt` is the prompt-calibration CLI and PyPI distribution that wraps it with the held-out gate, three judges (`RuleJudge` / `LLMJudge` / `EnsembleJudge`), provider-neutral axes, the `CalibrationArtifact` schema (v2.0), the CI `diff`, and the new `gate` ship verdict.
+
+The name *omega* is the final ship check — the last gate a prompt clears before it goes out. The name **omegaprompt** is earned at this point in the page, not assumed in the first screen.
+
+> **Part of the omegaprompt toolkit** — [omegaprompt](https://github.com/hibou04-ops/omegaprompt) (calibration engine, this repo) · [omega-lock](https://github.com/hibou04-ops/omega-lock) (audit framework) · [antemortem-cli](https://github.com/hibou04-ops/antemortem-cli) (pre-implementation recon CLI) · [mini-omega-lock](https://github.com/hibou04-ops/mini-omega-lock) (empirical preflight) · [mini-antemortem-cli](https://github.com/hibou04-ops/mini-antemortem-cli) (analytical preflight) · [Antemortem](https://github.com/hibou04-ops/Antemortem) (methodology). Cross-toolkit cookbook (when-to-call-which-tool, 9 agent scenarios): [AGENT_TRIGGERS.md](AGENT_TRIGGERS.md).
+
+---
+
+## Go deeper
+
+The rest of this README is the full reference: architecture, the `CalibrationArtifact` schema (v2.0), data contracts, all six search axes, the three judges, provider adapter details, validation, and limitations. New to it? Start with **[EASY_README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)**. Browse worked tasks (code review, summarization, translation, debugging) in **[`examples/`](examples/)**.
+
+License: Apache 2.0 · Copyright (c) 2026 hibou · PyPI: [omegaprompt](https://pypi.org/project/omegaprompt/) · CLI: `omegaprompt` (alias `omegacal`) · MCP: `omegaprompt-mcp`
 
 ---
 
 ## Table of contents
 
-- [Demo (60s)](#demo-60s)
+- [30-second demo (offline, no keys)](#30-second-demo--no-api-keys-no-network)
 - [1. Problem statement](#1-problem-statement)
 - [2. Contributions](#2-contributions)
 - [3. System architecture](#3-system-architecture)
@@ -229,13 +343,13 @@ Real LLM SDKs degrade silently. A reasoning-effort parameter is rejected by a lo
 
 1. **Provider-neutral meta-axes.** The public search space is expressed in semantic categories (reasoning profile, output budget bucket, response schema mode, tool policy variant) rather than vendor-specific parameter names. Each provider adapter maps meta-axes to its vendor's native surface internally. The calibration artifact records the meta-axis value (e.g. `reasoning_profile: deep`), not the translated parameter (e.g. `effort: high`), so the same artifact is legible and replayable across vendors.
 
-2. **Execution profiles.** A `guarded` profile (default) refuses to silently relax validation — unship-grade judges raise, structured-schema fallback to prose raises, hidden capability loss raises. An `expedition` profile permits controlled boundary crossing, but every relaxation is recorded as a `RelaxedSafeguard` entry on the artifact. The two profiles make the bargain between strictness and reach explicit and auditable.
+2. **Execution profiles.** Strict mode (the `guarded` profile, default) refuses to silently relax validation — unship-grade judges raise, structured-schema fallback to prose raises, hidden capability loss raises. Fast mode (the `expedition` profile) permits controlled boundary crossing, but every relaxation is recorded as a `RelaxedSafeguard` entry on the artifact. The two profiles make the bargain between strictness and reach explicit and auditable.
 
 3. **Capability tiers and explicit degradation events.** Each provider declares a `ProviderCapabilities` record (supports strict schema, json object, reasoning profiles, usage accounting, LLM judging, tools; tier CORE / CLOUD / LOCAL; experimental / placeholder flags). When an adapter degrades at runtime — for instance, retries without a rejected `reasoning_effort` parameter — it emits a `CapabilityEvent` capturing the capability, the requested value, the applied fallback, and a user-visible note. The event flows up through `EvalItemResult` → `EvalResult` → `CalibrationArtifact` so downstream diffs can detect capability regressions.
 
 4. **Neutral-baseline vs calibrated comparison.** The `CalibrationArtifact` (schema v2.0) records the fitness of the neutral-parameter baseline and the fitness of the calibrated best side by side, with absolute and percent uplift, plus quality-per-cost and quality-per-latency ratios at both points. A reviewer sees not just *the best score* but *what the search earned over doing nothing*.
 
-5. **Walk-forward ship gate with pre-declared thresholds.** The held-out test evaluation uses a Pearson-correlation threshold (`--min-kc4`) and a generalisation-gap threshold (`--max-gap`) that default from the execution profile and are recorded on the artifact. The thresholds cannot be lowered after the scores are seen; this is the Winchester defence, borrowed from quant finance. `status = FAIL_KC4_GATE` is a ship-blocker by construction.
+5. **Held-out ship gate with pre-declared thresholds.** The held-out test evaluation uses a Pearson-correlation threshold (`--min-kc4`) and a generalisation-gap threshold (`--max-gap`) that default from the execution profile and are recorded on the artifact. The thresholds cannot be lowered after the scores are seen; this is the Winchester defence, borrowed from quant finance. `status = FAIL_KC4_GATE` is a ship-blocker by construction.
 
 6. **Judge protocol with three shipped implementations.** `LLMJudge` uses a provider's strict-schema parse path; `RuleJudge` runs deterministic Python predicates for format / refusal / regex gates at zero API cost; `EnsembleJudge` short-circuits LLM grading when rule gates fail. The three compose under a single `Judge` protocol, which the `PromptTarget` consumes without knowledge of which strategy is wired in.
 
@@ -316,7 +430,7 @@ The dependency graph has no back-edges. `domain` does not import from anywhere i
 
 ### 3.3 Boundary between discipline and adapters
 
-The calibration *discipline* — sensitivity measurement, top-K unlock, grid search, walk-forward with pre-declared gates, hard-gate × soft-score fitness, artifact schema — is vendor-agnostic and lives in `core/` and `domain/`. The *adapter layer* — how a `reasoning_profile: deep` becomes a vendor-native API call, how a vendor's usage record is normalised to `input_tokens / output_tokens / cache_creation_input_tokens / cache_read_input_tokens` — lives in `providers/`. A reader evaluating the integrity of the calibration can review `core/` and `domain/` without caring which vendors are wired in. A reader onboarding a new provider can implement `LLMProvider` without reading the search layer.
+The calibration *discipline* — sensitivity measurement, top-K unlock, grid search, held-out validation with pre-declared gates, hard-gate × soft-score fitness, artifact schema — is vendor-agnostic and lives in `core/` and `domain/`. The *adapter layer* — how a `reasoning_profile: deep` becomes a vendor-native API call, how a vendor's usage record is normalised to `input_tokens / output_tokens / cache_creation_input_tokens / cache_read_input_tokens` — lives in `providers/`. A reader evaluating the integrity of the calibration can review `core/` and `domain/` without caring which vendors are wired in. A reader onboarding a new provider can implement `LLMProvider` without reading the search layer.
 
 ---
 
@@ -347,15 +461,15 @@ class ExecutionProfile(str, Enum):
     EXPEDITION = "expedition" # permits recorded boundary crossing
 ```
 
-Guarded mode:
+Strict mode (the `guarded` profile):
 - Refuses to use a provider whose `supports_llm_judge` capability is false as a judge.
 - Raises when a `STRICT_SCHEMA` request hits a provider that cannot honour it.
 - Treats `experimental` or `placeholder` adapters as ineligible for ship-grade positions.
-- Uses strict defaults for `max_gap` and `min_kc4` on the walk-forward gate.
+- Uses strict defaults for `max_gap` and `min_kc4` on the held-out gate.
 
-Expedition mode:
+Fast mode (the `expedition` profile):
 - Permits the above, but every relaxation is recorded as a `RelaxedSafeguard` on the artifact, and `stayed_within_guarded_boundaries` is set to `False`.
-- `additional_uplift_from_boundary_crossing` records how much of the calibrated fitness came from work that guarded mode would have blocked, so the reviewer can see whether the boundary crossing actually paid off.
+- `additional_uplift_from_boundary_crossing` records how much of the calibrated fitness came from work that strict mode would have blocked, so the reviewer can see whether the boundary crossing actually paid off.
 
 Profile selection is a single CLI flag (`--profile guarded|expedition`) and appears on the artifact as `selected_profile`.
 
@@ -387,7 +501,7 @@ Capability *tiers* are a coarse classification:
 | `tier_2_cloud_grade` | First-class cloud providers; judge ship-grade is still declared separately. | Anthropic, OpenAI, Gemini. |
 | `tier_3_local` | Local OpenAI-compatible backends. Target-eligible; by default not ship-grade judges. | Ollama, vLLM, llama.cpp, local OpenAI-compatible servers. |
 
-Tiers are a policy input: the guarded profile refuses tier-3 providers in the judge position. Expedition permits it, recording a `RelaxedSafeguard`.
+Tiers are a policy input: strict mode refuses tier-3 providers in the judge position. Fast mode permits it, recording a `RelaxedSafeguard`.
 
 ### 4.4 Capability events
 
@@ -403,7 +517,7 @@ class CapabilityEvent(BaseModel):
     affects_guarded_boundary: bool = True
 ```
 
-Events propagate from the `ProviderResponse` up through the `EvalItemResult` into the `EvalResult.degraded_capabilities`, and finally onto `CalibrationArtifact.degraded_capabilities`. A reader of the artifact can grep for capability names to see which features were not honoured during the run. In guarded mode, events with `affects_guarded_boundary=True` block the run; in expedition mode they merely record.
+Events propagate from the `ProviderResponse` up through the `EvalItemResult` into the `EvalResult.degraded_capabilities`, and finally onto `CalibrationArtifact.degraded_capabilities`. A reader of the artifact can grep for capability names to see which features were not honoured during the run. In strict mode, events with `affects_guarded_boundary=True` block the run; in fast mode they merely record.
 
 ### 4.5 Ship recommendations
 
@@ -417,7 +531,7 @@ class ShipRecommendation(str, Enum):
     BLOCK = "block"           # structural risk exceeds the current profile
 ```
 
-Computation is deterministic from `status`, walk-forward outcome, hard-gate pass rate, `stayed_within_guarded_boundaries`, and the presence of blocking `CapabilityEvent`s. Same artifact in, same recommendation out — a CI pipeline whitelists `SHIP` without interpreting prose. `omegaprompt diff` treats `BLOCK` and `HOLD` on the candidate as regressions even when the raw metrics improve; `EXPERIMENT` remains non-blocking by design.
+Computation is deterministic from `status`, the held-out validation outcome, hard-gate pass rate, `stayed_within_guarded_boundaries`, and the presence of blocking `CapabilityEvent`s. Same artifact in, same recommendation out — a CI pipeline whitelists `SHIP` without interpreting prose. `omegaprompt diff` treats `BLOCK` and `HOLD` on the candidate as regressions even when the raw metrics improve; `EXPERIMENT` remains non-blocking by design.
 
 ---
 
@@ -431,7 +545,7 @@ Three files, all user-authored, all Pydantic-validated:
 - **`rubric.json`** — `JudgeRubric` with per-dimension weight and integer scale, plus hard gates each labelled with an `evaluator` (`rule` / `judge` / `post`).
 - **`variants.json`** — `PromptVariants` with `system_prompts` pool and optional `few_shot_examples`.
 
-Optionally: `space.json` (custom `MetaAxisSpace`), `test.jsonl` (held-out slice for walk-forward).
+Optionally: `space.json` (custom `MetaAxisSpace`), `test.jsonl` (the held-out test slice the winner is re-tested on).
 
 ### 5.2 Sensitivity measurement
 
@@ -445,19 +559,19 @@ The top `--unlock-k` axes by Gini delta enter the grid-search subspace. The rest
 
 Every combination in the unlocked subspace is evaluated. Each evaluation issues one provider call per dataset item (target) plus one judge call per item (if the judge is `LLMJudge` or `EnsembleJudge` with the LLM fallback triggered). The returned `EvalResult` records fitness, per-item scores, aggregate token usage, latency, and any capability events.
 
-### 5.5 Walk-forward replay
+### 5.5 Held-out replay
 
 The training-best parameters are replayed on the held-out test slice. The replay uses the *same* `PromptTarget` adapter with a different dataset; there is no leakage possible because the test slice was never seen by the searcher.
 
-### 5.6 KC-4 Pearson gate
+### 5.6 Held-out transfer gate (per-item correlation)
 
 The Pearson correlation between train per-item scores and test per-item scores (on the shared dataset ids) is compared to `--min-kc4`. The generalisation gap `|train - test| / |train|` is compared to `--max-gap`. A failure on either sets `status = FAIL_KC4_GATE` and `ship_recommendation = HOLD`. Both thresholds are recorded on the artifact; they cannot be lowered after the fact.
 
-**KC-4 semantics by validation_mode (v1.5+).** KC-4 is a per-item correlation, so it is only meaningful when train and test slices share the *same* item ids — a "paired replay". On an ordinary disjoint train/test split the slices have no shared ids and KC-4 is structurally unmeasurable; the gate degenerates to the gap-only check. To make this explicit, `CalibrateTuning.validation_mode` accepts:
+**Transfer-gate semantics by validation_mode (v1.5+).** The transfer gate is a per-item correlation, so it is only meaningful when train and test slices share the *same* item ids — a "paired replay". On an ordinary disjoint train/test split the slices have no shared ids and the per-item correlation is structurally unmeasurable; the gate degenerates to the gap-only check. To make this explicit, `CalibrateTuning.validation_mode` accepts:
 
-- `"auto"` (default, backward-compat): compute KC-4 only when slices share ≥3 ids; otherwise skip silently.
+- `"auto"` (default, backward-compat): compute the per-item correlation only when slices share ≥3 ids; otherwise skip silently.
 - `"paired"`: caller asserts shared ids by design. Raises `ValueError` if overlap < 3 — a paired run with no overlap is a setup bug, not a free pass.
-- `"disjoint"`: caller asserts no shared ids by design. KC-4 is never computed; the gate is gap-only.
+- `"disjoint"`: caller asserts no shared ids by design. The per-item correlation is never computed; the gate is gap-only.
 
 If you run a normal held-out split (disjoint ids), set `validation_mode="disjoint"` to make the artifact's lack of `kc4_correlation` self-documenting. Use `"paired"` when you score two prompts on the *same* items and want the per-item correlation as a stability signal.
 
@@ -467,7 +581,7 @@ The `CalibrationArtifact` (see §8) is written as pretty-printed JSON to the `--
 
 ### 5.8 Preflight and adaptation (optional sub-tool ecosystem)
 
-The main pipeline does not assume that its default thresholds (`min_kc4 = 0.5`, `max_gap = 0.25`, `unlock_k = 3`) are universally correct. `omegaprompt.preflight` defines a stable plugin contract for two *optional* external sub-tools that measure the actual environment and emit a shared :class:`AdaptationPlan` the main pipeline consumes. The discipline's *defenses* — hard-gate fitness collapse, walk-forward ship gate, sensitivity-driven axis unlock — remain in place; only the numeric parameters are tuned to the environment.
+The main pipeline does not assume that its default thresholds (`min_kc4 = 0.5`, `max_gap = 0.25`, `unlock_k = 3`) are universally correct. `omegaprompt.preflight` defines a stable plugin contract for two *optional* external sub-tools that measure the actual environment and emit a shared :class:`AdaptationPlan` the main pipeline consumes. The discipline's *defenses* — hard-gate fitness collapse, held-out ship gate, sensitivity-driven axis unlock — remain in place; only the numeric parameters are tuned to the environment.
 
 **Standalone `omegaprompt` ships no preflight probe code.** Most users never need it. The preflight module exposes only:
 
@@ -479,7 +593,7 @@ Two external sub-tools plug in:
 | Sub-tool | Repository / PyPI | Role |
 |---|---|---|
 | **`mini-omega-lock`** | `pip install mini-omega-lock` (separate) | **Empirical preflight.** Probes the live judge + endpoint to measure consistency, schema reliability, context margin, latency, noise floor. Emits `JudgeQualityMeasurement`, `EndpointMeasurement`, `PerformanceMeasurement`. |
-| **`mini-antemortem-cli`** | `pip install mini-antemortem-cli` (separate) | **Analytical preflight.** Reads the run configuration and classifies calibration trap patterns (self-agreement bias, small-sample KC-4 power, rubric concentration, variant homogeneity, …) as `REAL` / `GHOST` / `NEW` / `UNRESOLVED`. Emits `AnalyticalFinding` records. |
+| **`mini-antemortem-cli`** | `pip install mini-antemortem-cli` (separate) | **Analytical preflight.** Reads the run configuration and classifies calibration trap patterns (self-agreement bias, small-sample transfer-gate power, rubric concentration, variant homogeneity, …) as `REAL` / `GHOST` / `NEW` / `UNRESOLVED`. Emits `AnalyticalFinding` records. |
 
 Either can be used alone; both compose into the same `PreflightReport`.
 
@@ -526,7 +640,7 @@ class Judge(Protocol):
 
 ### 6.1 LLMJudge
 
-Delegates to an `LLMProvider` via `ResponseSchemaMode.STRICT_SCHEMA`. Anthropic uses `messages.parse`, OpenAI uses `beta.chat.completions.parse`, and Gemini requests `response_schema` through the Google GenAI SDK before local Pydantic validation. No regex fallback, no prose-to-structure inference. Under guarded mode, `LLMJudge` refuses to run on a provider whose `supports_llm_judge` capability is false; separate run-risk policy still treats non-ship-grade judges as a guarded-boundary issue.
+Delegates to an `LLMProvider` via `ResponseSchemaMode.STRICT_SCHEMA`. Anthropic uses `messages.parse`, OpenAI uses `beta.chat.completions.parse`, and Gemini requests `response_schema` through the Google GenAI SDK before local Pydantic validation. No regex fallback, no prose-to-structure inference. Under strict mode, `LLMJudge` refuses to run on a provider whose `supports_llm_judge` capability is false; separate run-risk policy still treats non-ship-grade judges as a strict-mode-boundary issue.
 
 ### 6.2 RuleJudge
 
@@ -558,8 +672,8 @@ Every adapter declares a `ProviderCapabilities` record. Built-in adapters:
 |---|---|---|---|---|---|---|
 | `anthropic` | cloud | yes | yes | yes | yes | `messages.parse` + explicit `cache_control`. |
 | `openai` | cloud | yes | yes | yes | yes | `beta.chat.completions.parse`; drops `reasoning_effort` on unsupported endpoints and records the event. |
-| `gemini` | cloud | yes | yes | no | no | Google GenAI `generate_content`; supports target/freeform/json-object and strict schema via `response_schema` + local Pydantic validation. Not marked ship-grade as a guarded judge. |
-| `ollama` / `local` / `vllm` / `llama_cpp` | local | best-effort | yes | no | no | Target-eligible; refuses LLM-judge position under guarded mode. |
+| `gemini` | cloud | yes | yes | no | no | Google GenAI `generate_content`; supports target/freeform/json-object and strict schema via `response_schema` + local Pydantic validation. Not marked ship-grade as a strict-mode judge. |
+| `ollama` / `local` / `vllm` / `llama_cpp` | local | best-effort | yes | no | no | Target-eligible; refuses LLM-judge position under strict mode. |
 
 ### 7.2 Anthropic
 
@@ -571,13 +685,13 @@ Every adapter declares a `ProviderCapabilities` record. Built-in adapters:
 
 ### 7.4 Gemini
 
-Uses the official Google GenAI SDK (`google-genai`). Freeform and JSON-object target calls are supported. `STRICT_SCHEMA` uses Gemini `response_schema` when enabled and still validates the response against the requested Pydantic model before returning. If native strict schema is unavailable, guarded mode raises instead of degrading; expedition mode may fall back to JSON-object output plus local Pydantic validation and records a `CapabilityEvent`.
+Uses the official Google GenAI SDK (`google-genai`). Freeform and JSON-object target calls are supported. `STRICT_SCHEMA` uses Gemini `response_schema` when enabled and still validates the response against the requested Pydantic model before returning. If native strict schema is unavailable, strict mode raises instead of degrading; fast mode may fall back to JSON-object output plus local Pydantic validation and records a `CapabilityEvent`.
 
-Gemini is target-eligible for freeform and JSON-object runs, especially with `reasoning_profile` locked to `OFF` or `STANDARD`. `LIGHT` and `DEEP` reasoning profiles emit a `CapabilityEvent` because this adapter does not map them to a native Gemini control. Gemini can be used as a judge, but `ship_grade_judge=False`, so guarded artifacts should not be treated as ship-ready on that basis alone. Use Gemini judge paths for expedition or independently validate judge reliability before changing capability policy.
+Gemini is target-eligible for freeform and JSON-object runs, especially with `reasoning_profile` locked to `OFF` or `STANDARD`. `LIGHT` and `DEEP` reasoning profiles emit a `CapabilityEvent` because this adapter does not map them to a native Gemini control. Gemini can be used as a judge, but `ship_grade_judge=False`, so strict-mode artifacts should not be treated as ship-ready on that basis alone. Use Gemini judge paths in fast mode or independently validate judge reliability before changing capability policy.
 
 ### 7.5 Local endpoints
 
-Local OpenAI-compatible backends are first-class target providers but are not considered ship-grade judges by default. The guarded profile blocks their use in the judge position; expedition mode records the relaxation. This is a policy position, not a library limitation — a local model that demonstrates ship-grade judge quality on your domain can have its capability override set explicitly.
+Local OpenAI-compatible backends are first-class target providers but are not considered ship-grade judges by default. Strict mode blocks their use in the judge position; fast mode records the relaxation. This is a policy position, not a library limitation — a local model that demonstrates ship-grade judge quality on your domain can have its capability override set explicitly.
 
 ### 7.6 Extending
 
@@ -687,7 +801,7 @@ The key structural choice: `neutral_baseline` and `calibrated` are recorded side
 All CLI commands use the same contract:
 
 - `0` — command completed and no requested gate/failure condition fired.
-- `1` — CI gate failure: calibration status is non-OK, KC4/hard-gate failure, `ship_recommendation` is `hold` or `block` in gate mode, artifact regression, or `check-artifact --strict` found integrity errors.
+- `1` — CI gate failure: calibration status is non-OK, transfer-gate/hard-gate failure, `ship_recommendation` is `hold` or `block` in gate mode, artifact regression, or `check-artifact --strict` found integrity errors.
 - `2` — environment/config/tooling/input problem: missing provider env var, unknown provider, missing dependency, invalid CLI argument, unreadable file, or invalid artifact passed to a non-checker command. Where applicable stderr uses explicit prefixes such as `TOOLING_MISSING`, `ENVIRONMENT_BLOCKED`, or `INVALID_ARTIFACT`.
 
 ### 9.1 `omegaprompt calibrate`
@@ -797,7 +911,7 @@ Three input-coercion conveniences worth flagging:
 - `params=` on `evaluate()` accepts a `CalibrationArtifact` directly. The
   common "evaluate the previous best on a new dataset" flow is one call.
 
-Low-frequency knobs (search method, unlock-K, walk-forward thresholds, axis
+Low-frequency knobs (search method, unlock-K, held-out gate thresholds, axis
 space) are grouped under `tuning=CalibrateTuning(...)` rather than flat
 parameters; the agent surface stays minimal while power users keep full
 control.
@@ -922,7 +1036,7 @@ Candidate B:  train_fitness = 0.876   (4.4 / 5 average)
 
 Candidate A wins on training. The practitioner ships A.
 
-Walk-forward on a held-out test slice the searcher never saw:
+Held-out validation on a test slice the searcher never saw:
 
 ```
 Candidate A:  train = 0.923   test = 0.612   gap = 33.7%
@@ -937,7 +1051,7 @@ Rationale: candidate A's per-item train ranking does not predict its per-item te
 
 Candidate A overfit the training slice. `omegaprompt` blocks the ship decision mechanically, before the practitioner sees the production behaviour. Candidate B — lower training score, dramatically better generalisation — is the correct decision.
 
-The artifact records both candidates in the grid history, the failed KC-4, and `ship_recommendation: "hold"`. CI gating on `stayed_within_guarded_boundaries == true` and `ship_recommendation == "ship"` blocks the merge without the practitioner needing to parse prose.
+The artifact records both candidates in the grid history, the failed held-out transfer gate, and `ship_recommendation: "hold"`. CI gating on `stayed_within_guarded_boundaries == true` and `ship_recommendation == "ship"` blocks the merge without the practitioner needing to parse prose.
 
 > Numbers in this subsection are illustrative of the failure mode. A reproducible, machine-generated example is in §11.2.
 
@@ -956,7 +1070,7 @@ omegaprompt check-artifact examples/reference/reference_artifact.json --strict
 The harness writes `examples/reference/golden_manifest.json`, which records each case id, reproducible command, expected status, expected ship recommendation, expected validation mode, integrity classification, normalized artifact hash, and whether exact metrics may be displayed. It covers:
 
 - `clean_ok_ship` — the real `omega_lock.run_p1` path with deterministic target and judge stubs.
-- `fail_kc4_gate` — paired walk-forward with KC-4 below the pre-declared threshold.
+- `fail_kc4_gate` — paired held-out validation with the per-item transfer correlation below the pre-declared threshold.
 - `fail_hard_gates` — hard-gate failure with a BLOCK recommendation.
 - `provider_degradation` — explicit capability degradation and relaxed safeguard visibility.
 - `diff_regression_candidate` — an individually valid artifact that regresses against the clean baseline under `omegaprompt diff`.
@@ -1019,7 +1133,7 @@ Every override is *monotonic toward stricter* validation: `min_kc4` only rises, 
 
 ## 12. Validation
 
-The default test suite runs with `pytest -q` and uses mocked provider clients rather than live provider/API calls. Exact test counts are intentionally not repeated in README prose; the static badge row is preserved separately and guarded by the consistency checker. Adapter tests use `SimpleNamespace` or `MagicMock` in place of SDK clients and assert the outgoing request payload shape (model, messages, cache headers, `response_format`, reasoning directives, few-shot ordering). The sub-tool repositories `mini-omega-lock` and `mini-antemortem-cli` carry their own test suites covering probe execution and analytical trap classification respectively.
+The default test suite runs with `pytest -q` and uses mocked provider clients rather than live provider/API calls. Exact test counts are intentionally not repeated in README prose; the static badge row is preserved separately and protected by the consistency checker. Adapter tests use `SimpleNamespace` or `MagicMock` in place of SDK clients and assert the outgoing request payload shape (model, messages, cache headers, `response_format`, reasoning directives, few-shot ordering). The sub-tool repositories `mini-omega-lock` and `mini-antemortem-cli` carry their own test suites covering probe execution and analytical trap classification respectively.
 
 | Module | Coverage summary |
 |---|---|
@@ -1029,9 +1143,9 @@ The default test suite runs with `pytest -q` and uses mocked provider clients ra
 | `core/sensitivity` | Gini-coefficient ranking; top-K unlock; edge cases (zero-delta axes, single-point probes). |
 | `core/artifact` | Round-trip through JSON on disk; `model_post_init` invariants on load. |
 | `core/profiles` | `policy_for(GUARDED/EXPEDITION)` returns distinct defaults; `relaxed_safeguards_for(...)` reports crossings. |
-| `core/risk` | `assess_run_risk(...)` across OK / KC-4 fail / hard-gate fail / capability-event scenarios. |
-| `providers/` | Factory rejects unknown names; respects `base_url`; lists `anthropic` / `openai` / `gemini` / `ollama`. Anthropic adapter: freeform uses `messages.create` with thinking config when reasoning enabled, omits it when OFF; strict schema uses `messages.parse`; refusal raises; JSON-object mode adds system-prompt suffix. OpenAI adapter: same paths on `chat.completions.create` / `beta.chat.completions.parse`; `reasoning_effort` rejected-retry records `CapabilityEvent`; `prompt_tokens_details.cached_tokens` normalised to `cache_read_input_tokens`; content-filter finish reason raises; missing `parsed` raises. Gemini adapter: freeform/json-object/strict-schema request shapes, guarded no-degrade rule, expedition JSON fallback with `CapabilityEvent`, malformed/schema-invalid JSON failures, and usage mapping. `ollama` alias reports tier `tier_3_local`, `supports_llm_judge=False`, `experimental=True`. |
-| `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / duplicate-check rejection / missing-check raise); `LLMJudge` (strict-schema dispatch, payload composition, non-`JudgeResult` response raise, guarded-mode ship-grade judge refusal); `EnsembleJudge` (rule-first short-circuit, LLM escalation on rule-pass, merged gate_results, non-`RuleJudge` rejection). |
+| `core/risk` | `assess_run_risk(...)` across OK / transfer-gate fail / hard-gate fail / capability-event scenarios. |
+| `providers/` | Factory rejects unknown names; respects `base_url`; lists `anthropic` / `openai` / `gemini` / `ollama`. Anthropic adapter: freeform uses `messages.create` with thinking config when reasoning enabled, omits it when OFF; strict schema uses `messages.parse`; refusal raises; JSON-object mode adds system-prompt suffix. OpenAI adapter: same paths on `chat.completions.create` / `beta.chat.completions.parse`; `reasoning_effort` rejected-retry records `CapabilityEvent`; `prompt_tokens_details.cached_tokens` normalised to `cache_read_input_tokens`; content-filter finish reason raises; missing `parsed` raises. Gemini adapter: freeform/json-object/strict-schema request shapes, strict-mode no-degrade rule, fast-mode JSON fallback with `CapabilityEvent`, malformed/schema-invalid JSON failures, and usage mapping. `ollama` alias reports tier `tier_3_local`, `supports_llm_judge=False`, `experimental=True`. |
+| `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / duplicate-check rejection / missing-check raise); `LLMJudge` (strict-schema dispatch, payload composition, non-`JudgeResult` response raise, strict-mode ship-grade judge refusal); `EnsembleJudge` (rule-first short-circuit, LLM escalation on rule-pass, merged gate_results, non-`RuleJudge` rejection). |
 | `targets/` | `PromptTarget` end-to-end with mocked provider + judge; meta-axis resolution and clamping for out-of-range inputs; usage accumulation across evaluations; `evaluation_history` retention; latency measurement; degraded-capability propagation. |
 | `commands/` | CLI help lists `calibrate` / `report` / `diff` / `check-artifact`; `--version` shows `omegaprompt`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips; `check-artifact` performs zero-network integrity checks. |
 | `preflight/` | **Plugin interface only** — no probe or classifier code inside `omegaprompt`. `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement; bounds on `JudgeQualityMeasurement.consistency` (0..1), `EndpointMeasurement.schema_reliability` (0..1). `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample gap widening; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). Sub-tool probe + classifier implementations (with their own test suites) live in the `mini-omega-lock` and `mini-antemortem-cli` repositories. |
@@ -1045,10 +1159,10 @@ Run the default no-network suite with `uv run pytest -q -m "not live"` (or `pyth
 
 | Approach | What it does well | What `omegaprompt` adds |
 |---|---|---|
-| **promptfoo** | Runs prompts against test cases with assertion-based grading. | Pre-declared walk-forward gate, sensitivity-ranked axis unlock, `hard_gate × soft_score` fitness, machine-readable diffable artifact. Composable — promptfoo-style assertions plug in as `RuleJudge` checks. |
-| **DSPy** | Prompt synthesis via program abstraction + bootstrapped few-shot. | Orthogonal concern. DSPy *produces* candidate prompts; `omegaprompt` *decides which one ships* after walk-forward validation. DSPy outputs plug in as `system_prompts` entries in `PromptVariants`. |
-| **Optuna / Ray Tune on prompts** | Generic hyperparameter optimisation. | Walk-forward ship gate and pre-declared kill criteria out of the box; schema-enforced LLM-as-judge via each vendor's native parse path; provider-neutral meta-axes; explicit `CalibrationArtifact` schema CI can diff. |
-| **Provider-native evaluation dashboards** | Rubric-based grading inside one vendor's console. | Cross-vendor judging (break self-agreement bias); local artifact that does not require vendor login; deterministic `diff` for regression detection; `expedition` mode for controlled boundary crossing. |
+| **promptfoo** | Runs prompts against test cases with assertion-based grading. | Pre-declared held-out gate, sensitivity-ranked axis unlock, `hard_gate × soft_score` fitness, machine-readable diffable artifact. Composable — promptfoo-style assertions plug in as `RuleJudge` checks. |
+| **DSPy** | Prompt synthesis via program abstraction + bootstrapped few-shot. | Orthogonal concern. DSPy *produces* candidate prompts; `omegaprompt` *decides which one ships* after held-out validation. DSPy outputs plug in as `system_prompts` entries in `PromptVariants`. |
+| **Optuna / Ray Tune on prompts** | Generic hyperparameter optimisation. | Held-out ship gate and pre-declared kill criteria out of the box; schema-enforced LLM-as-judge via each vendor's native parse path; provider-neutral meta-axes; explicit `CalibrationArtifact` schema CI can diff. |
+| **Provider-native evaluation dashboards** | Rubric-based grading inside one vendor's console. | Cross-vendor judging (break self-agreement bias); local artifact that does not require vendor login; deterministic `diff` for regression detection; fast mode for controlled boundary crossing. |
 | **Hand-rolled eval scripts** | Fast to author for a single workload. | Structured data contract (`Dataset` / `JudgeRubric` / `PromptVariants` / `CalibrationArtifact`); capability-tier policy; pre-declared gates that cannot be lowered after the fact; CI integration without bespoke glue. |
 
 The unique selling point is *discipline over search*. The search engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), which was shipped and validated against a different domain (parameter calibration in quantitative trading) before this prompt adapter was written. `omegaprompt` contributes the prompt-specific adapter, three provider-neutral judges, the hard-gates-first fitness shape, and the capability / profile / artifact architecture.
@@ -1075,11 +1189,11 @@ The LLM judge's scoring distribution can drift across model releases. A planned 
 
 ### Cost is non-trivial
 
-A typical run (10-item dataset, 125-candidate grid, walk-forward) on frontier-tier cloud providers costs in the tens of dollars. Mitigations: cheaper judge during iteration, prompt-cache-aware scheduling within a 5-minute window, local target via Ollama when quality permits.
+A typical run (10-item dataset, 125-candidate grid, held-out validation) on frontier-tier cloud providers costs in the tens of dollars. Mitigations: cheaper judge during iteration, prompt-cache-aware scheduling within a 5-minute window, local target via Ollama when quality permits.
 
 ### Not all providers are ship-grade judges
 
-Guarded mode blocks local providers in the judge position by policy. Gemini is implemented and can validate `JudgeResult`, but is not marked ship-grade as a guarded judge in this adapter. Use it as a target freely; use it as a judge in expedition or after independent domain validation and a deliberate capability policy change.
+Strict mode blocks local providers in the judge position by policy. Gemini is implemented and can validate `JudgeResult`, but is not marked ship-grade as a strict-mode judge in this adapter. Use it as a target freely; use it as a judge in fast mode or after independent domain validation and a deliberate capability policy change.
 
 ---
 
@@ -1088,7 +1202,7 @@ Guarded mode blocks local providers in the judge position by policy. Gemini is i
 **Shipped (v1.0)**
 - Provider-neutral meta-axes (`reasoning_profile`, `output_budget_bucket`, `response_schema_mode`, `tool_policy_variant`).
 - Unified `LLMProvider.call(ProviderRequest) -> ProviderResponse` + `capabilities()` contract.
-- `ExecutionProfile` (guarded / expedition) + structural risk reporting.
+- `ExecutionProfile` (strict mode / fast mode) + structural risk reporting.
 - `CalibrationArtifact` schema v2.0 (neutral baseline vs calibrated, capability events, boundary warnings, ship recommendation).
 - `RuleJudge` / `LLMJudge` / `EnsembleJudge`.
 - Native `gemini` adapter + `ollama` / `local` / `vllm` / `llama_cpp` local adapter family.
@@ -1115,7 +1229,7 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md).
 
 ## 16. Prior art and credits
 
-- **Train / test split with a pre-declared gate.** The foundational ML defence against overfitting, documented in every undergraduate curriculum. The specific implementation here (Pearson rank correlation threshold, pre-declared and unmodifiable) is `omega-lock`'s KC-4 kill criterion.
+- **Train / test split with a pre-declared gate.** The foundational ML defence against overfitting, documented in every undergraduate curriculum. The specific implementation here (Pearson rank correlation threshold, pre-declared and unmodifiable) is the held-out transfer gate — the kill criterion the `omega-lock` engine names `KC-4` internally.
 - **LLM-as-judge.** Pattern formalised in *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (Zheng et al., 2023). `omegaprompt` implements the pattern with schema enforcement at the SDK boundary (Pydantic via each vendor's native parse path) so malformed judge responses raise before polluting the fitness.
 - **Winchester defence.** A quant-finance discipline: *kill criteria declared before the run cannot be relaxed after.* Used here to argue that `--max-gap` and `--min-kc4` must be enforced in configuration, not retroactively tuned on inspection of scores.
 - **Sensitivity-driven coordinate descent.** Stress measurement and top-K unlock are the parameter-calibration primitives introduced by `omega-lock` (v0.3.0), originally for trading-strategy calibration, ported here to prompt configuration.
@@ -1179,11 +1293,11 @@ for name in ("anthropic", "openai", "gemini"):
 
 A 401 here is a key issue; an `ImportError` is a missing optional vendor SDK (`pip install "omegaprompt[anthropic]"` etc.); a successful call confirms the provider path is healthy and the eval can proceed.
 
-### Gemini call works but `LLMJudge` refuses under guarded mode
+### Gemini call works but `LLMJudge` refuses under strict mode
 
-By design. Gemini is `ship_grade_judge=False`. Under guarded profile the judge tier check fails fast rather than producing an artifact whose ship recommendation rests on an unvalidated judge. Two ways forward:
+By design. Gemini is `ship_grade_judge=False`. Under strict mode the judge tier check fails fast rather than producing an artifact whose ship recommendation rests on an unvalidated judge. Two ways forward:
 
-- Use Gemini as the **target** and Anthropic / OpenAI as the **judge** (cross-vendor still satisfies guarded).
+- Use Gemini as the **target** and Anthropic / OpenAI as the **judge** (cross-vendor still satisfies strict mode).
 - Run under `--profile expedition`, which records a `RelaxedSafeguard` rather than failing — the artifact will reflect the relaxed boundary and downstream `diff` will surface it.
 
 Validate independently before flipping `ship_grade_judge=True` in any forked adapter.
@@ -1194,10 +1308,10 @@ Validate independently before flipping `ship_grade_judge=True` in any forked ada
 
 The trust-heavy details live in focused docs so README prose stays source-backed:
 
-- [Trust model](docs/trust-model.md) — what a `CalibrationArtifact` proves, what it does not prove, train/test discipline, walk-forward/KC4 limits, offline vs live evidence, the no-live-provider default CI rule, MCP optional boundary, and diff regression use.
+- [Trust model](docs/trust-model.md) — what a `CalibrationArtifact` proves, what it does not prove, train/test discipline, held-out transfer-gate limits, offline vs live evidence, the no-live-provider default CI rule, MCP optional boundary, and diff regression use.
 - [Toolkit positioning](docs/toolkit-positioning.md) — `omegaprompt` vs `omega-lock`, `antemortem-cli`, optional `mini-*` preflight plugins, the `omegacal` compatibility alias, and the no-dashboard/no-web-app scope.
 - [Provider capabilities](docs/provider-capabilities.md) — adapter capability claims tied to code and contract tests.
-- [Profiles and risk boundaries](docs/profiles-and-risk-boundaries.md) — guarded vs expedition behavior and validation-mode interpretation.
+- [Profiles and risk boundaries](docs/profiles-and-risk-boundaries.md) — strict mode vs fast mode behavior and validation-mode interpretation.
 
 Exact public claims remain governed by the claim ledger and deterministic artifacts.
 
@@ -1434,12 +1548,12 @@ Canonical translation table, excerpted from the adapter implementations.
 | `output_budget_bucket = LARGE` | `max_tokens=16000` | `max_tokens=16000` | `max_output_tokens=16000` | `max_tokens=16000` |
 | `response_schema_mode = FREEFORM` | `messages.create` | `chat.completions.create` | `generate_content` | `chat.completions.create` |
 | `response_schema_mode = JSON_OBJECT` | `messages.create` + system-prompt JSON suffix | `response_format={type:json_object}` | `response_mime_type=application/json` + JSON suffix | best-effort system-prompt instruction |
-| `response_schema_mode = STRICT_SCHEMA` | `messages.parse(output_format=T)` | `beta.chat.completions.parse(response_format=T)` | `response_schema=T` + local Pydantic validation; if unavailable, expedition-only JSON fallback | not supported; guarded mode raises |
+| `response_schema_mode = STRICT_SCHEMA` | `messages.parse(output_format=T)` | `beta.chat.completions.parse(response_format=T)` | `response_schema=T` + local Pydantic validation; if unavailable, fast-mode-only JSON fallback | not supported; strict mode raises |
 | `tool_policy_variant = NO_TOOLS` | no `tools` argument | no `tools` argument | no `tools` argument | no `tools` argument |
 | `tool_policy_variant = TOOL_OPTIONAL` | `tools=[...]`, no `tool_choice` | `tools=[...], tool_choice="auto"` | not mapped | adapter-specific |
 | `tool_policy_variant = TOOL_REQUIRED` | `tools=[...], tool_choice={type:"any"}` | `tools=[...], tool_choice="required"` | not mapped | adapter-specific |
 
-Any cell that reads "not supported" or "best-effort" emits a `CapabilityEvent` at runtime and, under guarded mode, may block the run depending on the execution profile policy.
+Any cell that reads "not supported" or "best-effort" emits a `CapabilityEvent` at runtime and, under strict mode, may block the run depending on the execution profile policy.
 
 ---
 
@@ -1447,9 +1561,9 @@ Any cell that reads "not supported" or "best-effort" emits a `CapabilityEvent` a
 
 The following properties hold by construction and are enforced either in the Pydantic schema layer or in a dedicated test. They are the "theorems" a reviewer can rely on without reading the implementation.
 
-1. **No client-side schema regex.** `STRICT_SCHEMA` mode dispatches to the provider's strongest structured path (`messages.parse` on Anthropic, `beta.chat.completions.parse` on OpenAI, `response_schema` on Gemini when available). Any fallback to JSON-object plus local Pydantic validation is explicit and expedition-only. A malformed structured response raises before the calibration loop sees it.
+1. **No client-side schema regex.** `STRICT_SCHEMA` mode dispatches to the provider's strongest structured path (`messages.parse` on Anthropic, `beta.chat.completions.parse` on OpenAI, `response_schema` on Gemini when available). Any fallback to JSON-object plus local Pydantic validation is explicit and fast-mode-only. A malformed structured response raises before the calibration loop sees it.
 2. **Hard-gate fitness collapse.** For any `(item, params)` pair, if any `hard_gate` returns `False`, the item's contribution to `CompositeFitness` is `0.0`. No soft penalty, no partial credit.
-3. **Walk-forward threshold immutability.** `--max-gap` and `--min-kc4` are CLI arguments resolved once at run start and recorded on the artifact. There is no API surface for modifying them mid-run.
+3. **Held-out threshold immutability.** `--max-gap` and `--min-kc4` are CLI arguments resolved once at run start and recorded on the artifact. There is no API surface for modifying them mid-run.
 4. **Capability-event propagation.** Every `CapabilityEvent` emitted in `ProviderResponse.degraded_capabilities` flows up through `EvalItemResult` → `EvalResult` → `CalibrationArtifact.degraded_capabilities` unchanged. An adapter cannot silently degrade.
 5. **Guarded-profile ship-grade judge check.** Under `ExecutionProfile.GUARDED`, `LLMJudge.score` raises `JudgeError` if `provider.capabilities().supports_llm_judge` is `False`. No implicit waiver.
 6. **Deterministic decision derivation.** `ship_recommendation`, `status`, `stayed_within_guarded_boundaries`, and `guarded_boundary_crossed` are computed by pure functions of the artifact fields and the profile policy. Same input, same output.

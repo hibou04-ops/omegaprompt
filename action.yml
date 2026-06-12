@@ -1,0 +1,84 @@
+name: "omegaprompt ship gate"
+description: >-
+  Run the omegaprompt CI ship gate on a CalibrationArtifact: zero-network
+  integrity audit plus the train<->holdout transfer/gap (overfit) verdict.
+  Fails the job when the artifact is not clear to ship.
+author: "Kyunghoon Gwak"
+branding:
+  icon: "check-circle"
+  color: "purple"
+
+inputs:
+  artifact:
+    description: "Path to the CalibrationArtifact JSON to gate."
+    required: true
+  format:
+    description: "Gate output format: text (default) or json."
+    required: false
+    default: "text"
+  require-generalization:
+    description: >-
+      When 'true' (default), an absent or unverifiable walk-forward verdict
+      blocks the gate. Set 'false' to gate on integrity + release-approval only.
+    required: false
+    default: "true"
+  python-version:
+    description: "Python version used to run the gate."
+    required: false
+    default: "3.11"
+  version:
+    description: >-
+      omegaprompt version/spec to install (e.g. '2.1.0' or a PEP 508 spec).
+      Defaults to the latest published release.
+    required: false
+    default: ""
+
+outputs:
+  passed:
+    description: "'true' when the gate passed, otherwise 'false'."
+    value: ${{ steps.gate.outputs.passed }}
+  exit-code:
+    description: "The gate exit code (0 pass / 1 ship-blocked / 2 environment)."
+    value: ${{ steps.gate.outputs.exit-code }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install omegaprompt
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.version }}" ]; then
+          spec="${{ inputs.version }}"
+          case "$spec" in
+            *[\<\>=!~]*) python -m pip install "omegaprompt${spec}" ;;
+            *) python -m pip install "omegaprompt==${spec}" ;;
+          esac
+        else
+          python -m pip install omegaprompt
+        fi
+
+    - name: Run ship gate
+      id: gate
+      shell: bash
+      run: |
+        set +e
+        if [ "${{ inputs.require-generalization }}" = "false" ]; then
+          gen_flag="--no-require-generalization"
+        else
+          gen_flag="--require-generalization"
+        fi
+        omegaprompt gate "${{ inputs.artifact }}" --format "${{ inputs.format }}" $gen_flag
+        code=$?
+        set -e
+        echo "exit-code=$code" >> "$GITHUB_OUTPUT"
+        if [ "$code" -eq 0 ]; then
+          echo "passed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "passed=false" >> "$GITHUB_OUTPUT"
+        fi
+        exit $code

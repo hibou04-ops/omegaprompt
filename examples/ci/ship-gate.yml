@@ -1,0 +1,38 @@
+# Example: gate a calibration artifact in CI with the omegaprompt composite action.
+#
+# Drop this under .github/workflows/ in your own repo. It assumes a prior
+# step (or a committed file) produces a CalibrationArtifact JSON. The gate
+# fails the job when the artifact is not clear to ship (integrity error,
+# not release-approved, or the candidate overfit the training slice).
+name: prompt ship gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Produce or fetch your CalibrationArtifact here. For the demo we use
+      # the committed reference artifact path.
+      - name: Ship gate
+        id: ship_gate
+        uses: hibou04-ops/omegaprompt@v2.1.0
+        with:
+          artifact: examples/reference/reference_artifact.json
+          format: json
+          require-generalization: "true"
+          version: "2.1.0"
+
+      - name: Report verdict
+        if: always()
+        run: |
+          echo "gate passed: ${{ steps.ship_gate.outputs.passed }}"
+          echo "gate exit-code: ${{ steps.ship_gate.outputs.exit-code }}"

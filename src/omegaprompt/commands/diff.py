@@ -13,6 +13,7 @@ canonical regression contract.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -38,6 +39,15 @@ def diff(
         dir_okay=False,
         readable=True,
     ),
+    fmt: str = typer.Option(  # noqa: B008
+        "markdown",
+        "--format",
+        "-f",
+        help=(
+            "Output format: markdown (default, human-readable) or json "
+            "(stable ArtifactDiff dict for CI consumption)."
+        ),
+    ),
     fail_on_regression: bool = typer.Option(  # noqa: B008
         True,
         "--fail-on-regression/--no-fail-on-regression",
@@ -49,10 +59,26 @@ def diff(
     ),
 ) -> None:
     """Diff two calibration artifacts."""
-    # Markdown form is the human-readable view.
+    fmt_norm = fmt.lower().strip()
+    if fmt_norm not in {"markdown", "json"}:
+        typer.secho(
+            f"INVALID_FORMAT: {fmt!r} (expected markdown or json).",
+            fg=typer.colors.RED,
+            err=True,
+        )
+        raise typer.Exit(code=2)
+
     try:
-        md = runtime_diff(old_path, new_path, format="markdown")
         structured = runtime_diff(old_path, new_path, format="json")
+        if fmt_norm == "json":
+            rendered = json.dumps(
+                structured.model_dump(mode="json"),
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=2,
+            )
+        else:
+            rendered = runtime_diff(old_path, new_path, format="markdown")
     except (ValidationError, ValueError) as exc:
         typer.secho(
             "INVALID_ARTIFACT: one or both inputs failed CalibrationArtifact validation.",
@@ -61,7 +87,7 @@ def diff(
         )
         typer.secho(str(exc), fg=typer.colors.RED, err=True)
         raise typer.Exit(code=2) from exc
-    typer.echo(md)
+    typer.echo(rendered)
 
     # Structured form drives the exit code so CI gates honour the same
     # regression definition as Python callers.

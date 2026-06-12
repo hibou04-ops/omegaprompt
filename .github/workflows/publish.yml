@@ -29,10 +29,43 @@ jobs:
       - name: Install build backend
         run: python -m pip install --upgrade build twine
 
-      - name: Verify version
+      - name: Verify version (version-agnostic)
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          grep 'version = "2.0.2"' pyproject.toml
-          grep '2.0.2' src/omegaprompt/__init__.py || true
+          python - <<'PY'
+          import os
+          import re
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          # Single source of truth: pyproject [project].version.
+          with open("pyproject.toml", "rb") as fh:
+              version = tomllib.load(fh)["project"]["version"]
+          print(f"pyproject version: {version}")
+
+          # __init__ must match pyproject exactly.
+          init_text = Path("src/omegaprompt/__init__.py").read_text(encoding="utf-8")
+          m = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', init_text)
+          if m is None:
+              sys.exit("FAIL: __version__ not found in src/omegaprompt/__init__.py")
+          init_version = m.group(1)
+          print(f"__init__ version: {init_version}")
+          if init_version != version:
+              sys.exit(f"FAIL: __init__ {init_version} != pyproject {version}")
+
+          # When invoked from a release, the tag must be v<version>.
+          tag = os.environ.get("RELEASE_TAG", "").strip()
+          if tag:
+              print(f"release tag: {tag}")
+              if tag != f"v{version}":
+                  sys.exit(f"FAIL: release tag {tag!r} != v{version}")
+          else:
+              print("no release tag in context (workflow_dispatch); skipping tag assertion")
+
+          print("OK: version is consistent across pyproject, __init__, and tag.")
+          PY
 
       - name: Run tests
         run: python -m pip install -e ".[dev]" && python -m pytest tests

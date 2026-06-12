@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-06-12
+
+### Added
+
+- **`omegaprompt gate` (new CLI command).** A first-class, zero-network CI ship gate. It fuses the artifact integrity audit (the same checks `check-artifact` runs) with the train↔holdout transfer/gap (overfit) verdict, then exits `0` (clear to ship), `1` (ship-blocked), or `2` (environment/load failure). `--format json` emits a schema-versioned machine summary (`gate_schema_version` `1.0`). Shipping is now a dedicated decision rather than something inferred from `diff`/`report`. Exposed in Python as `omegaprompt.run_gate()` / `GateResult`. (No MCP tool was added: the MCP tool set is frozen at 8 and the consistency contract enforces it — see Notes.)
+- **`ollama` provider adapter (distinct named class).** `make_provider("ollama")` now returns a clearly-named `OllamaProvider` with Ollama defaults (local `http://localhost:11434/v1` base URL, keyless) instead of a generic `local` adapter configured via a `backend` string. Backward-compatible: same name, same OpenAI-compatible transport, same LOCAL/experimental capability reporting. Supported providers are now `anthropic / openai / gemini / local / ollama / vllm / llama_cpp`.
+- **HTML report.** `omegaprompt report --format html` renders a self-contained, single-file scorecard (inline CSS, no JS, no external assets — stdlib only) with status, overfit verdict, summary metrics, sensitivity ranking, and parameters.
+- **`--format json` on `report` and `diff`.** `report` gains a stable, schema-versioned summary projection (`summary_schema_version` `1.0`) that includes the prominent overfit block; `diff` now exposes its existing structured `ArtifactDiff` as a deterministic `--format json` output. Both are sorted-key, byte-stable for CI diffs.
+- **Overfit metrics surfacing.** `extract_overfit_metrics()` / `OverfitMetrics` / `overfit_metrics_dict()` surface the train↔holdout *transfer correlation* (KC-4) and *generalization gap* — the "is my prompt overfit?" numbers — as one prominent machine-readable block, with a coarse `overfit_verdict` (`GENERALIZES` / `OVERFIT` / `UNVERIFIABLE` / `UNKNOWN`). This is a **pure read** over the existing walk-forward block: it adds **no** field to `CalibrationArtifact`, so the artifact schema stays `2.0` and every golden hash is byte-stable.
+- **GitHub composite Action.** `action.yml` at the repo root wraps `omegaprompt gate`, so downstream repos can `uses: hibou04-ops/omegaprompt@v2.1.0` in CI. Inputs: `artifact`, `format`, `require-generalization`, `python-version`, `version`. Outputs: `passed`, `exit-code`. An example workflow lives at `examples/ci/ship-gate.yml`.
+- **Determinism/replay hardening.** The offline golden-reference replay now also asserts the new gate JSON and report-summary JSON are byte-stable across repeats and across a save→load roundtrip, so CI catches any nondeterminism in the new surfaces without the network.
+
+### Changed
+
+- **`publish.yml` is version-agnostic.** The "Verify version" step now reads the single source of truth (`[project].version` in `pyproject.toml` via `tomllib`), asserts `src/omegaprompt/__init__.__version__` matches, and — when invoked from a release — asserts the tag equals `v<version>`. No more hardcoded version string in the workflow.
+
+### Notes
+
+- Package version is `2.1.0`; `CalibrationArtifact.schema_version` remains `2.0`. The omega-lock dependency pin remains `>=0.3.0,<0.4.0`.
+- All additions are backward-compatible: the 68 `omegaprompt.__init__` exports are additive-only (new symbols added, none removed/renamed); the frozen downstream contract surfaces for `mini-omega-lock` / `mini-antemortem-cli` are untouched; console scripts, MCP tools (frozen at 8 — `gate` is CLI/Python only), runtime entrypoints (8), and the artifact schema (`2.0`) are unchanged. The consistency checker's `EXPECTED.cli_commands` was deliberately extended with `gate`.
+- Golden reference artifacts are **unchanged** — overfit surfacing reads the artifact rather than mutating it, so the golden hashes are byte-stable.
+- This release-preparation change edits the working tree only; it does not publish to PyPI, push tags, or create/edit GitHub Releases.
+
 ## [2.0.2] - 2026-06-08
 
 ### Added

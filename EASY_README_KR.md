@@ -1,188 +1,116 @@
-# omegaprompt — 빠른 안내 (한국어)
+# omegaprompt — 빠른 시작
 
-> 본 문서는 [README_KR.md](README_KR.md)의 압축판입니다. 전체 reference가 필요하면 본 문서를 먼저 읽고 README_KR로 넘어가세요.
-> English: [EASY_README.md](EASY_README.md) · [README.md](README.md)
+> 짧은 버전입니다. 전체 README가 부담스러웠던 분들을 위한 문서예요.
 
-Public claim과 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
+[![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
 
-> **참고:** omegaprompt는 omega-lock 0.3.0을 따릅니다(calibration engine이 결과 action count를 `sample_count`로 rename했고, omegaprompt가 그 alias를 노출해 calibration이 계속 동작합니다). consumer contract test와 scheduled canary가 omega-lock 의존성 seam을 지켜 producer 쪽 field rename을 release 전에 잡습니다.
-
-> **속도 참고 (선택):** calibration은 `--concurrency N`(CLI) 또는 `CalibrateTuning(max_workers=N)`으로 dataset item을 병렬 평가할 수 있습니다. 기본값은 off(serial)이며, 속도 향상은 전적으로 provider 계정이 동시에 허용하는 한도에 달려 있습니다 — 계정의 rate limit에 맞춰 N을 정하거나 기본값으로 두세요.
+전체 문서: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · English Easy: [EASY_README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) · 한국어 Full: [README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md)
 
 ---
 
-## 한 줄 정의
+## 이야기 (60초)
 
-**omegaprompt는 prompt engineering을 위한 CI입니다.** train/test split, 사전 선언된 gate, holdout 상관 검증, CI를 fail시키는 audit artifact — ML이 1990년대부터 써 온 방어선을 prompt에 그대로 옮긴 것. **calibration set에 overfit한 prompt는 빌드를 깨뜨립니다.**
+prompt를 튜닝하고 있다고 해봅시다. 예제 입력 20개를 만들고, prompt를 몇 가지 버전으로 그 예제들에 돌려본 뒤, 가장 점수가 좋은 걸 고릅니다. 좋아 보이네요. 그래서 출시합니다.
 
-## 해결 대상
+**이틀째, 그게 방금 교체한 이전 prompt보다 더 못합니다.**
 
-직접 고른 소수 예제에 prompt를 맞춰 높은 점수 → ship → production 지표 악화. 이건 prompt 실력이 아니라 검증되지 않은 *generalization* 문제입니다. 대부분의 LLM eval 도구는 *어느* prompt가 best score인지만 알려주고, 그 score가 일반화되는지는 묻지 않습니다.
+무슨 일이 벌어진 걸까요? 당신의 예제 20개는 아주 작은 표본이었습니다. "이긴" prompt가 이긴 건 더 나아서가 아니라, *바로 그 20개 예제에* 우연히 잘 맞아떨어졌기 때문입니다. 그 20개가 다루지 못한 입력을 가진 실제 트래픽이 들어오는 순간, 당신이 믿었던 점수는 증발해 버립니다.
 
-omegaprompt가 강제하는 것:
+여기엔 이름이 있습니다. 바로 **overfit**입니다. 그리고 1990년대부터 머신러닝에서 표준이었던 해결책도 있죠 — 예제 일부를 따로 떼어 두고, 나머지로 튜닝한 다음, 떼어 둔 예제에서도 여전히 통할 때만 그 결과를 믿는 겁니다. 대부분의 prompt 워크플로는 이 단계를 건너뜁니다. omegaprompt가 바로 그 단계입니다.
 
-- **train/test split + 사전 선언 KC4 gate** — score를 본 뒤 threshold를 낮출 수 없습니다.
-- **walk-forward 검증** — `test_fitness`가 `train_fitness`를 따라가지 못하면 run이 flagged.
-- **cross-vendor judge** — Anthropic target을 OpenAI judge로 (또는 반대) 평가해 self-agreement bias 위험을 구조적으로 줄임.
-- **provider-neutral meta-axes** — 벤더 고유 knob이 아니라 semantic 축(reasoning profile, output budget, schema mode, tool policy)에서 탐색. 마이그레이션에서 깨지지 않음.
-- **`CalibrationArtifact` schema v2.0** — PR diff에 그대로 들어가는 JSON. regression이면 CI fail.
+---
 
-## KC4 한 줄 요약
+## omegaprompt가 실제로 하는 일
 
-KC4 = **holdout 상관 gate**. train에서는 좋아 보였는데 test에서는 declared target과 더 이상 상관 없는 경우 — 즉 calibration set에 overfit한 경우 — fail. threshold(`--min-kc4`, `--max-gap`)는 *score를 보기 전*에 config로 선언합니다. `status = FAIL_KC4_GATE`는 설계상 ship-blocker.
+세 가지를 넘겨줍니다:
 
-## 60초 멘탈 모델
+1. **dataset** — 당신의 예제 입력들 (그리고 가능하면, 좋은 답이 어떤 모습인지).
+2. **rubric** — 답을 어떻게 채점할지 (규칙, 또는 "모델한테 채점을 시킨다").
+3. **후보 prompt 몇 개** — 비교하고 싶은 버전들.
 
-```
-dataset (train) ──┐
-rubric            ├─▶ meta-axes 탐색 ─▶ walk-forward (test) ─▶ KC4 gate ─▶ artifact
-prompt 후보       │   (reasoning,         (Pearson + gap)        PASS / FAIL    (JSON, diffable)
-provider/judge ───┘    budget, schema, ...)
-```
+omegaprompt는 dataset을 두 더미로 나눕니다: 튜닝에 써도 되는 **train** 더미와, 절대 *엿보면 안 되는* **held-out** 더미. train 더미만 써서 가장 좋은 prompt를 찾은 다음, 그 우승작을 held-out 더미에서 채점합니다. 우승작이 한 번도 본 적 없는 예제에서도 여전히 잘하면, 좋습니다 — 일반화된 거예요. 무너지면, overfit된 prompt를 production에 닿기 **전에** 잡아낸 겁니다.
 
-입력: `dataset + rubric + prompt 후보 + provider`.
-출력: `CalibrationArtifact` JSON — neutral baseline vs calibrated fitness, uplift, walk-forward 수치, capability degradation event, ship recommendation.
+이게 전부입니다. 이 페이지의 나머지를 읽어도 되고, 그냥 이것만 기억해도 됩니다: **튜닝에 쓰지 않은 예제에서 당신의 우승 prompt를 다시 시험한다.**
+
+---
 
 ## 설치
 
 ```bash
-pip install omegaprompt              # core
-pip install "omegaprompt[mcp]"       # + MCP server (Claude Code, Cursor)
+pip install omegaprompt
 ```
 
-`omegaprompt`는 PyPI distribution, primary import package, primary CLI입니다. `omegacal`은 compatibility alias이고, `omega-lock`은 별도 calibration engine dependency입니다.
+---
 
-## Offline vs live
+## 지금 바로 해보기 — API key도, 인터넷도 필요 없음
 
-- Offline deterministic path, key/network 불필요: `python examples/reference/reproduce_reference_artifact.py`.
-- Live provider path: provider API key를 설정한 뒤 `omegaprompt calibrate ...`를 실행합니다. 기본 test와 generated claim은 live API call을 하지 않습니다.
+가짜 in-memory 모델로 완전히 오프라인에서 돌아가는 예제가 내장돼 있어서, 한 푼도 쓰지 않고 key 설정도 없이 결과가 어떤 모양인지 볼 수 있습니다:
 
-## 가장 짧은 경로 — CLI
+```bash
+# 1. Produce the example result (deterministic — same numbers every time)
+python examples/reference/reproduce_reference_artifact.py
+
+# 2. Read it as a human-friendly report
+omegaprompt report examples/reference/reference_artifact.json
+```
+
+리포트는 **baseline** 점수(튜닝 안 한 당신의 prompt), **calibrated** 점수(train 더미에서의 우승작), 그리고 **held-out** 점수(우승작이 한 번도 본 적 없는 예제에서의 점수)를 보여줍니다. 핵심은 마지막 두 점수 사이의 간격입니다: 간격이 작으면 일반화된 것이고, 간격이 크면 overfit된 겁니다.
+
+> **이 예제에 관한 솔직한 한마디:** 번들로 들어 있는 dataset의 두 더미는 같은 항목을 공유하지 않습니다. 그래서 "held-out 항목 하나하나가 따라가는가?"라는 가장 세밀한 검사는 맞춰 볼 대상이 없어 건너뛰었다고 보고합니다. 그래도 이 예제는 *간격* 검사가 동작하는 모습은 보여줍니다. 당신의 데이터에서 두 더미가 항목 id를 공유하면, 항목별 검사도 함께 작동합니다. 그러니 이 예제는 "모든 검사가 발동했다"가 아니라 "간격 검사가 통과했다"로 읽으세요.
+
+---
+
+## 결과 읽기
+
+결과는 JSON 파일 하나입니다. 주로 신경 쓸 필드는 두 개예요:
+
+- **`.status`** — `OK`면 prompt가 held-out 검사를 통과했다는 뜻입니다. 그 외엔 통과 못 한 거고요.
+- **`.ship_recommendation`** — 쉬운 말로 된 판정: `ship`, `hold`, `experiment`, `block`.
+
+이게 다입니다. 예쁜 버전이 필요하면, `omegaprompt report`가 그 JSON을 pull request에 붙여 넣을 수 있는 읽기 좋은 점수표로 바꿔 줍니다.
+
+---
+
+## 내 prompt에 직접 돌려보기
+
+오프라인 예제가 이해되고 나면, 실제 데이터와 실제 모델로 겨눠 보세요. flag는 멘탈 모델이 자리 잡은 뒤에만 필요합니다:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
-export OPENAI_API_KEY=sk-...
 
 omegaprompt calibrate train.jsonl \
-  --test test.jsonl \
-  --rubric rubric.json \
-  --variants variants.json \
-  --output artifact.json \
+  --test test.jsonl \          # the held-out pile it's NOT allowed to tune on
+  --rubric rubric.json \       # how to score answers
+  --variants variants.json \   # your candidate prompts
   --target-provider anthropic \
-  --judge-provider openai \
-  --profile guarded
+  --output artifact.json
 ```
 
-확인할 필드: `.status` (`OK` / `FAIL_KC4_GATE` / `FAIL_HARD_GATES`), `.ship_recommendation` (`SHIP` / `HOLD` / `EXPERIMENT` / `BLOCK`).
+그런 다음 결과를 똑같은 방식으로 읽으세요: `omegaprompt report artifact.json`.
 
-## CI에 꽂기
+---
 
-```bash
-omegaprompt diff previous.json artifact.json   # 회귀 시 non-zero exit
-```
+## 두 가지 실행 방식
 
-```yaml
-# .github/workflows/prompt-audit.yml
-- run: omegaprompt diff previous.json artifact.json
-```
+- **careful (기본값):** 무언가 조용히 대충 넘어가려 하면 — 사실은 일을 못 하는 모델, 충분히 좋지 않은 채점기, 말없는 fallback 같은 것 — 멈춰 서서 알려 줍니다. 모든 게 괜찮은 척하지 않아요. 진짜 일에는 이걸 쓰세요.
+- **quick:** 그런 지름길을 통과시켜서 로컬에서 빠르게 이것저것 찔러볼 수 있게 해 줍니다. 하지만 어떤 지름길을 탔는지 전부 적어 두기 때문에, 실행 결과는 여전히 스스로에게 솔직합니다.
 
-`calibrated_fitness`, `walk_forward.test_fitness`, `hard_gate_pass_rate`, cost/latency frontier, guarded-mode 위반 — 어느 하나라도 regression이면 PR을 막습니다.
+---
 
-## Python 경로
+## 당신이 이미 쓰는 eval 위에서 돌아갑니다
 
-```python
-from omegaprompt import (
-    Dataset, Dimension, HardGate, JudgeRubric,
-    PromptVariants, PromptTarget, LLMJudge, make_provider,
-)
-from omega_lock import run_p1
+지금 쓰는 설정을 버릴 필요 없습니다. 오늘 좋은 prompt를 *찾는 데* 무엇을 쓰든, omegaprompt는 그 뒤에 자리 잡고 그 도구가 답하지 않는 하나의 질문에 답합니다: *이 우승작이 튜닝하지 않은 데이터에서도 버티는가?* 당신의 기존 예제는 train/held-out의 출처가 되고, 당신의 기존 채점 방식은 rubric이 됩니다.
 
-train = Dataset.from_jsonl("train.jsonl")
-test  = Dataset.from_jsonl("test.jsonl")
+---
 
-rubric = JudgeRubric(
-    dimensions=[Dimension(name="accuracy", description="정확한가?", weight=1.0)],
-    hard_gates=[HardGate(name="no_refusal", description="응답 자체는 시도해야 함", evaluator="judge")],
-)
+## 쓸 만할 때 (그리고 아닐 때)
 
-variants = PromptVariants(
-    system_prompts=["You are a helpful assistant.", "Be terse. Be accurate."],
-    few_shot_examples=[],
-)
+**쓸 만할 때**: 당신 말고 누군가가 그 prompt를 신뢰해야 할 때 — 팀원, ops, compliance, 아니면 6개월 뒤의 나 자신 — 또는 prompt 변경을 분위기가 아니라 리뷰 가능한 것으로 만들고 싶을 때.
 
-provider = make_provider("anthropic")           # "openai" | "local" | "ollama" | "vllm"
-judge    = LLMJudge(provider=provider)
+**과할 때**: 아무도 리뷰하지 않는 1회용 즉석 prompt. playground에서 출력 열 개를 눈으로 훑어보는 게 만족스럽다면, 그렇게 하세요 — 이 도구는 거기서 당신에게 아무것도 더해 주지 않고, 그래도 괜찮습니다.
 
-train_t = PromptTarget(target_provider=provider, judge=judge,
-                       dataset=train, rubric=rubric, variants=variants)
-test_t  = PromptTarget(target_provider=provider, judge=judge,
-                       dataset=test,  rubric=rubric, variants=variants)
+---
 
-result = run_p1(train_target=train_t, test_target=test_t)
-# 최적 파라미터: result.grid_best["unlocked"]
-```
+공개 주장과 정확한 deterministic reference 지표는 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
 
-## 6개 meta-axes — 실제 탐색 공간
-
-벤더별 parameter 이름이 아니라 semantic 카테고리로 탐색합니다. 각 provider adapter가 내부에서 번역. 동일 artifact가 벤더 간 재생됩니다.
-
-| Axis | 값 | 통제 대상 |
-|---|---|---|
-| `system_prompt_variant` | prompt 리스트 인덱스 | 어느 system prompt |
-| `few_shot_count` | 0, 1, 2, ... | 포함할 예제 개수 |
-| `reasoning_profile` | OFF / LIGHT / STANDARD / DEEP | extended thinking 깊이 |
-| `output_budget_bucket` | SMALL(1024) / MEDIUM(4096) / LARGE(16000) | max_tokens 버킷 |
-| `response_schema_mode` | FREEFORM / JSON_OBJECT / STRICT_SCHEMA | 출력 구조 강제 |
-| `tool_policy_variant` | NO_TOOLS / TOOL_OPTIONAL / TOOL_REQUIRED | tool-use 정책 (declared; wiring 일부) |
-
-## 3개 judge
-
-- **`RuleJudge`** — deterministic regex/predicate gate (no_refusal, JSON 유효성, regex 일치). API 비용 0.
-- **`LLMJudge`** — capable LLM이 STRICT_SCHEMA로 dimension 별 점수 산출. self-congratulation에 저항하도록 calibration-hygiene 지시가 포함된 system prompt 내장.
-- **`EnsembleJudge`** — `RuleJudge` 먼저, 한 gate라도 실패하면 **short-circuit** (LLM 호출 안 함). 통과하면 LLM judge로 escalate. 깨진 응답에 들이는 비용을 잘라냅니다.
-
-## 2개 profile
-
-| | `guarded` (기본) | `expedition` |
-|---|---|---|
-| silent schema fallback | ❌ raise | ✅ 허용, `CapabilityEvent` 기록 |
-| placeholder provider | ❌ raise | ✅ 허용 |
-| non-ship-grade judge | ❌ raise | ✅ 허용 |
-| 기본 `--max-gap` | 0.25 | 0.35 |
-| 기본 `--min-kc4` | 0.5 | 0.3 |
-
-`expedition`에서 풀린 모든 가드는 `RelaxedSafeguard` 항목으로 artifact에 기록됩니다. *strict냐 reach냐*의 trade가 명시적이고 audit 가능.
-
-## 쓸 만한 경우
-
-- 진짜 **train/test 분리**가 있다 (또는 만들 수 있다).
-- prompt를 **누군가가 신뢰해야 한다** — ops, compliance, 3개월 뒤의 나.
-- **동일 calibration을 다른 벤더에서 재생**하고 싶다 (탐색 축을 다시 짜지 않고).
-- **provider의 조용한 capability 저하를 잡아야 한다** (예: 로컬 endpoint가 어느 날 strict schema를 silently drop).
-
-## 과한 경우
-
-- 데모용 1회성 prompt.
-- test set이 없고, 결과를 아무도 리뷰하지 않는다.
-- 출력 10개 눈으로 훑어보고 ship해도 만족한다.
-
-이 경우는 그냥 playground에서 반복하는 편이 낫습니다.
-
-## 선택적 preflight 플러그인
-
-`omegaprompt`는 **plug-in 인터페이스**(`omegaprompt.preflight.contracts` + `.adaptation`)만 포함합니다. probe 코드는 분리:
-
-- **[mini-omega-lock](https://pypi.org/project/mini-omega-lock/)** — *실 환경* 측정. judge consistency, endpoint 신뢰도, context margin, latency. 실제 API 호출.
-- **[mini-antemortem-cli](https://pypi.org/project/mini-antemortem-cli/)** — *config*를 7개 calibration trap 패턴으로 분류 (self-agreement, small-sample power, variant homogeneity 등). 순수 deterministic rule, API 호출 0.
-
-환경 맞춤 adaptive threshold가 필요할 때만 설치하세요.
-
-## 더 깊이
-
-- 전체 reference: [README_KR.md](README_KR.md)
-- meta-axes 정의: `src/omegaprompt/domain/enums.py`
-- fitness 식 (hard_gate × soft_score): `src/omegaprompt/core/fitness.py`
-- walk-forward gate: `src/omegaprompt/core/walkforward.py`
-- provider adapter: `src/omegaprompt/providers/`
-
-License: Apache 2.0. © 2026 Kyunghoon Gwak (hibou04-ops).
+License: Apache 2.0. Copyright (c) 2026 hibou.

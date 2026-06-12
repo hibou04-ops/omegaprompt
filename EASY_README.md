@@ -1,32 +1,38 @@
 # omegaprompt — Easy Start
 
-> The short version, for people who found the 16-section academic README intimidating.
-> Full doc: [README.md](README.md) · 한국어 Easy: [EASY_README_KR.md](EASY_README_KR.md)
+> The short version, for people who found the full README intimidating.
 
-Public claims and exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
+[![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
 
-> **Note:** omegaprompt tracks omega-lock 0.3.0 (the calibration engine renamed the result action count to `sample_count`; omegaprompt exposes that alias so calibration keeps working). A consumer contract test plus a scheduled canary guard the omega-lock dependency seam so a producer-side field rename is caught before release.
+Full doc: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · 한국어 Easy: [EASY_README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · 한국어 Full: [README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md)
 
-> **Speed note (optional):** calibration can evaluate dataset items in parallel with `--concurrency N` (CLI) or `CalibrateTuning(max_workers=N)`. It is off by default (serial), and any speedup depends entirely on what your provider account allows concurrently — set N to fit your account's rate limits, or leave it at the default.
+---
 
-## What problem does it fix?
+## The story (60 seconds)
 
-You iterate prompt variants against 20 hand-picked examples. The top scorer gets shipped. **On day two in production, it fails on inputs the 20 examples didn't represent.**
+You're tuning a prompt. You write 20 example inputs, try a few versions of your prompt against them, and pick the one that scores best. It looks great. You ship it.
 
-That's overfitting. ML has known the defense since the 1990s: a **held-out test slice**, a **pre-declared correlation threshold**, and a **gate that blocks ship if the numbers miss**. Every ML textbook teaches it. Most prompt-tuning tools skip it.
+**On day two, it's doing worse than the prompt you replaced.**
 
-omegaprompt is prompt calibration with those three defenses wired in. It's **provider-neutral** (same artifact replays across Anthropic / OpenAI / Gemini / local / OpenAI-compatible) and it **records every degradation** so CI sees when a provider silently dropped a capability.
+What happened? Your 20 examples were a tiny sample. The prompt that "won" didn't win because it's better — it won because it happened to fit *those exact 20 examples*. The moment real traffic showed up with inputs your 20 didn't cover, the score you trusted evaporated.
 
-## 60-second mental model
+This has a name: **overfitting**. And it has a fix that's been standard in machine learning since the 1990s — you hold some examples back, tune on the rest, and only trust a result if it still holds up on the examples you held back. Most prompt workflows skip this step. omegaprompt is that step.
 
-```
-Your dataset  →  search over meta-axes  →  walk-forward on held-out  →  PASS or FAIL_KC4_GATE
-                 (reasoning, budget,        (Pearson + gap gate)        ship-ready artifact
-                  schema, variants)
-```
+---
 
-You define: **dataset + rubric + candidate prompts + provider**.
-It returns: **a `CalibrationArtifact` JSON** with neutral-baseline vs calibrated fitness, uplift, walk-forward metrics, capability degradation events, and a ship recommendation.
+## What omegaprompt actually does
+
+You hand it three things:
+
+1. **A dataset** — your example inputs (and, ideally, what a good answer looks like).
+2. **A rubric** — how to score an answer (rules, or "ask a model to grade it").
+3. **A few candidate prompts** — the versions you want to compare.
+
+It splits your dataset into two piles: a **train** pile it's allowed to tune on, and a **held-out** pile it is *not* allowed to peek at. It finds the best prompt using only the train pile, then scores that winner on the held-out pile. If the winner still does well on examples it never saw, great — it generalized. If it falls apart, you just caught an overfit prompt **before** it hit production.
+
+That's the whole idea. You can read the rest of this page, or you can just remember: **it re-tests your winning prompt on examples it never tuned on.**
+
+---
 
 ## Install
 
@@ -34,131 +40,77 @@ It returns: **a `CalibrationArtifact` JSON** with neutral-baseline vs calibrated
 pip install omegaprompt
 ```
 
-`omegaprompt` is the PyPI distribution, primary import package, and primary CLI. `omegacal` is a compatibility alias; `omega-lock` is the separate calibration engine dependency.
+---
 
-## Offline vs live
+## Try it right now — no API key, no internet
 
-- Offline deterministic path, no keys or network: `python examples/reference/reproduce_reference_artifact.py`.
-- Live provider path: set the provider API key, then run `omegaprompt calibrate ...`. Default tests and generated claims do not make live API calls.
+There's a built-in example that runs entirely offline using fake in-memory models, so you can see the shape of the result without spending a cent or setting up a key:
 
-## The easiest path: the CLI
+```bash
+# 1. Produce the example result (deterministic — same numbers every time)
+python examples/reference/reproduce_reference_artifact.py
+
+# 2. Read it as a human-friendly report
+omegaprompt report examples/reference/reference_artifact.json
+```
+
+The report shows you a **baseline** score (your prompt with no tuning), a **calibrated** score (the winner on the train pile), and the **held-out** score (the winner on examples it never saw). The gap between those last two is the whole point: a small gap means it generalized; a big gap means it overfit.
+
+> **One honest note about this example:** the bundled dataset's two piles don't share the same items, so the finest-grained "does each held-out item track?" check has nothing to line up and reports that it was skipped. The example still shows the *gap* check working. On your own data, if the two piles share item ids, the per-item check kicks in too. So read the example as "the gap check passed," not "every check fired."
+
+---
+
+## Reading the result
+
+The result is one JSON file. You mostly care about two fields:
+
+- **`.status`** — `OK` means the prompt cleared the held-out checks. Anything else means it didn't.
+- **`.ship_recommendation`** — a plain-English call: `ship`, `hold`, `experiment`, or `block`.
+
+That's it. If you want the pretty version, `omegaprompt report` turns that JSON into a readable scorecard you can paste into a pull request.
+
+---
+
+## Running it on your own prompt
+
+Once the offline example makes sense, point it at real data with a real model. You only need the flags after the mental model has clicked:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
 
 omegaprompt calibrate train.jsonl \
-  --test test.jsonl \
-  --rubric rubric.json \
-  --variants variants.json \
-  --output result.json \
+  --test test.jsonl \          # the held-out pile it's NOT allowed to tune on
+  --rubric rubric.json \       # how to score answers
+  --variants variants.json \   # your candidate prompts
   --target-provider anthropic \
-  --judge-provider anthropic \
-  --profile guarded
+  --output artifact.json
 ```
 
-You get `result.json` — the `CalibrationArtifact`. Look at `.status` (`OK` / `FAIL_KC4_GATE` / `FAIL_HARD_GATES`) and `.ship_recommendation` (`SHIP` / `HOLD` / `EXPERIMENT` / `BLOCK`).
+Then read the result the same way: `omegaprompt report artifact.json`.
 
-## The Python path
+---
 
-```python
-from omegaprompt import (
-    Dataset, Dimension, HardGate, JudgeRubric,
-    PromptVariants, PromptTarget, LLMJudge, make_provider,
-)
-from omega_lock import run_p1
+## Two ways to run
 
-# 1. Dataset + rubric
-train = Dataset.from_jsonl("train.jsonl")
-test  = Dataset.from_jsonl("test.jsonl")
+- **Careful (the default):** if anything tries to quietly cut a corner — a model that can't really do the job, a grader that isn't good enough, a silent fallback — it stops and tells you instead of pretending everything's fine. Use this for anything real.
+- **Quick:** lets those shortcuts through so you can poke around fast locally, but it writes down every shortcut it took so the run is still honest about itself.
 
-rubric = JudgeRubric(
-    dimensions=[Dimension(name="accuracy", description="is it correct?", weight=1.0)],
-    hard_gates=[HardGate(name="no_refusal", description="model must try", evaluator="judge")],
-)
+---
 
-# 2. Candidate prompts (at least 2 for sensitivity signal)
-variants = PromptVariants(
-    system_prompts=["You are a helpful assistant.", "Be terse. Be accurate."],
-    few_shot_examples=[],
-)
+## It runs on top of whatever eval you already use
 
-# 3. Provider + judge
-provider = make_provider("anthropic")           # or "openai", "local", "ollama", "vllm"
-judge    = LLMJudge(provider=provider)
+You don't have to throw away your current setup. Whatever you use to *find* a good prompt today, omegaprompt sits after it and answers the one question that tool doesn't: *does this winner hold up on data it wasn't tuned on?* Your existing examples become the train/held-out source; your existing scoring becomes the rubric.
 
-# 4. Wrap as calibrable targets
-train_t = PromptTarget(target_provider=provider, judge=judge, dataset=train, rubric=rubric, variants=variants)
-test_t  = PromptTarget(target_provider=provider, judge=judge, dataset=test,  rubric=rubric, variants=variants)
+---
 
-# 5. Run — uses omega-lock's run_p1 under the hood
-result = run_p1(train_target=train_t, test_target=test_t)
+## When it's worth it (and when it isn't)
 
-# Best prompt is in result.grid_best["unlocked"]
-```
+**Worth it** when someone other than you has to trust the prompt — a teammate, ops, compliance, or future-you six months from now — or when you want a prompt change to be reviewable instead of a vibe.
 
-## The 6 meta-axes (the actual search space)
+**Overkill** for a one-off throwaway prompt with nobody reviewing it. If you're happy eyeballing ten outputs in a playground, do that — this tool buys you nothing there, and that's fine.
 
-Instead of vendor-specific parameter names, omegaprompt searches over semantic categories each provider adapter translates internally:
+---
 
-| Axis | Values | What it controls |
-|---|---|---|
-| `system_prompt_variant` | index into your prompts | Which system prompt |
-| `few_shot_count` | 0, 1, 2, ... | How many examples to include |
-| `reasoning_profile` | OFF / LIGHT / STANDARD / DEEP | Extended thinking depth |
-| `output_budget_bucket` | SMALL (1024) / MEDIUM (4096) / LARGE (16000) | max_tokens |
-| `response_schema_mode` | FREEFORM / JSON_OBJECT / STRICT_SCHEMA | Output structure enforcement |
-| `tool_policy_variant` | NO_TOOLS / TOOL_OPTIONAL / TOOL_REQUIRED | Tool-use policy (declared; not wired in providers yet) |
-
-Same artifact replays across vendors because the axes are semantic.
-
-## Three judges
-
-- **`RuleJudge`** — deterministic regex/predicate gates (no_refusal, JSON-valid, regex-match). Zero API cost.
-- **`LLMJudge`** — a capable LLM scores dimensions via STRICT_SCHEMA. Ships a judge system prompt that actively resists self-congratulation.
-- **`EnsembleJudge`** — RuleJudge first; if any rule gate fails, **short-circuit** (no LLM call). Otherwise escalate. Saves cost on broken responses.
-
-## The two profiles
-
-| | `guarded` (default) | `expedition` |
-|---|---|---|
-| Silent schema fallback | ❌ raise | ✅ allow, log as CapabilityEvent |
-| Placeholder providers | ❌ raise | ✅ allow |
-| Non-ship-grade judge | ❌ raise | ✅ allow |
-| Default `--max-gap` | 0.25 | 0.35 |
-| Default `--min-kc4` | 0.5 | 0.3 |
-
-Every relaxation in `expedition` is recorded as a `RelaxedSafeguard` entry in the artifact. The bargain between strictness and reach is explicit and auditable.
-
-## When it's worth it
-
-- You have a **real train/test split** (or can make one).
-- Someone downstream needs to **trust** the prompt — ops, compliance, you in 3 months.
-- You want to **replay the same calibration on a different vendor** without rewriting search axes.
-- You need to **catch silent provider degradations** (e.g., a local endpoint dropping strict schema).
-
-## When it's overkill
-
-- One-off prompt for a demo.
-- No test set, no holdout, nobody will review the result.
-- You're fine eyeballing 10 outputs and shipping.
-
-In those cases, just iterate in a playground.
-
-## Optional preflight plugins
-
-`omegaprompt` ships the **plugin interface** (`omegaprompt.preflight.contracts` + `.adaptation`) but no probes. Two separate packages fill the slot:
-
-- **[mini-omega-lock](https://pypi.org/project/mini-omega-lock/)** — measures *your actual environment* (judge consistency, endpoint reliability, context margin, latency). Live API calls.
-- **[mini-antemortem-cli](https://pypi.org/project/mini-antemortem-cli/)** — classifies *your config* against 7 calibration trap patterns (self-agreement, small-sample power, variant homogeneity, ...). Pure deterministic rules, zero API calls.
-
-Install only if you want adaptive thresholds tuned to your real setup.
-
-## Go deeper
-
-- Full academic README: [README.md](README.md) (system architecture, data contracts, all the appendices)
-- Meta-axes definitions: `src/omegaprompt/domain/enums.py`
-- Fitness rule (hard_gate × soft_score): `src/omegaprompt/core/fitness.py`
-- Walk-forward gate: `src/omegaprompt/core/walkforward.py`
-- Provider adapters: `src/omegaprompt/providers/`
+Public claims and exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
 
 License: Apache 2.0. Copyright (c) 2026 hibou.

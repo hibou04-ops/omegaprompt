@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-06-12
+
+Marketplace: shorten action.yml description to GitHub's 125-char limit so the
+composite Action can be published to GitHub Marketplace. No library/API changes.
+
+### Changed
+
+- Shortened the composite `action.yml` `description` to a single line under
+  GitHub's 125-character Marketplace limit (107 chars) so the ship gate can be
+  published to the GitHub Marketplace and consumed as
+  `uses: hibou04-ops/omegaprompt@v2.1.1`. The action's inputs, outputs, run
+  steps, and branding are unchanged; the example workflow pin
+  (`examples/ci/ship-gate.yml`) advanced to `2.1.1`.
+
+### Notes
+
+- No source, behavior, or public-API change. `CalibrationArtifact.schema_version`
+  remains `2.0`, the MCP tool set stays frozen at 8 (no new tool), the CLI command
+  set is unchanged, and the omega-lock dependency pin remains `>=0.3.0,<0.4.0`.
+  Fully backward compatible; `publish.yml` reads the version from `pyproject.toml`.
+
 ## [2.1.0] - 2026-06-12
 
 ### Added

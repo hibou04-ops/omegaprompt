@@ -1,8 +1,5 @@
 name: "omegaprompt ship gate"
-description: >-
-  Run the omegaprompt CI ship gate on a CalibrationArtifact: zero-network
-  integrity audit plus the train<->holdout transfer/gap (overfit) verdict.
-  Fails the job when the artifact is not clear to ship.
+description: Re-test a tuned prompt on a held-out slice and fail the build when it won't generalize (overfit ship gate).
 author: "Kyunghoon Gwak"
 branding:
   icon: "check-circle"

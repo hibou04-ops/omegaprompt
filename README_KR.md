@@ -20,7 +20,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.1.0 (2026-06-12)** — 새 `omegaprompt gate` CI ship-gate 명령(하나의 exit code: held-out transfer + overfit gap 기준으로 ship 또는 block), `report`/`diff`에 안정적인 CI 요약을 위한 `--format json`, 단일 파일 scorecard용 `--format html`, key가 필요 없는 **`ollama`** 로컬 provider, GitHub composite **Action**(`uses: hibou04-ops/omegaprompt@v2.1.0`), 그리고 기계가 읽을 수 있는 **overfit-metrics** 블록(`extract_overfit_metrics`)이 추가되었습니다. MCP 도구 세트는 변경되지 않았습니다(8개로 고정 — `gate` MCP 도구는 없음); artifact schema는 `2.0`을 유지하며 backward compatible합니다. 정확한 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
+> **v2.1.1 (2026-06-12)** — 메타데이터 전용 릴리스: composite **Action**의 `action.yml` `description`을 GitHub Marketplace의 125자 제한 미만으로 줄여 Marketplace에 게시하고 `uses: hibou04-ops/omegaprompt@v2.1.1`로 사용할 수 있게 했습니다. 라이브러리/API 변경은 없습니다 — v2.1.0에서 추가된 `omegaprompt gate` CI ship-gate 명령, `--format json`/`--format html` 출력, key가 필요 없는 **`ollama`** provider, 기계가 읽을 수 있는 **overfit-metrics** 블록(`extract_overfit_metrics`)은 그대로입니다. MCP 도구 세트는 8개로 고정(`gate` MCP 도구는 없음); artifact schema는 `2.0`을 유지하며 backward compatible합니다. 정확한 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -150,7 +150,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.1.0
+- uses: hibou04-ops/omegaprompt@v2.1.1
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

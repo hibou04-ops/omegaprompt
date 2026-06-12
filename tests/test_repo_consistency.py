@@ -91,9 +91,9 @@ __all__ = [
     badges = "\n".join(
         [
             "[![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)",
-            "[![License: Apache 2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)",
-            "[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org)",
-            "[![PyPI](https://img.shields.io/badge/pypi-2.0.2-blue.svg)](https://pypi.org/project/omegaprompt/)",
+            "[![License: Apache 2.0](https://img.shields.io/pypi/l/omegaprompt?color=blue&label=license&cacheSeconds=3600)](LICENSE)",
+            "[![Python](https://img.shields.io/pypi/pyversions/omegaprompt?color=blue&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)",
+            "[![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)",
             "[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](tests/)",
             "[![Artifact schema](https://img.shields.io/badge/artifact-schema%20v2.0-blueviolet.svg)](#8-the-calibrationartifact-schema-v20)",
             "[![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)",

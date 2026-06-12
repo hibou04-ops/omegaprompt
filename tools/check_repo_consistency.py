@@ -60,17 +60,22 @@ EXPECTED = {
 }
 
 # Badge-composition tokens are version-AGNOSTIC on purpose: the PyPI badge's
-# exact version is owned by the separate README_PYPI_BADGE_VERSION check
-# (which compares the badge version to pyproject's source-of-truth version).
-# Encoding the literal version here too created a coupling where every
-# release bump broke README_BADGE_COMPOSITION even though the badge was
-# correct. The composition check only needs a stable structural token to
-# confirm "this is the PyPI badge" — ``pypi-`` does that for any version.
+# exact version is owned by the separate README_PYPI_BADGE_VERSION check.
+# The composition check only needs a stable structural token to confirm
+# "this is the right badge".
+#
+# DELIBERATE CHANGE (2.1.0 distribution README): the PyPI, Python, and License
+# badges were switched from static shields (which go stale the instant a
+# release ships) to DYNAMIC shields.io endpoints that read live from PyPI
+# (``pypi/v/omegaprompt``, ``pypi/pyversions/omegaprompt``, ``pypi/l/omegaprompt``)
+# with ``?cacheSeconds=3600``. A dynamic badge has no version baked into the
+# URL, so the version is OWNED BY PyPI — never stale, never a lie. README_BADGES
+# tokens and README_PYPI_BADGE_VERSION below were updated to match this.
 README_BADGES = [
     ("CI", "actions/workflows/ci.yml/badge.svg"),
-    ("License: Apache 2.0", "license-Apache--2.0-blue.svg"),
-    ("Python", "python-3.11%2B-blue.svg"),
-    ("PyPI", "pypi-"),
+    ("License: Apache 2.0", "pypi/l/omegaprompt"),
+    ("Python", "pypi/pyversions/omegaprompt"),
+    ("PyPI", "pypi/v/omegaprompt"),
     ("Tests", "tests-passing-brightgreen.svg"),
     ("Artifact schema", "artifact-schema%20v2.0-blueviolet.svg"),
     ("MCP", "MCP-server-blueviolet.svg"),
@@ -503,11 +508,16 @@ def check_readme_badges_and_versions(ctx: Context, py_version: str | None) -> No
     else:
         ctx.drift("README_BADGE_COMPOSITION", "README.md badge row composition changed.", category="docs", path="README.md:5", expected=README_BADGES, actual=badge_lines, remediation="Do not add, remove, reorder, or restyle the current README.md badge row in this task.")
 
-    badge_version = _extract_pypi_badge_version(readme)
-    if badge_version == py_version:
-        ctx.ok("README_PYPI_BADGE_VERSION", "README PyPI badge matches pyproject version.", category="docs", path="README.md", expected=py_version, actual=badge_version)
+    if _has_dynamic_pypi_badge(readme):
+        # Dynamic shield reads the version live from PyPI; there is no baked-in
+        # version that can drift. The version is owned by PyPI, by design.
+        ctx.ok("README_PYPI_BADGE_VERSION", "README PyPI badge is dynamic (version owned by PyPI, cannot drift).", category="docs", path="README.md", expected="dynamic shields.io pypi/v badge", actual="dynamic shields.io pypi/v badge")
     else:
-        ctx.drift("README_PYPI_BADGE_VERSION", "README PyPI badge version drifted from pyproject.", category="docs", path="README.md", expected=py_version, actual=badge_version)
+        badge_version = _extract_pypi_badge_version(readme)
+        if badge_version == py_version:
+            ctx.ok("README_PYPI_BADGE_VERSION", "README PyPI badge matches pyproject version.", category="docs", path="README.md", expected=py_version, actual=badge_version)
+        else:
+            ctx.drift("README_PYPI_BADGE_VERSION", "README PyPI badge version drifted from pyproject (use a dynamic shields.io pypi/v badge or the current version).", category="docs", path="README.md", expected=py_version, actual=badge_version)
 
     for rel in ("README.md", "README_KR.md"):
         text = ctx.read_text(rel, category="docs")
@@ -573,6 +583,15 @@ def check_readme_badges_and_versions(ctx: Context, py_version: str | None) -> No
 def _extract_pypi_badge_version(text: str) -> str | None:
     match = re.search(r"pypi-(\d+\.\d+\.\d+)-blue\.svg", text)
     return match.group(1) if match else None
+
+
+def _has_dynamic_pypi_badge(text: str) -> bool:
+    """True when the README uses a live shields.io ``pypi/v`` endpoint badge.
+
+    A dynamic badge reads the published version from PyPI at render time, so it
+    cannot go stale on a release bump (unlike a static ``pypi-X.Y.Z`` shield).
+    """
+    return bool(re.search(r"img\.shields\.io/pypi/v/omegaprompt", text))
 
 
 def _extract_test_badge_count(text: str) -> int | None:

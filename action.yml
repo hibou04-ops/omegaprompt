@@ -26,9 +26,9 @@ inputs:
   version:
     description: >-
       omegaprompt version/spec to install (e.g. '2.1.0' or a PEP 508 spec).
-      Defaults to the latest published release.
+      Defaults to the package version shipped with this Action tag.
     required: false
-    default: ""
+    default: "2.1.2"
 
 outputs:
   passed:

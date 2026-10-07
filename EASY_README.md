@@ -8,6 +8,31 @@ Full doc: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/READM
 
 ---
 
+## Start here · Standalone use · Integration/Docking
+
+**Omega Aile** — Quiet precision. AI research guided by evidence.
+
+Calibrate prompt configurations through omega-lock and inspect CalibrationArtifact JSON against declared ship gates.
+
+Requires Python 3.11+. Installation needs internet.
+
+```bash
+python -m pip install omegaprompt==2.1.2
+omegaprompt --help
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+omegaprompt check-artifact artifact.json
+omegaprompt report artifact.json --format json
+```
+
+The download needs internet; the integrity check and report run offline without API keys. The stored deterministic artifact is synthetic evidence. Its missing per-item scores do not prove transfer. Live calibration needs a configured provider and may incur cost.
+
+omega-lock>=0.3.0,<0.4.0 is required and installed automatically. Both mini packages are optional, separately installed preflight producers. PreflightReport feeds derive_adaptation_plan; antemortem is a parallel pre-implementation review tool. promptfoo and DSPy require caller-authored conversion into Dataset/PromptVariants or rules; there is no native one-click adapter.
+
+[Docking contracts and runnable data handoff](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [Full guide](README.md).
+
+MCP: install the distribution with `[mcp]` and use its existing server executable. FastMCP support is bounded to MCP SDK `>=1.0.0,<2.0.0`; the tool names and schemas are unchanged.
+
+
 ## The story (60 seconds)
 
 You're tuning a prompt. You write 20 example inputs, try a few versions of your prompt against them, and pick the one that scores best. It looks great. You ship it.

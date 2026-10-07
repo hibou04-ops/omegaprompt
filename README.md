@@ -20,7 +20,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.1.1 (2026-06-12)** — metadata-only release: the composite **Action**'s `action.yml` `description` was shortened to under GitHub's 125-character Marketplace limit so it can be published to the GitHub Marketplace and consumed as `uses: hibou04-ops/omegaprompt@v2.1.1`. No library/API changes — the `omegaprompt gate` CI ship-gate command, `--format json`/`--format html` outputs, the keyless **`ollama`** provider, and the machine-readable **overfit-metrics** block (`extract_overfit_metrics`) shipped in v2.1.0 are unchanged. MCP tool set stays frozen at 8 (no `gate` MCP tool); artifact schema stays `2.0`; backward compatible. Exact deterministic reference metrics are tracked in the generated [claim ledger](docs/claims/README_CLAIMS.generated.md).
+> **v2.1.2 (2026-10-08)** — MCP installs retain SDK 1.x compatibility; the Action installs this exact package version by default. Standalone examples and docking instructions clarify synthetic versus live evidence. CLI/MCP names, schema 2.0 and the eight MCP tools are unchanged.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -29,6 +29,31 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 Trust docs: [trust model](docs/trust-model.md) · [toolkit positioning](docs/toolkit-positioning.md) · [provider capabilities](docs/provider-capabilities.md) · [profiles and risk boundaries](docs/profiles-and-risk-boundaries.md) · [release checklist](docs/release/release-checklist.md) · [post-release verification](docs/release/release-checklist.md#post-release-network-verification).
 
 ---
+
+## Start here · Standalone use · Integration/Docking
+
+**Omega Aile** — Quiet precision. AI research guided by evidence.
+
+Calibrate prompt configurations through omega-lock and inspect CalibrationArtifact JSON against declared ship gates.
+
+Requires Python 3.11+. Installation needs internet.
+
+```bash
+python -m pip install omegaprompt==2.1.2
+omegaprompt --help
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+omegaprompt check-artifact artifact.json
+omegaprompt report artifact.json --format json
+```
+
+The download needs internet; the integrity check and report run offline without API keys. The stored deterministic artifact is synthetic evidence. Its missing per-item scores do not prove transfer. Live calibration needs a configured provider and may incur cost.
+
+omega-lock>=0.3.0,<0.4.0 is required and installed automatically. Both mini packages are optional, separately installed preflight producers. PreflightReport feeds derive_adaptation_plan; antemortem is a parallel pre-implementation review tool. promptfoo and DSPy require caller-authored conversion into Dataset/PromptVariants or rules; there is no native one-click adapter.
+
+[Docking contracts and runnable data handoff](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [Full guide](README.md).
+
+MCP: install the distribution with `[mcp]` and use its existing server executable. FastMCP support is bounded to MCP SDK `>=1.0.0,<2.0.0`; the tool names and schemas are unchanged.
+
 
 ## Your prompt is overfit to your eval set — and you don't know it
 
@@ -52,24 +77,8 @@ Then one line in CI makes a "small prompt tweak" fail the build if it silently d
 
 ## It sits on top of your eval — it doesn't replace it
 
-omegaprompt does **not** compete with promptfoo, DSPy, deepeval, Braintrust, or your hand-rolled harness. Those tools *find and score* the best prompt. omegaprompt does the one thing they leave out: a **train/held-out split with a transfer gate** that tells you whether that best prompt survives data it wasn't tuned on — plus a **ship/block CI verdict** so the next PR's "tiny wording tweak" can't silently tank production.
+omegaprompt performs prompt calibration as well as downstream artifact gating. promptfoo, DSPy and other frameworks have their own evaluation and validation features. This repository supplies no native adapters for them: callers explicitly convert datasets, prompt variants or exported results into omegaprompt contracts. Existing RuleJudge and PromptVariants APIs are the conversion boundary.
 
-| | promptfoo / DSPy / your harness | Just eyeball the eval | **omegaprompt** |
-|---|---|---|---|
-| Run prompts against test cases | ✓ | manual | reuses yours as input |
-| Find / optimize the best prompt | ✓ (that's their job) | by hand | not its job |
-| Train / held-out split | ✗ (one set, scored once) | ✗ | ✓ pre-declared; tuner never sees held-out |
-| Held-out transfer gate (does train score predict held-out score?) | ✗ | ✗ | ✓ per-item correlation gate |
-| Max train↔held-out gap gate | ✗ | ✗ | ✓ pre-declared threshold |
-| Single-command CI ship/block verdict | partial | ✗ | ✓ `gate` / `diff` exit non-zero |
-| Machine-readable "is it overfit?" number | ✗ | ✗ | ✓ `extract_overfit_metrics` |
-| Overfit caught **before** ship | ✗ | ✗ | ✓ that's the entire point |
-
-> **One line for your tech lead:** promptfoo/DSPy tell you *which* prompt scored best. omegaprompt tells you *whether that prompt holds up* on held-out data — and gives CI a single exit code to ship or block on it.
-
-Your existing eval outputs plug straight in — assertions become rule-based gates, your dataset becomes the train/held-out source. omegaprompt is **audit-first, not search-first**: it assumes you already picked candidates and answers the question downstream of search — *did you actually generalize?*
-
----
 
 ## 30-second demo — no API keys, no network
 
@@ -150,7 +159,7 @@ A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.1.1
+- uses: hibou04-ops/omegaprompt@v2.1.2
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

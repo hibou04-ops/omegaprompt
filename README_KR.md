@@ -20,7 +20,7 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.1.1 (2026-06-12)** — 메타데이터 전용 릴리스: composite **Action**의 `action.yml` `description`을 GitHub Marketplace의 125자 제한 미만으로 줄여 Marketplace에 게시하고 `uses: hibou04-ops/omegaprompt@v2.1.1`로 사용할 수 있게 했습니다. 라이브러리/API 변경은 없습니다 — v2.1.0에서 추가된 `omegaprompt gate` CI ship-gate 명령, `--format json`/`--format html` 출력, key가 필요 없는 **`ollama`** provider, 기계가 읽을 수 있는 **overfit-metrics** 블록(`extract_overfit_metrics`)은 그대로입니다. MCP 도구 세트는 8개로 고정(`gate` MCP 도구는 없음); artifact schema는 `2.0`을 유지하며 backward compatible합니다. 정확한 deterministic reference metric은 생성된 [claim ledger](docs/claims/README_CLAIMS.generated.md)에서 추적합니다.
+> **v2.1.2 (2026-10-08)** — MCP 설치는 SDK 1.x 호환 범위를 유지하고 Action은 해당 버전을 기본 설치합니다. 단독 예제와 도킹 안내에서 합성·실제 근거를 구분합니다. CLI/MCP 이름, schema 2.0, MCP 도구 8개는 유지합니다.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -29,6 +29,29 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 신뢰 문서: [trust model](docs/trust-model.md) · [toolkit positioning](docs/toolkit-positioning.md) · [provider capabilities](docs/provider-capabilities.md) · [profiles and risk boundaries](docs/profiles-and-risk-boundaries.md) · [release checklist](docs/release/release-checklist.md) · [post-release verification](docs/release/release-checklist.md#post-release-network-verification).
 
 ---
+
+## 시작 · 단독 사용 · 도킹
+
+**Omega Aile** — Quiet precision. AI research guided by evidence.
+
+omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact의 선언된 배포 기준을 검사합니다.
+
+Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
+
+```bash
+python -m pip install omegaprompt==2.1.2
+omegaprompt --help
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+omegaprompt check-artifact artifact.json
+omegaprompt report artifact.json --format json
+```
+
+artifact 다운로드는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.0,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
+
+[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 현재 검증 조합은 omegaprompt 2.1.2이며, 별도 배포 패키지입니다.
+
+MCP는 해당 배포명의 `[mcp]` extras와 기존 서버 명령을 사용합니다. 기존 FastMCP 계약은 SDK `>=1.0.0,<2.0.0` 범위로 유지합니다.
+
 
 ## 당신의 prompt는 eval set에 overfit되어 있다 — 그리고 당신은 그 사실을 모른다
 
@@ -52,24 +75,8 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 ## 이것은 당신의 eval 위에 얹히는 것이지, 그것을 대체하지 않는다
 
-omegaprompt는 promptfoo, DSPy, deepeval, Braintrust, 또는 당신이 직접 만든 harness와 **경쟁하지 않습니다**. 그 도구들은 최선의 prompt를 *찾고 점수를 매깁니다*. omegaprompt는 그들이 빠뜨린 한 가지를 합니다: 그 최선의 prompt가 튜닝되지 않은 데이터 위에서도 살아남는지 알려주는 **train/held-out split + transfer gate** — 더해서, 다음 PR의 "사소한 표현 수정"이 production을 조용히 무너뜨릴 수 없도록 하는 **ship/block CI 판정**입니다.
+omegaprompt는 프롬프트 보정과 artifact 게이트를 모두 제공합니다. promptfoo·DSPy 등도 자체 평가·검증 기능을 갖추므로 검증 기능이 없다고 단정하지 않습니다. 이 저장소에는 해당 도구의 네이티브 어댑터가 없으며, 사용자가 dataset·prompt variant·내보낸 결과를 Dataset/PromptVariants 또는 RuleJudge 계약으로 변환해야 합니다.
 
-| | promptfoo / DSPy / 당신의 harness | eval을 눈으로만 본다 | **omegaprompt** |
-|---|---|---|---|
-| 테스트 케이스에 prompt 실행 | ✓ | 수동 | 당신 것을 입력으로 재사용 |
-| 최선의 prompt 찾기 / 최적화 | ✓ (그게 그들의 일) | 손으로 | 그건 이 도구의 일이 아님 |
-| Train / held-out split | ✗ (한 세트, 한 번 채점) | ✗ | ✓ 사전 선언; tuner는 held-out을 절대 보지 않음 |
-| Held-out transfer gate (train 점수가 held-out 점수를 예측하는가?) | ✗ | ✗ | ✓ per-item 상관 gate |
-| Train↔held-out 최대 격차 gate | ✗ | ✗ | ✓ 사전 선언된 임계값 |
-| 단일 명령 CI ship/block 판정 | 부분적 | ✗ | ✓ `gate` / `diff`가 non-zero로 종료 |
-| 기계가 읽는 "overfit인가?" 숫자 | ✗ | ✗ | ✓ `extract_overfit_metrics` |
-| ship **전에** overfit을 잡음 | ✗ | ✗ | ✓ 그게 전부의 핵심 |
-
-> **당신의 tech lead을 위한 한 줄:** promptfoo/DSPy는 *어떤* prompt가 가장 높은 점수를 받았는지 알려줍니다. omegaprompt는 *그 prompt가 held-out 데이터 위에서 유지되는지*를 알려주고, CI에 ship할지 block할지를 결정할 단일 exit code를 줍니다.
-
-당신의 기존 eval 출력은 그대로 꽂힙니다 — assertion은 rule-based gate가 되고, 당신의 dataset은 train/held-out 소스가 됩니다. omegaprompt는 **search-first가 아니라 audit-first**입니다: 당신이 이미 후보를 골랐다고 가정하고, search의 하류에 있는 질문에 답합니다 — *당신은 정말로 일반화했는가?*
-
----
 
 ## 30초 데모 — API key 불필요, network 불필요
 
@@ -150,7 +157,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.1.1
+- uses: hibou04-ops/omegaprompt@v2.1.2
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.2] - 2026-10-08
+
+Bound FastMCP to SDK >=1,<2 to fix clean MCP installs. Pin the Action default to this package version. Add standalone artifact inspection and explicit preflight data handoff; remove unsupported framework comparisons.
+
+Compatibility: no renamed imports, CLI/MCP identifiers, schemas or relaxed gates.
+Upgrade with the same PyPI distribution name; MCP users reinstall its [mcp] extra.
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).

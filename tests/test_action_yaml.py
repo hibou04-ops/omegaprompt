@@ -10,6 +10,8 @@ block-structured (no tabs, top-level keys present).
 from __future__ import annotations
 
 from pathlib import Path
+import re
+import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 ACTION = ROOT / "action.yml"
@@ -39,6 +41,13 @@ def test_action_declares_artifact_input() -> None:
     text = _action_text()
     assert "artifact:" in text
     assert "required: true" in text
+
+
+def test_action_default_installs_the_tagged_package_version() -> None:
+    version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    section = _action_text().split("\n  version:\n", 1)[1].split("\noutputs:", 1)[0]
+    default = re.search(r'default: "([^"]+)"', section)
+    assert default is not None and default.group(1) == version
 
 
 def test_action_declares_format_and_generalization_inputs() -> None:
@@ -77,5 +86,5 @@ def test_action_indentation_is_block_structured() -> None:
 def test_example_workflow_exists_and_uses_pinned_action() -> None:
     assert EXAMPLE.exists()
     text = EXAMPLE.read_text(encoding="utf-8")
-    assert "uses: hibou04-ops/omegaprompt@v2.1.1" in text
+    assert "uses: hibou04-ops/omegaprompt@v2.1.2" in text
     assert "artifact:" in text

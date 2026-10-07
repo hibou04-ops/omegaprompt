@@ -75,7 +75,7 @@ def test_mcp_optional_extra_boundary_is_documented_in_packaging_and_readme() -> 
     readme_kr = (REPO_ROOT / "README_KR.md").read_text(encoding="utf-8")
 
     assert not any(dep == "mcp" or dep.startswith("mcp>") for dep in dependencies)
-    assert optional["mcp"] == ["mcp>=1.0.0"]
+    assert optional["mcp"] == ["mcp>=1.0.0,<2.0.0"]
     assert scripts["omegaprompt-mcp"] == "omegaprompt.mcp.__main__:main"
     assert 'pip install "omegaprompt[mcp]"' in readme
     assert 'pip install "omegaprompt[mcp]"' in readme_kr

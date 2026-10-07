@@ -8,6 +8,29 @@
 
 ---
 
+## 시작 · 단독 사용 · 도킹
+
+**Omega Aile** — Quiet precision. AI research guided by evidence.
+
+omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact의 선언된 배포 기준을 검사합니다.
+
+Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
+
+```bash
+python -m pip install omegaprompt==2.1.2
+omegaprompt --help
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+omegaprompt check-artifact artifact.json
+omegaprompt report artifact.json --format json
+```
+
+artifact 다운로드는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.0,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
+
+[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 현재 검증 조합은 omegaprompt 2.1.2이며, 별도 배포 패키지입니다.
+
+MCP는 해당 배포명의 `[mcp]` extras와 기존 서버 명령을 사용합니다. 기존 FastMCP 계약은 SDK `>=1.0.0,<2.0.0` 범위로 유지합니다.
+
+
 ## 이야기 (60초)
 
 prompt를 튜닝하고 있다고 해봅시다. 예제 입력 20개를 만들고, prompt를 몇 가지 버전으로 그 예제들에 돌려본 뒤, 가장 점수가 좋은 걸 고릅니다. 좋아 보이네요. 그래서 출시합니다.

@@ -7,7 +7,7 @@
   "neutral_baseline_params": {
     "system_prompt_variant": 0,
     "few_shot_count": 0,
-    "reasoning_profile": 2,
+    "reasoning_profile": 1,
     "output_budget_bucket": 1,
     "response_schema_mode": 0,
     "tool_policy_variant": 0

@@ -1,5 +1,9 @@
 # omegaprompt — Easy Start
 
+> **2.2.1 (2026-10-28): neutral parameters respect configured subsets.** Select STANDARD/MEDIUM by their positions in the allowed lists, falling back to the first allowed value. Public 2.2.0 unintentionally used DEEP for the default baseline and rejected valid singleton lists. Fresh baseline scores, costs and selections can change; historical artifacts are preserved. [Reproduction and migration](docs/release/2.2.1.md).
+
+Raw optimizer integers are indices into the configured `MetaAxisSpace` lists, not the global `REASONING_ORDINALS`/`OUTPUT_BUDGET_ORDINALS` helper mappings.
+
 > **2.2.0 (2026-10-28): evaluation integrity and bounded work.** Context changes invalidate memoized observations. `PromptTarget.evaluate(..., use_cache=False)` performs fresh calls; cache replay adds no independent observation. Parallel evaluation retains at most `max_workers` submitted results and preserves input order. Failed target/judge attempts and returned usage remain in target accounting; no partial success is cached. Explicit disjoint mode rejects overlapping IDs. [Evidence and migration](docs/release/2.2.0.md).
 
 
@@ -20,9 +24,9 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install omegaprompt==2.2.0
+python -m pip install omegaprompt==2.2.1
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.0/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.1/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```

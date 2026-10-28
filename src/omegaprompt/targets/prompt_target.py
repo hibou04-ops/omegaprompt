@@ -13,9 +13,7 @@ from typing import Any
 
 from omegaprompt.domain.dataset import Dataset
 from omegaprompt.domain.enums import (
-    OUTPUT_BUDGET_ORDINALS,
     OutputBudgetBucket,
-    REASONING_ORDINALS,
     ReasoningProfile,
 )
 from omegaprompt.domain.judge import JudgeRubric
@@ -131,13 +129,20 @@ class PromptTarget:
         return {
             "system_prompt_variant": 0,
             "few_shot_count": self.space.few_shot_min,
-            "reasoning_profile": REASONING_ORDINALS[ReasoningProfile.STANDARD],
-            "output_budget_bucket": OUTPUT_BUDGET_ORDINALS[OutputBudgetBucket.MEDIUM],
+            "reasoning_profile": (
+                self.space.reasoning_profiles.index(ReasoningProfile.STANDARD)
+                if ReasoningProfile.STANDARD in self.space.reasoning_profiles else 0
+            ),
+            "output_budget_bucket": (
+                self.space.output_budgets.index(OutputBudgetBucket.MEDIUM)
+                if OutputBudgetBucket.MEDIUM in self.space.output_budgets else 0
+            ),
             "response_schema_mode": 0,
             "tool_policy_variant": 0,
         }
 
     def _param_specs_mini(self) -> list[_ParamSpecMini]:
+        neutral = self.neutral_params()
         return [
             _ParamSpecMini(
                 name="system_prompt_variant",
@@ -158,14 +163,14 @@ class PromptTarget:
                 dtype="int",
                 low=0,
                 high=len(self.space.reasoning_profiles) - 1,
-                neutral=min(1, len(self.space.reasoning_profiles) - 1),
+                neutral=neutral["reasoning_profile"],
             ),
             _ParamSpecMini(
                 name="output_budget_bucket",
                 dtype="int",
                 low=0,
                 high=len(self.space.output_budgets) - 1,
-                neutral=min(1, len(self.space.output_budgets) - 1),
+                neutral=neutral["output_budget_bucket"],
             ),
             _ParamSpecMini(
                 name="response_schema_mode",

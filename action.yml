@@ -1,5 +1,5 @@
 name: "omegaprompt ship gate"
-description: Re-test a tuned prompt on a held-out slice and fail the build when it won't generalize (overfit ship gate).
+description: Check declared artifact integrity, gap and hard-gate criteria; fail the build when the artifact is blocked.
 author: "Kyunghoon Gwak"
 branding:
   icon: "check-circle"
@@ -28,7 +28,7 @@ inputs:
       omegaprompt version/spec to install (e.g. '2.1.0' or a PEP 508 spec).
       Defaults to the package version shipped with this Action tag.
     required: false
-    default: "2.2.0"
+    default: "2.2.1"
 
 outputs:
   passed:

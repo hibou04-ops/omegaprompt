@@ -12,7 +12,7 @@
       "expected_ship_recommendation": "ship",
       "expected_validation_mode": "auto",
       "expected_integrity_classification": "release_approved",
-      "normalized_artifact_hash": "1b16c2cf423915fda7ea14779034e0dcab873f751ef0db265d82d02491ce5563",
+      "normalized_artifact_hash": "4aaceafed3b741f6d5151e963c9a7674cf1d046a67115ceffc9a4403bc834070",
       "exact_metrics_may_be_displayed": true,
       "diff_baseline_case_id": null,
       "expected_diff_regression": null
@@ -25,7 +25,7 @@
       "expected_ship_recommendation": "hold",
       "expected_validation_mode": "paired",
       "expected_integrity_classification": "valid_non_release",
-      "normalized_artifact_hash": "58c5bc817a31dae49a2b838092fcd6e5cb6ddbc54ba57971b46fd430c2cfae26",
+      "normalized_artifact_hash": "bfbfe826b087138480c27b79704388fad2ebd215d47b37312c95e5e88978b317",
       "exact_metrics_may_be_displayed": true,
       "diff_baseline_case_id": null,
       "expected_diff_regression": null
@@ -38,7 +38,7 @@
       "expected_ship_recommendation": "block",
       "expected_validation_mode": "auto",
       "expected_integrity_classification": "valid_non_release",
-      "normalized_artifact_hash": "d163da066f2d72d36a30f076cf49d348ad22aa0a78ad7b1ba299fea8b103bf2b",
+      "normalized_artifact_hash": "a9392e2cc1d6756b3bd42b5a59416d743a96bc4f02ef9ea4bf3f01d1262af905",
       "exact_metrics_may_be_displayed": true,
       "diff_baseline_case_id": null,
       "expected_diff_regression": null
@@ -51,7 +51,7 @@
       "expected_ship_recommendation": "experiment",
       "expected_validation_mode": "auto",
       "expected_integrity_classification": "valid_non_release",
-      "normalized_artifact_hash": "7ae47e07afa1f08f9adbeb707d8dcb56bb19d0f1575700ffd8fa551650ec0418",
+      "normalized_artifact_hash": "4004021f470476c24207d30788ba12f1916e07d483cc9b3f2795b9d5e507ae6b",
       "exact_metrics_may_be_displayed": true,
       "diff_baseline_case_id": null,
       "expected_diff_regression": null
@@ -64,7 +64,7 @@
       "expected_ship_recommendation": "ship",
       "expected_validation_mode": "auto",
       "expected_integrity_classification": "release_approved",
-      "normalized_artifact_hash": "2f5541032e24771efa10824081050ec7465e53ca13940f7eda49b6deea0ac7fd",
+      "normalized_artifact_hash": "f02722870563895304d76fd0668b2265d0a4022c7dbbc897f6d17ce10be3fa0a",
       "exact_metrics_may_be_displayed": true,
       "diff_baseline_case_id": "clean_ok_ship",
       "expected_diff_regression": true

@@ -259,6 +259,22 @@
       "drift_risk": "medium",
       "exact_numeric_values_allowed": true,
       "owner_surface": "repo"
+    },
+    {
+      "claim_id": "evaluation.neutral_subset_2_2_1",
+      "claim": "Neutral reasoning/output-budget values and parameter specifications use configured list indices, preferring STANDARD/MEDIUM when present and falling back to index 0.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "docs/release/2.2.1.md"
+      ],
+      "evidence_type": "reproducible_command",
+      "source": "command: python -m pytest tests/test_neutral_subset_parameters.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": true,
+      "owner_surface": "repo"
     }
   ]
 }

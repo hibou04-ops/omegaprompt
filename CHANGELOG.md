@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.2.2] - 2026-10-28
+
+- Initialize the public omega_lock engine synchronously in the official MCP
+  entrypoint after the optional MCP app imports successfully and before
+  stdio/HTTP transport startup. This avoids first native-engine initialization
+  during a tool worker call on the observed NumPy 2.5.4 / MCP 1.30 / Windows
+  cold-start path. The internal cause of that wait remains UNKNOWN.
+- Preserve missing-MCP diagnostics, --help and core-without-MCP behavior. No
+  dependency, provider-call, gate, API, schema or computation-policy changes.
+- Include the 2.2.1 neutral-parameter correction. Existing 2.2.1 tags, release
+  files and golden artifacts are preserved; this is a new patch version.
+
 ## [2.2.1] - 2026-10-28
 
 - Fix neutral reasoning and output-budget parameters to use indices into the

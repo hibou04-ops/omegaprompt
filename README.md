@@ -11,6 +11,8 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
+> **2.2.2 (2026-10-28): initialize the engine before MCP transport starts.** The official MCP entrypoint loads the public omega_lock engine synchronously after the optional MCP app loads and before stdio/HTTP dispatch. This mitigates the observed Windows cold NumPy import wait; the internal cause remains UNKNOWN. No provider requests, dependency, gate or schema policies change. 2.2.1 neutral-parameter fixes remain included.
+
 > **2.2.1 (2026-10-28): neutral parameters respect configured subsets.** Select STANDARD/MEDIUM by their positions in the allowed lists, falling back to the first allowed value. Public 2.2.0 unintentionally used DEEP for the default baseline and rejected valid singleton lists. Fresh baseline scores, costs and selections can change; historical artifacts are preserved. [Reproduction and migration](docs/release/2.2.1.md).
 
 Raw optimizer integers are indices into the configured `MetaAxisSpace` lists, not the global `REASONING_ORDINALS`/`OUTPUT_BUDGET_ORDINALS` helper mappings.
@@ -44,9 +46,9 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install omegaprompt==2.2.1
+python -m pip install omegaprompt==2.2.2
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.1/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.2/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
@@ -164,7 +166,7 @@ A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.1
+- uses: hibou04-ops/omegaprompt@v2.2.2
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

@@ -20,6 +20,7 @@ Streamable HTTP::
 from __future__ import annotations
 
 import argparse
+import importlib
 import sys
 
 from omegaprompt.mcp import MCP_MISSING_MESSAGE, _is_missing_mcp_dependency
@@ -32,6 +33,9 @@ def _load_mcp_app():
         if _is_missing_mcp_dependency(exc):
             raise RuntimeError(MCP_MISSING_MESSAGE) from exc
         raise
+    # Finish native engine imports synchronously before the transport starts
+    # dispatching tools in worker threads. This issues no provider requests.
+    importlib.import_module("omega_lock")
     return mcp_app
 
 

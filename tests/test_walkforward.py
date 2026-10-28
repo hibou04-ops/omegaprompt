@@ -91,20 +91,23 @@ def test_walk_forward_skips_kc4_when_too_few_shared_ids():
 import pytest
 
 
-def test_validation_mode_disjoint_skips_kc4_even_with_overlap():
-    """disjoint mode never computes KC-4, even if ids accidentally overlap."""
+def test_validation_mode_disjoint_rejects_overlap():
+    """A declared disjoint split must not bypass correlation with shared IDs.
+
+    The old expectation allowed a mode switch to hide contradictory pairing.
+    This deliberate input-contract correction is documented for 2.2.0.
+    """
     per_item_train = {"t1": 0.9, "t2": 0.8, "t3": 0.7, "t4": 0.6}
     per_item_test = {"t1": 0.85, "t2": 0.75, "t3": 0.7, "t4": 0.55}
-    wf = evaluate_walk_forward(
-        0.75, 0.71,
-        per_item_train=per_item_train,
-        per_item_test=per_item_test,
-        max_gap=0.10,
-        min_kc4=0.5,
-        validation_mode="disjoint",
-    )
-    assert wf.kc4_correlation is None
-    assert wf.passed is True  # gap-only gate
+    with pytest.raises(ValueError, match="disjoint.*overlap"):
+        evaluate_walk_forward(
+            0.75, 0.71,
+            per_item_train=per_item_train,
+            per_item_test=per_item_test,
+            max_gap=0.10,
+            min_kc4=0.5,
+            validation_mode="disjoint",
+        )
 
 
 def test_validation_mode_paired_raises_when_overlap_too_small():

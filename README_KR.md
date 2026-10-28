@@ -1,6 +1,6 @@
 # omegaprompt
 
-**당신의 prompt를 위한 overfit gate.** prompt가 당신의 eval set에서 만점을 받았다 — 바로 그것이 아직 그 prompt를 믿어선 안 되는 이유입니다. `omegaprompt`는 이긴 prompt를 그 prompt가 한 번도 튜닝하지 않은 예시들로 다시 테스트하고, 그 결과가 유지되지 않으면 **당신의 CI 빌드를 실패**시킵니다.
+**명시적 gate를 갖춘 provider 중립 프롬프트 보정.** train 데이터에서 설정을 선택하고 별도로 제공한 test 데이터에서 gap·hard gate·실행 정책을 검사합니다. paired 재측정은 반복 일관성이며, 독립 holdout은 선택에 사용하지 않은 사례가 필요합니다.
 
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/pypi/l/omegaprompt?color=blue&label=license&cacheSeconds=3600)](LICENSE)
@@ -11,6 +11,8 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
+> **2.2.0 (2026-10-28): 평가 무결성과 대기 작업 상한.** 데이터·rubric·variants 등 평가 컨텍스트 변경 시 캐시를 무효화합니다. `PromptTarget.evaluate(..., use_cache=False)`는 실제 재측정이며 캐시 재생은 독립 관측으로 세지 않습니다. 병렬 대기 결과는 `max_workers`개 이하이고 입력 순서를 보존합니다. 실패한 target/judge 시도와 반환된 usage도 누적 계측하며 부분 성공은 캐시하지 않습니다. 명시적 disjoint 모드는 ID 중복을 입력 오류로 처리합니다. [검증 근거와 이행 안내](docs/release/2.2.0.md).
+
 문서: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (신뢰 근거)](docs/claims/README_CLAIMS.generated.md)
 
 키워드: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
@@ -20,7 +22,6 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.1.2 (2026-10-08)** — MCP 설치는 SDK 1.x 호환 범위를 유지하고 Action은 해당 버전을 기본 설치합니다. 단독 예제와 도킹 안내에서 합성·실제 근거를 구분합니다. CLI/MCP 이름, schema 2.0, MCP 도구 8개는 유지합니다.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -39,16 +40,16 @@ omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact�
 Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
 
 ```bash
-python -m pip install omegaprompt==2.1.2
+python -m pip install omegaprompt==2.2.0
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.0/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
 
 artifact 다운로드는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.0,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
 
-[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 현재 검증 조합은 omegaprompt 2.1.2이며, 별도 배포 패키지입니다.
+[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 현재 검증 조합은 omegaprompt 2.2.0이며, 별도 배포 패키지입니다.
 
 MCP는 해당 배포명의 `[mcp]` extras와 기존 서버 명령을 사용합니다. 기존 FastMCP 계약은 SDK `>=1.0.0,<2.0.0` 범위로 유지합니다.
 
@@ -157,7 +158,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.1.2
+- uses: hibou04-ops/omegaprompt@v2.2.0
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary
@@ -568,7 +569,7 @@ unlock된 부분공간의 모든 조합이 평가됩니다. 각 평가는 datase
 
 ### 5.5 held-out replay
 
-training-best parameter가 held-out 테스트 슬라이스에서 replay됩니다. replay는 *같은* `PromptTarget` adapter를 다른 dataset과 함께 씁니다; 테스트 슬라이스는 searcher가 결코 보지 않았으므로 leakage가 가능하지 않습니다.
+선택한 parameter를 별도 PromptTarget 인스턴스와 제공된 test 데이터에서 평가합니다. 독립성은 실제 입력 내용과 과거 선택 이력에 달려 있습니다. paired 재측정은 동일 사례를 다시 사용하므로 독립 holdout이 아닙니다.
 
 ### 5.6 held-out transfer gate (per-item 상관)
 
@@ -576,7 +577,7 @@ train per-item 점수와 test per-item 점수 사이의(공유 dataset id 위에
 
 **validation_mode별 transfer-gate 의미(v1.5+).** transfer gate는 per-item 상관이므로, train과 test 슬라이스가 *같은* item id를 공유할 때 — "paired replay" — 에만 의미가 있습니다. 보통의 disjoint train/test split에서는 슬라이스에 공유 id가 없어 per-item 상관이 구조적으로 측정 불가능합니다; gate는 gap-only 검사로 축소됩니다. 이를 명시하기 위해 `CalibrateTuning.validation_mode`는 다음을 받습니다:
 
-- `"auto"`(기본값, backward-compat): 슬라이스가 ≥3개 id를 공유할 때만 per-item 상관을 계산하고; 그렇지 않으면 조용히 건너뜁니다.
+- `"auto"`(기본값, backward-compat): 슬라이스가 ≥3개 id를 공유할 때만 per-item 상관을 계산하고; 그렇지 않으면 미측정 사유를 기록합니다.
 - `"paired"`: 호출자가 설계상 공유 id를 단언합니다. overlap이 3 미만이면 `ValueError`를 던집니다 — overlap 없는 paired 실행은 무료 통과가 아니라 setup 버그입니다.
 - `"disjoint"`: 호출자가 설계상 공유 id 없음을 단언합니다. per-item 상관은 결코 계산되지 않고; gate는 gap-only입니다.
 
@@ -1672,3 +1673,5 @@ Apache 2.0. [LICENSE](LICENSE)를 참고하세요.
 ## Colophon
 
 혼자 설계하고, 구현하고, ship했습니다. `omega-lock` 위의 adapter 계층; calibration-engine 재구현 0. 모든 non-trivial한 변경은 `antemortem-cli`의 recon 원칙을 통해 사전 작성됩니다. 테스트는 offline으로 돌고; CI에 라이브 API 호출이 없습니다.
+
+2.2.0 runtime split contract: explicit paired mode requires matching ID sets and identical input/reference content on at least three cases; explicit disjoint mode rejects overlapping IDs or exact duplicate input content before provider calls. Historical auto mode is retained and does not establish independence.

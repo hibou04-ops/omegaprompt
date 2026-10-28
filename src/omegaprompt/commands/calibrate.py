@@ -314,6 +314,9 @@ def calibrate(
             tuning=tuning,
             adaptation_plan=plan,
         )
+    except ValueError as exc:
+        typer.secho(f"INPUT_ERROR: {exc}", fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=2) from exc
     except RuntimeError as exc:
         message = str(exc)
         if "requires omega-lock" in message or "Install with" in message:

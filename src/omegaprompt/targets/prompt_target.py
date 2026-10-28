@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from hashlib import sha256
+from threading import Lock
 from time import perf_counter
 from typing import Any
 
@@ -105,6 +108,10 @@ class PromptTarget:
         # re-eval at the end of calibrate()) reuses the prior result instead
         # of re-calling the providers. Per-instance, GC'd with the target.
         self._eval_cache: dict[str, EvalResult] = {}
+        self._context_fingerprint: str | None = None
+        self.cache_hits = 0
+        self.failed_evaluations: list[dict[str, Any]] = []
+        self._accounting_lock = Lock()
 
     def param_space(self) -> list:
         try:
@@ -176,7 +183,72 @@ class PromptTarget:
             ),
         ]
 
-    def evaluate(self, params: dict | None) -> EvalResult:
+    def clear_cache(self) -> None:
+        """Invalidate observations after an opaque custom provider/judge change.
+
+        Costs remain cumulative; previous-context results cannot enter best-eval
+        selection. Do not mutate configuration during an evaluation or call
+        evaluate concurrently on the same target instance.
+        """
+        self._eval_cache.clear()
+        self.evaluation_history.clear()
+
+    def _evaluation_context(self) -> str:
+        from omegaprompt.judges import EnsembleJudge, LLMJudge, RuleJudge
+        from omegaprompt.providers.base import ProviderCapabilities
+
+        def identity(obj):
+            if obj is None:
+                return None
+            def scalar(name):
+                value = getattr(obj, name, None)
+                return value if isinstance(value, (str, int, float, bool)) else None
+            state = {
+                "instance": id(obj),
+                "name": scalar("name"),
+                "model": scalar("model"),
+                "base_url": str(getattr(obj, "base_url", "")),
+                "execution_profile": scalar("execution_profile"),
+                "output_budget": scalar("output_budget"),
+            }
+            caps_fn = getattr(obj, "capabilities", None)
+            caps = caps_fn() if callable(caps_fn) else None
+            if isinstance(caps, ProviderCapabilities):
+                state["capabilities"] = caps.model_dump(mode="json")
+            if isinstance(obj, LLMJudge):
+                state["provider"] = identity(obj.provider)
+            elif isinstance(obj, EnsembleJudge):
+                state["fallback"] = identity(obj.fallback)
+                state["rule_judge"] = identity(obj.rule_judge)
+            elif isinstance(obj, RuleJudge):
+                state["checks"] = [(name, check.name, id(check.check)) for name, check in obj.checks.items()]
+            return state
+
+        payload = {
+            "dataset": self.dataset.model_dump(mode="json"),
+            "rubric": self.rubric.model_dump(mode="json"),
+            "variants": self.variants.model_dump(mode="json"),
+            "space": self.space.model_dump(mode="json"),
+            "profile": self.execution_profile,
+            "provider": identity(self.target_provider),
+            "judge": identity(self.judge),
+            "judge_provider": identity(getattr(self.judge, "provider", None)),
+        }
+        return sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def evaluate(self, params: dict | None, *, use_cache: bool = True) -> EvalResult:
+        """Evaluate once; use_cache=False requests independent fresh calls.
+
+        Default replay is memoization, not another judge observation. Public
+        data/rubric/variants/profile/provider identity changes invalidate it.
+        Opaque custom backend state requires clear_cache() or use_cache=False.
+        """
+        context = self._evaluation_context()
+        if context != self._context_fingerprint:
+            from omegaprompt.core.fitness import CompositeFitness
+            self.clear_cache()
+            self._fitness = CompositeFitness(self.rubric)
+            self._context_fingerprint = context
         resolved, param_clamp_warnings = self._resolve_params(params)
 
         # H1: return the memoized result for an already-evaluated resolved
@@ -195,8 +267,12 @@ class PromptTarget:
             separators=(",", ":"),
             default=str,
         )
+        if param_clamp_warnings:
+            # Identical resolved values can have different boundary verdicts.
+            _cache_key += json.dumps([w.model_dump(mode="json") for w in param_clamp_warnings], sort_keys=True)
         cached = self._eval_cache.get(_cache_key)
-        if cached is not None:
+        if cached is not None and use_cache:
+            self.cache_hits += 1
             return cached
 
         system_prompt = self.variants.system_prompts[resolved.system_prompt_variant]
@@ -209,6 +285,8 @@ class PromptTarget:
         judge_results: list[tuple[str, Any]] = []
         item_results: list[EvalItemResult] = []
         degraded_capabilities = []
+        calls_before = self.total_api_calls
+        usage_before = dict(self.last_usage)
 
         def _eval_one(item):
             """Evaluate one dataset item (target call then judge call).
@@ -230,16 +308,24 @@ class PromptTarget:
             )
 
             target_started = perf_counter()
+            with self._accounting_lock:
+                self.total_api_calls += 1
             target_response = self.target_provider.call(target_request)
+            with self._accounting_lock:
+                _accumulate_usage(self.last_usage, target_response.usage)
             target_wall_ms = (perf_counter() - target_started) * 1000.0
 
             judge_started = perf_counter()
+            with self._accounting_lock:
+                self.total_api_calls += 1
             judge_outcome = self.judge.score(
                 rubric=self.rubric,
                 item=item,
                 target_response=target_response.text,
             )
             judge_result, judge_usage = judge_outcome
+            with self._accounting_lock:
+                _accumulate_usage(self.last_usage, judge_usage)
             judge_wall_ms = (perf_counter() - judge_started) * 1000.0
 
             # Reviewer P0: judge provider degradation must surface in
@@ -262,15 +348,43 @@ class PromptTarget:
                 item_latency_ms,
             )
 
-        if self.max_workers > 1:
-            # ThreadPoolExecutor.map yields results in INPUT order regardless
-            # of completion order, so the fold below is identical to the serial
-            # path — the artifact is byte-stable across worker counts.
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                computed = list(executor.map(_eval_one, self.dataset.items))
-        else:
-            # Serial path: byte-identical to prior versions (default).
-            computed = [_eval_one(item) for item in self.dataset.items]
+        def ordered_results():
+            started = perf_counter()
+            try:
+                if self.max_workers == 1:
+                    for item in self.dataset.items:
+                        yield _eval_one(item)
+                    return
+                # Bound submitted + completed-but-unconsumed items to workers.
+                # Yield in input order, including input-order exceptions.
+                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                    items = iter(self.dataset.items)
+                    pending = deque()
+                    try:
+                        for _ in range(self.max_workers):
+                            item = next(items, None)
+                            if item is None:
+                                break
+                            pending.append(executor.submit(_eval_one, item))
+                        while pending:
+                            yield pending.popleft().result()
+                            item = next(items, None)
+                            if item is not None:
+                                pending.append(executor.submit(_eval_one, item))
+                    finally:
+                        for future in pending:
+                            future.cancel()
+            except Exception as exc:
+                self.failed_evaluations.append({
+                    "status": "failed", "error_type": type(exc).__name__,
+                    "elapsed_ms": (perf_counter() - started) * 1000,
+                    "context_fingerprint": context,
+                    "api_calls": self.total_api_calls - calls_before,
+                    "returned_usage": {k: v - usage_before.get(k, 0) for k, v in self.last_usage.items()},
+                })
+                raise
+
+        computed = ordered_results()
 
         for (
             item,
@@ -304,9 +418,6 @@ class PromptTarget:
 
         fitness = self._fitness.evaluate(judge_results)
         pass_rate = self._fitness.pass_rate()
-
-        self.total_api_calls += target_call_count + judge_call_count
-        _accumulate_usage(self.last_usage, run_usage)
 
         resolved_json = resolved.model_dump(mode="json")
         compat_resolved = {

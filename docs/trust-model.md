@@ -177,3 +177,5 @@ boundary crossing.
 
 The diff result is not a benchmark leaderboard. It is a local regression gate
 between two artifacts under the team's declared contract.
+
+2.2.0 runtime split contract: explicit paired mode requires matching ID sets and identical input/reference content on at least three cases; explicit disjoint mode rejects overlapping IDs or exact duplicate input content before provider calls. Historical auto mode is retained and does not establish independence.

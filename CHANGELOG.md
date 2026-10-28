@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.2.1] - 2026-10-28
+
+- Fix neutral reasoning and output-budget parameters to use indices into the
+  configured axis lists. Prefer STANDARD/MEDIUM when allowed, otherwise the first
+  allowed value; expose the same neutral through parameter specifications.
+- Correct the 2.2.0 default baseline from unintended DEEP to STANDARD. Valid
+  singleton subsets no longer fail bounds checks, and reordered lists preserve
+  the preferred semantic value. Historical artifacts are not rewritten; fresh
+  runs can have different baseline scores, requests and calibration outcomes.
+- Verify actual offline ProviderRequests and the runtime, CLI and MCP subset
+  calibration paths, retaining manual-review HOLD escalation.
+- Describe `PerformanceMeasurement.noise_floor` as absolute fitness standard
+  deviation, and describe the composite Action as checking declared artifact/gap/
+  hard-gate criteria without asserting generalization.
+
+The direct comparison baseline for this patch is public **2.2.0**, not 2.1.2.
+No gate threshold, artifact schema or existing reference fixture was relaxed.
+See [reproduction and migration](docs/release/2.2.1.md).
+
 ## [2.2.0] - 2026-10-28
 
 - Invalidate evaluation caches when public context changes, provide explicit fresh evaluation and cache invalidation, and keep boundary-clamp verdicts distinct.

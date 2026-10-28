@@ -14,6 +14,7 @@ Tier 2: measure_sensitivity, grade, preflight, classify_traps.
 from __future__ import annotations
 
 from pathlib import Path
+from inspect import signature
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field
@@ -298,6 +299,16 @@ def calibrate(
 
     train_ds = _resolve_dataset(train)
     test_ds = _resolve_dataset(test) if test is not None else None
+    if tuning.validation_mode == "paired":
+        train_items = {item.id: (item.input, item.reference) for item in train_ds.items}
+        test_items = {item.id: (item.input, item.reference) for item in test_ds.items} if test_ds is not None else {}
+        if len(train_items) < 3 or train_items != test_items:
+            raise ValueError("validation_mode='paired' requires the same at least 3 item ids and input/reference content")
+    if tuning.validation_mode == "disjoint" and test_ds is not None:
+        if {item.id for item in train_ds.items} & {item.id for item in test_ds.items}:
+            raise ValueError("validation_mode='disjoint' requires disjoint item ids; overlap found")
+        if {item.input for item in train_ds.items} & {item.input for item in test_ds.items}:
+            raise ValueError("validation_mode='disjoint' requires independent inputs; duplicate content found")
     rubric_obj = _resolve_rubric(rubric)
     variants_obj = _resolve_variants(variants)
     target_provider = _resolve_provider(target)
@@ -947,6 +958,8 @@ def classify_traps(
     judge: LLMProvider | ProviderSpec | str | dict,
     dataset: Dataset | Path | str,
     test: Dataset | Path | str | None = None,
+    validation_mode: Literal["auto", "paired", "disjoint"] = "auto",
+    selected_few_shot_indices: list[int] | None = None,
 ) -> list[AnalyticalFinding]:
     """Classify the calibration config against known trap patterns.
 
@@ -972,6 +985,17 @@ def classify_traps(
     train_dataset = _resolve_dataset(dataset)
     test_dataset = _resolve_dataset(test) if test is not None else None
 
+    if validation_mode not in {"auto", "paired", "disjoint"}:
+        raise ValueError(f"Unknown validation_mode: {validation_mode!r}")
+    mode_options = {}
+    if "validation_mode" in signature(analytical_preflight).parameters:
+        mode_options["validation_mode"] = validation_mode
+    elif validation_mode != "auto":
+        raise ValueError("Explicit validation_mode requires mini-antemortem-cli>=0.11.0")
+    if selected_few_shot_indices is not None:
+        if "selected_few_shot_indices" not in signature(analytical_preflight).parameters:
+            raise ValueError("Selected few-shot context requires mini-antemortem-cli>=0.11.0")
+        mode_options["selected_few_shot_indices"] = selected_few_shot_indices
     return analytical_preflight(
         target_provider=target_provider.name,
         target_model=target_provider.model,
@@ -981,6 +1005,7 @@ def classify_traps(
         test_dataset=test_dataset,
         rubric=rubric_obj,
         variants=variants_obj,
+        **mode_options,
     )
 
 

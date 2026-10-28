@@ -1,5 +1,8 @@
 # omegaprompt — 빠른 시작
 
+> **2.2.0 (2026-10-28): 평가 무결성과 대기 작업 상한.** 데이터·rubric·variants 등 평가 컨텍스트 변경 시 캐시를 무효화합니다. `PromptTarget.evaluate(..., use_cache=False)`는 실제 재측정이며 캐시 재생은 독립 관측으로 세지 않습니다. 병렬 대기 결과는 `max_workers`개 이하이고 입력 순서를 보존합니다. 실패한 target/judge 시도와 반환된 usage도 누적 계측하며 부분 성공은 캐시하지 않습니다. 명시적 disjoint 모드는 ID 중복을 입력 오류로 처리합니다. [검증 근거와 이행 안내](docs/release/2.2.0.md).
+
+
 > 짧은 버전입니다. 전체 README가 부담스러웠던 분들을 위한 문서예요.
 
 [![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
@@ -17,16 +20,16 @@ omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact�
 Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
 
 ```bash
-python -m pip install omegaprompt==2.1.2
+python -m pip install omegaprompt==2.2.0
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.0/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
 
 artifact 다운로드는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.0,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
 
-[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 현재 검증 조합은 omegaprompt 2.1.2이며, 별도 배포 패키지입니다.
+[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 현재 검증 조합은 omegaprompt 2.2.0이며, 별도 배포 패키지입니다.
 
 MCP는 해당 배포명의 `[mcp]` extras와 기존 서버 명령을 사용합니다. 기존 FastMCP 계약은 SDK `>=1.0.0,<2.0.0` 범위로 유지합니다.
 

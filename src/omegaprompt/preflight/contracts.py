@@ -9,6 +9,7 @@ full sub-units must emit records conforming to these shapes.
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -133,6 +134,12 @@ class PreflightReport(BaseModel):
     status: PreflightStatus = PreflightStatus.PROCEED
     blocker_reasons: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
+    # Empty maps preserve unknown historical measurement state; warnings are
+    # human text and must not serve as the machine-readable measurement flag.
+    measurement_status: dict[str, Literal[
+        "measured", "unmeasured", "insufficient_samples", "failed", "estimated", "not_applicable"
+    ]] = Field(default_factory=dict)
+    probe_accounting: dict[str, Any] = Field(default_factory=dict)
 
     def any_real_or_new(self) -> bool:
         return any(f.label in {"REAL", "NEW"} for f in self.analytical_findings)

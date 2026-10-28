@@ -243,6 +243,22 @@
       "drift_risk": "medium",
       "exact_numeric_values_allowed": false,
       "owner_surface": "CLI"
+    },
+    {
+      "claim_id": "evaluation.integrity_2_2",
+      "claim": "Context-aware replay and explicit fresh evaluation preserve observation provenance; bounded submitted item results preserve order; disjoint ID overlap is an input error; explicit failed measurements require review.",
+      "locations": [
+        "README.md",
+        "README_KR.md",
+        "EASY_README.md",
+        "EASY_README_KR.md",
+        "docs/release/2.2.0.md"
+      ],
+      "evidence_type": "reproducible_command",
+      "source": "command: python -m pytest tests/test_evaluation_integrity.py tests/test_walkforward.py",
+      "drift_risk": "medium",
+      "exact_numeric_values_allowed": true,
+      "owner_surface": "repo"
     }
   ]
 }

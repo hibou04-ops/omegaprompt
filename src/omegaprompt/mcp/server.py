@@ -300,6 +300,8 @@ def classify_traps(
     judge: str | dict,
     dataset: str,
     test: str | None = None,
+    validation_mode: str = "auto",
+    selected_few_shot_indices: list[int] | None = None,
 ) -> list[dict]:
     """Classify the calibration config against known trap patterns.
 
@@ -315,6 +317,8 @@ def classify_traps(
         judge: Judge provider.
         dataset: Path to the train dataset JSONL.
         test: Optional path to the held-out test JSONL.
+        validation_mode: auto/paired/disjoint; paired is repeat measurement,
+            not evidence of unseen-input generalization.
 
     Returns:
         List of AnalyticalFinding dicts. Each has ``trap_id``, ``label``
@@ -328,5 +332,7 @@ def classify_traps(
         judge=judge,
         dataset=dataset,
         test=test,
+        validation_mode=validation_mode,
+        selected_few_shot_indices=selected_few_shot_indices,
     )
     return [f.model_dump(mode="json") for f in findings]

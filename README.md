@@ -1,6 +1,6 @@
 # omegaprompt
 
-**The overfit gate for your prompts.** Your prompt aced your eval set — that's exactly why you can't trust it yet. `omegaprompt` re-tests the winning prompt on examples it never tuned on, and **fails your CI build** if it doesn't hold up.
+**Provider-neutral prompt calibration with explicit gates.** Search configurations on training data, score the winner on a separately supplied test slice, and inspect declared gap, hard-gate and profile checks. Paired replay measures repeat consistency; independent holdout needs cases excluded from selection.
 
 [![CI](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml/badge.svg)](https://github.com/hibou04-ops/omegaprompt/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/pypi/l/omegaprompt?color=blue&label=license&cacheSeconds=3600)](LICENSE)
@@ -11,6 +11,8 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
+> **2.2.0 (2026-10-28): evaluation integrity and bounded work.** Context changes invalidate memoized observations. `PromptTarget.evaluate(..., use_cache=False)` performs fresh calls; cache replay adds no independent observation. Parallel evaluation retains at most `max_workers` submitted results and preserves input order. Failed target/judge attempts and returned usage remain in target accounting; no partial success is cached. Explicit disjoint mode rejects overlapping IDs. [Evidence and migration](docs/release/2.2.0.md).
+
 Docs: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (trust evidence)](docs/claims/README_CLAIMS.generated.md)
 
 Keywords: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
@@ -20,7 +22,6 @@ pip install omegaprompt              # core
 pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 ```
 
-> **v2.1.2 (2026-10-08)** — MCP installs retain SDK 1.x compatibility; the Action installs this exact package version by default. Standalone examples and docking instructions clarify synthetic versus live evidence. CLI/MCP names, schema 2.0 and the eight MCP tools are unchanged.
 
 <!-- public-claim-ledger:start -->
 > Claim evidence source: [docs/claims/public_claim_ledger.json](docs/claims/public_claim_ledger.json), rendered by `python tools/generate_readme_claims.py`.
@@ -39,9 +40,9 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install omegaprompt==2.1.2
+python -m pip install omegaprompt==2.2.0
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.0/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
@@ -52,7 +53,7 @@ omega-lock>=0.3.0,<0.4.0 is required and installed automatically. Both mini pack
 
 [Docking contracts and runnable data handoff](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [Full guide](README.md).
 
-MCP: install the distribution with `[mcp]` and use its existing server executable. FastMCP support is bounded to MCP SDK `>=1.0.0,<2.0.0`; the tool names and schemas are unchanged.
+MCP: install the distribution with `[mcp]` and use its existing server executable. FastMCP support is bounded to MCP SDK `>=1.0.0,<2.0.0`; tool names are retained; classify_traps gains optional validation inputs.
 
 
 ## Your prompt is overfit to your eval set — and you don't know it
@@ -63,7 +64,7 @@ A week later, production quality is *worse* than before. Why?
 
 Because 4.8 was the score on **the exact examples you tuned against**. You didn't measure a prompt — you memorized an answer key. That's overfitting, and your eval tool reported PASS because that's all it was asked to do. ML solved this in the 1990s with a train/test split. Most prompt workflows still ship without one.
 
-`omegaprompt` is the 60-second check that catches this **before** you ship:
+`omegaprompt` is a configurable workflow that catches this **before** you ship:
 
 1. It tunes your prompt on a **train** slice (across system prompt, few-shot, reasoning effort, output budget, response-schema mode, tool policy).
 2. It **re-tests the winner on a held-out slice it never tuned on**.
@@ -71,7 +72,7 @@ Because 4.8 was the score on **the exact examples you tuned against**. You didn'
 
 Then one line in CI makes a "small prompt tweak" fail the build if it silently degrades quality.
 
-> **Your eval says PASS. omegaprompt says it won't generalize.** That sentence is the whole product.
+> A gate failure identifies a failed declared check on supplied data; it does not establish future production behavior.
 
 ---
 
@@ -108,7 +109,7 @@ generalization_gap: 0.00%      # train vs held-out — small gap = it transferre
 kc4_status:         MISSING_PER_ITEM_SCORES
 ```
 
-**Honest read of this demo:** the bundled demo dataset has *disjoint* train/held-out items (no shared item ids), so the per-item transfer gate cannot fire — it reports `MISSING_PER_ITEM_SCORES` and the gate degenerates to the gap check alone (which here is 0.00%). The per-item transfer gate is what *actually* fires on a real **paired** dataset (train and held-out sharing item ids). So don't read this demo's clean numbers as "the transfer gate passed" — read it as "the gap check passed and the transfer gate had nothing to score." See *How it works*.
+**Demo scope:** these deterministic fixtures exercise artifact and gap-gate behavior. Missing per-item scores are unmeasured correlation. A paired replay measures repeat consistency on the same cases; an independent holdout needs cases excluded from selection. Neither proves production generalization.
 
 Turn that same artifact into a one-command CI verdict:
 
@@ -159,7 +160,7 @@ A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.1.2
+- uses: hibou04-ops/omegaprompt@v2.2.0
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary
@@ -230,7 +231,7 @@ You give it a **dataset + a judging rubric + candidate prompts**. It searches st
 
 Then it re-tests the winning configuration on the **held-out** slice and applies two pre-declared gates:
 
-- **Held-out transfer gate** (`--min-kc4`): per-item held-out scores must still track the target. If train looks great but the held-out items stop correlating, the prompt overfit — the run is flagged `FAIL_KC4_GATE`. *(This needs train and held-out to share item ids — a "paired" replay. On an ordinary disjoint split it degrades to the gap check below, which still catches overfit — that's exactly what the offline demo above shows.)*
+- **Paired consistency gate** (`--min-kc4`): Pearson correlation on the same cases must meet the declared threshold. Failure means that consistency check failed, not proof of overfitting. An independent disjoint holdout has no paired correlation and uses the gap and hard-gate checks.
 - **Max gap gate** (`--max-gap`): the train↔held-out fitness gap must stay under your declared ceiling.
 
 Both thresholds are set **before** scoring. There's no lowering the bar after you see results.
@@ -570,7 +571,7 @@ Every combination in the unlocked subspace is evaluated. Each evaluation issues 
 
 ### 5.5 Held-out replay
 
-The training-best parameters are replayed on the held-out test slice. The replay uses the *same* `PromptTarget` adapter with a different dataset; there is no leakage possible because the test slice was never seen by the searcher.
+The training-best parameters are evaluated using a separate PromptTarget instance for the supplied test dataset. Independence depends on actual content and prior selection history. A paired replay deliberately reuses the same cases and is not an independent holdout.
 
 ### 5.6 Held-out transfer gate (per-item correlation)
 
@@ -578,9 +579,9 @@ The Pearson correlation between train per-item scores and test per-item scores (
 
 **Transfer-gate semantics by validation_mode (v1.5+).** The transfer gate is a per-item correlation, so it is only meaningful when train and test slices share the *same* item ids — a "paired replay". On an ordinary disjoint train/test split the slices have no shared ids and the per-item correlation is structurally unmeasurable; the gate degenerates to the gap-only check. To make this explicit, `CalibrateTuning.validation_mode` accepts:
 
-- `"auto"` (default, backward-compat): compute the per-item correlation only when slices share ≥3 ids; otherwise skip silently.
+- `"auto"` (default, backward-compat): compute the per-item correlation only when slices share ≥3 ids; otherwise record a noncomputed status.
 - `"paired"`: caller asserts shared ids by design. Raises `ValueError` if overlap < 3 — a paired run with no overlap is a setup bug, not a free pass.
-- `"disjoint"`: caller asserts no shared ids by design. The per-item correlation is never computed; the gate is gap-only.
+- `"disjoint"`: caller asserts no shared ids by design. Overlapping IDs raise an input error. For disjoint IDs the gate is gap-only; unmeasured correlation is not a correlation pass.
 
 If you run a normal held-out split (disjoint ids), set `validation_mode="disjoint"` to make the artifact's lack of `kc4_correlation` self-documenting. Use `"paired"` when you score two prompts on the *same* items and want the per-item correlation as a stability signal.
 
@@ -1157,7 +1158,7 @@ The default test suite runs with `pytest -q` and uses mocked provider clients ra
 | `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / duplicate-check rejection / missing-check raise); `LLMJudge` (strict-schema dispatch, payload composition, non-`JudgeResult` response raise, strict-mode ship-grade judge refusal); `EnsembleJudge` (rule-first short-circuit, LLM escalation on rule-pass, merged gate_results, non-`RuleJudge` rejection). |
 | `targets/` | `PromptTarget` end-to-end with mocked provider + judge; meta-axis resolution and clamping for out-of-range inputs; usage accumulation across evaluations; `evaluation_history` retention; latency measurement; degraded-capability propagation. |
 | `commands/` | CLI help lists `calibrate` / `report` / `diff` / `check-artifact`; `--version` shows `omegaprompt`; `report` renders schema-v2.0 artifacts; `diff` detects regressions on fitness, cost ratios, latency ratios, boundary-crossing flips; `check-artifact` performs zero-network integrity checks. |
-| `preflight/` | **Plugin interface only** — no probe or classifier code inside `omegaprompt`. `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement; bounds on `JudgeQualityMeasurement.consistency` (0..1), `EndpointMeasurement.schema_reliability` (0..1). `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample gap widening; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). Sub-tool probe + classifier implementations (with their own test suites) live in the `mini-omega-lock` and `mini-antemortem-cli` repositories. |
+| `preflight/` | **Plugin interface only** — no probe or classifier code inside `omegaprompt`. `contracts`: severity ordering, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` enforcement; bounds on `JudgeQualityMeasurement.consistency` (0..1), `EndpointMeasurement.schema_reliability` (0..1). `adaptation`: noise-adaptive `min_kc4` across four thresholds; consistency-driven `rescore_count`; schema-fallback trigger; wall-time-driven `unlock_k` reduction; small-sample manual-review escalation; variant-skip axis marking; `apply_adaptation_plan` invariants (never weakens `min_kc4`, never widens `max_gap`, never raises `unlock_k`). Sub-tool probe + classifier implementations (with their own test suites) live in the `mini-omega-lock` and `mini-antemortem-cli` repositories. |
 | `test_calibrate_integration.py` | **Drives the real `omega_lock.run_p1`** with a deterministic in-memory `CalibrableTarget` (no mocks on the search engine). Asserts the artifact's `calibrated_params`, `neutral_baseline_params`, `walk_forward`, and `sensitivity_ranking` match `P1Result`'s actual shape — the regression that this test catches is drift between the adapter layer and the search engine that per-module unit tests cannot reach. |
 
 Run the default no-network suite with `uv run pytest -q -m "not live"` (or `python -m pytest -q -m "not live"`). The wall-clock time is dominated by Pydantic model compilation on first import.
@@ -1702,3 +1703,5 @@ Apache 2.0. See [LICENSE](LICENSE).
 ## Colophon
 
 Designed, implemented, and shipped solo. Adapter layer over `omega-lock`; zero calibration-engine reimplementation. Every non-trivial change is pre-authored through `antemortem-cli`'s recon discipline. Tests run offline; no live API calls in CI.
+
+2.2.0 runtime split contract: explicit paired mode requires matching ID sets and identical input/reference content on at least three cases; explicit disjoint mode rejects overlapping IDs or exact duplicate input content before provider calls. Historical auto mode is retained and does not establish independence.

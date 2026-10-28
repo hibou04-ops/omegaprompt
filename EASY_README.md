@@ -1,5 +1,8 @@
 # omegaprompt — Easy Start
 
+> **2.2.0 (2026-10-28): evaluation integrity and bounded work.** Context changes invalidate memoized observations. `PromptTarget.evaluate(..., use_cache=False)` performs fresh calls; cache replay adds no independent observation. Parallel evaluation retains at most `max_workers` submitted results and preserves input order. Failed target/judge attempts and returned usage remain in target accounting; no partial success is cached. Explicit disjoint mode rejects overlapping IDs. [Evidence and migration](docs/release/2.2.0.md).
+
+
 > The short version, for people who found the full README intimidating.
 
 [![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
@@ -17,9 +20,9 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install omegaprompt==2.1.2
+python -m pip install omegaprompt==2.2.0
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.1.2/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.0/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
@@ -30,7 +33,7 @@ omega-lock>=0.3.0,<0.4.0 is required and installed automatically. Both mini pack
 
 [Docking contracts and runnable data handoff](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [Full guide](README.md).
 
-MCP: install the distribution with `[mcp]` and use its existing server executable. FastMCP support is bounded to MCP SDK `>=1.0.0,<2.0.0`; the tool names and schemas are unchanged.
+MCP: install the distribution with `[mcp]` and use its existing server executable. FastMCP support is bounded to MCP SDK `>=1.0.0,<2.0.0`; tool names are retained; classify_traps gains optional validation inputs.
 
 
 ## The story (60 seconds)
@@ -53,7 +56,7 @@ You hand it three things:
 2. **A rubric** — how to score an answer (rules, or "ask a model to grade it").
 3. **A few candidate prompts** — the versions you want to compare.
 
-It splits your dataset into two piles: a **train** pile it's allowed to tune on, and a **held-out** pile it is *not* allowed to peek at. It finds the best prompt using only the train pile, then scores that winner on the held-out pile. If the winner still does well on examples it never saw, great — it generalized. If it falls apart, you just caught an overfit prompt **before** it hit production.
+You supply separate datasets: a **train** pile it's allowed to tune on, and a **held-out** pile it is *not* allowed to peek at. It finds the best prompt using only the train pile, then scores that winner on the held-out pile. If the winner still does well on examples it never saw, that is evidence on the supplied cases, within their coverage. If it falls apart, you just caught an overfit prompt **before** it hit production.
 
 That's the whole idea. You can read the rest of this page, or you can just remember: **it re-tests your winning prompt on examples it never tuned on.**
 
@@ -79,7 +82,7 @@ python examples/reference/reproduce_reference_artifact.py
 omegaprompt report examples/reference/reference_artifact.json
 ```
 
-The report shows you a **baseline** score (your prompt with no tuning), a **calibrated** score (the winner on the train pile), and the **held-out** score (the winner on examples it never saw). The gap between those last two is the whole point: a small gap means it generalized; a big gap means it overfit.
+The report shows you a **baseline** score (your prompt with no tuning), a **calibrated** score (the winner on the train pile), and the **held-out** score (the winner on examples it never saw). The gap between those last two is the whole point: a small gap passes the declared check on those datasets; a large gap fails that check. Neither result proves production generalization or its cause.
 
 > **One honest note about this example:** the bundled dataset's two piles don't share the same items, so the finest-grained "does each held-out item track?" check has nothing to line up and reports that it was skipped. The example still shows the *gap* check working. On your own data, if the two piles share item ids, the per-item check kicks in too. So read the example as "the gap check passed," not "every check fired."
 

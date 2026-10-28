@@ -45,7 +45,7 @@ declared thresholds) so a future reader can tell ``None`` from
 
 from __future__ import annotations
 
-from math import isnan
+from math import isfinite, isnan
 from typing import Literal
 
 from omegaprompt.domain.result import WalkForwardResult
@@ -136,6 +136,15 @@ def evaluate_walk_forward(
         Default ``"auto"`` preserves historical behaviour: KC-4 is
         computed only when slices share >=3 ids, otherwise skipped.
     """
+    if validation_mode not in {"auto", "paired", "disjoint"}:
+        raise ValueError(f"Unknown validation_mode: {validation_mode!r}")
+    if not all(isfinite(v) for v in (train_best_fitness, test_fitness, max_gap, min_kc4)):
+        raise ValueError("fitness and gate thresholds must be finite")
+    if max_gap < 0 or not -1 <= min_kc4 <= 1:
+        raise ValueError("max_gap must be nonnegative and min_kc4 within [-1, 1]")
+    for scores in (per_item_train, per_item_test):
+        if scores is not None and not all(isfinite(v) for v in scores.values()):
+            raise ValueError("per-item scores must be finite")
     if train_best_fitness == 0:
         gap = float("inf")
         gap_status: GapStatus = (
@@ -152,6 +161,8 @@ def evaluate_walk_forward(
     kc4: float | None = None
     kc4_status: KC4Status
     if validation_mode == "disjoint":
+        if shared_ids:
+            raise ValueError("validation_mode='disjoint' requires disjoint item ids; overlap found")
         # Caller asserts disjoint split; do not compute KC-4 even if
         # ids happen to overlap (e.g. id collision across splits is a
         # bug to surface elsewhere, not a free pass for the gate).

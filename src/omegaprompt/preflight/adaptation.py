@@ -201,6 +201,9 @@ def derive_adaptation_plan(
         None,
     )
     require_manual_review_reasons: list[str] = []
+    for metric, state in report.measurement_status.items():
+        if state in {"failed", "insufficient_samples"}:
+            require_manual_review_reasons.append(f"{metric}: measurement {state}; no quality pass established")
     if small_sample_finding is not None and small_sample_finding.severity in {
         PreflightSeverity.HIGH,
         PreflightSeverity.BLOCKER,

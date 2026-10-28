@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.0] - 2026-10-28
+
+- Invalidate evaluation caches when public context changes, provide explicit fresh evaluation and cache invalidation, and keep boundary-clamp verdicts distinct.
+- Bound submitted item results to max_workers and stream input-order aggregation. Account attempted calls and returned usage even on failure; never cache incomplete evaluations.
+- Reject nonfinite gate inputs and contradictory disjoint IDs; calibrate reports input errors with exit 2 before provider calls for split overlap.
+- Add explicit PreflightReport measurement_status/probe_accounting. Failed or insufficient measurements require manual review; old reports retain unknown state.
+- Preserve CLI aliases, artifact schema 2.0, and default auto mode. classify_traps gains optional paired/disjoint inputs for mini-antemortem-cli 0.11.0+.
+- Retain advisory-only adaptation controls as advisory. See docs/release/2.2.0.md for measured scope and migration.
+
 ## [2.1.2] - 2026-10-08
 
 Bound FastMCP to SDK >=1,<2 to fix clean MCP installs. Pin the Action default to this package version. Add standalone artifact inspection and explicit preflight data handoff; remove unsupported framework comparisons.

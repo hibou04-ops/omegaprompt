@@ -117,7 +117,7 @@ class PerformanceMeasurement(BaseModel):
     noise_floor: float = Field(
         default=0.0,
         ge=0.0,
-        description="Fitness variance from repeating an evaluation at fixed params.",
+        description="Absolute fitness standard deviation from repeating an evaluation at fixed params.",
     )
 
 

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """High-level entrypoints for omegaprompt — the agent-callable surface.
 
 These four functions wrap the calibration pipeline as one-call operations,
@@ -13,6 +14,8 @@ Tier 2: measure_sensitivity, grade, preflight, classify_traps.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+from math import isfinite
 from pathlib import Path
 from inspect import signature
 from typing import Literal, Union
@@ -63,6 +66,35 @@ from omegaprompt.providers import (
 )
 from omegaprompt.reporting import render_markdown
 from omegaprompt.targets import PromptTarget
+
+
+def verify_calibration_preflight(
+    observed_delta: float,
+    noise_floor_mde: float = 0.0,
+    blocking_traps: Sequence[str] = (),
+) -> dict[str, object]:
+    """Classify the supplied delta against blocking traps and its noise floor.
+
+    This offline input check does not run calibration or verify a holdout.
+    Values must be finite and the noise floor must be nonnegative.
+    The returned trap list is an independent copy in the supplied order.
+    """
+    if not isfinite(observed_delta):
+        raise ValueError("observed_delta must be finite")
+    if not isfinite(noise_floor_mde) or noise_floor_mde < 0.0:
+        raise ValueError("noise_floor_mde must be finite and nonnegative")
+    traps = list(blocking_traps)
+    verdict = (
+        "NOT_ESTABLISHED"
+        if traps or observed_delta <= noise_floor_mde
+        else "ESTABLISHED"
+    )
+    return {
+        "verdict": verdict,
+        "observed_delta": observed_delta,
+        "noise_floor_mde": noise_floor_mde,
+        "blocking_traps": traps,
+    }
 
 
 # ----------------------------------------------------------------------
@@ -1097,4 +1129,5 @@ __all__ = [
     "grade",
     "preflight",
     "classify_traps",
+    "verify_calibration_preflight",
 ]

@@ -11,7 +11,7 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
-> **2.2.2 (2026-10-28): MCP transport 시작 전 engine 초기화.** 공식 진입점은 선택 MCP app import 성공 뒤 stdio/HTTP dispatch 전에 공개 omega_lock engine을 동기로 초기화합니다. 관측된 Windows cold NumPy import 대기에 대한 실행 순서 완화이며 내부 원인은 UNKNOWN입니다. provider 호출·의존성·gate·schema 정책을 바꾸지 않으며 2.2.1의 중립값 교정을 포함합니다.
+> 이전 2.2.2의 MCP transport 전 engine 초기화 수정을 포함합니다. 내부 cold-import 원인은 UNKNOWN입니다.
 
 > **2.2.1 (2026-10-28): 부분 축의 중립값 교정.** reasoning/budget 중립값은 설정 목록에서 STANDARD/MEDIUM의 위치를 사용하며, 없으면 첫 허용값을 사용합니다. 공개 2.2.0에서 기본 STANDARD가 DEEP으로 해석되거나 유효한 단일값 목록이 실패하던 결함을 교정했습니다. 새 실행의 기준 점수·비용·선택 결과는 달라질 수 있으며 기존 artifact는 보존합니다. [재현과 호환성](docs/release/2.2.1.md).
 
@@ -37,6 +37,12 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 ---
 
+## v2.2.3 — 이번 변경
+
+오프라인 hook `omegaprompt.runtime.verify_calibration_preflight()`를 추가했습니다. `verdict`, `observed_delta`, `noise_floor_mde`, 복사한 `blocking_traps` 목록을 반환합니다. blocking trap이 있거나 `delta <= MDE`이면 `NOT_ESTABLISHED`, 나머지는 로컬 규칙의 `ESTABLISHED`입니다. 기존 calibration 실행 경로와 기본값은 보존하며, 호출자가 선택해 사용하는 helper 자체가 calibration이나 독립 holdout 검증을 수행하지 않습니다.
+
+MCP 1.x/2.x import 경로 호환 shim(`FastMCP` / `MCPServer`)을 포함합니다. 로컬 검증은 SDK 1.30.0으로 수행했으며 2.x runtime은 미검증이고, 선언된 지원 의존성은 `mcp>=1.0.0,<2.0.0`을 유지합니다.
+
 ## 시작 · 단독 사용 · 도킹
 
 **Omega Verification Suite** — Quiet precision. AI research guided by evidence.
@@ -46,9 +52,9 @@ omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact�
 Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
 
 ```bash
-python -m pip install omegaprompt==2.2.2
+python -m pip install omegaprompt==2.2.3
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.2/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.3/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
@@ -164,7 +170,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.2
+- uses: hibou04-ops/omegaprompt@v2.2.3
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

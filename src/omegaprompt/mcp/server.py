@@ -14,7 +14,10 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from mcp.server.fastmcp import FastMCP
+try:
+    from mcp.server.fastmcp import FastMCP
+except ModuleNotFoundError:
+    from mcp.server import MCPServer as FastMCP  # type: ignore[no-redef,attr-defined]
 
 from omegaprompt import runtime
 

@@ -1,6 +1,6 @@
 # omegaprompt — Easy Start
 
-> **2.2.2 (2026-10-28): initialize the engine before MCP transport starts.** The official MCP entrypoint loads the public omega_lock engine synchronously after the optional MCP app loads and before stdio/HTTP dispatch. This mitigates the observed Windows cold NumPy import wait; the internal cause remains UNKNOWN. No provider requests, dependency, gate or schema policies change. 2.2.1 neutral-parameter fixes remain included.
+> Includes the 2.2.2 engine initialization before MCP transport; the internal cold-import cause remains UNKNOWN.
 
 > **2.2.1 (2026-10-28): neutral parameters respect configured subsets.** Select STANDARD/MEDIUM by their positions in the allowed lists, falling back to the first allowed value. Public 2.2.0 unintentionally used DEEP for the default baseline and rejected valid singleton lists. Fresh baseline scores, costs and selections can change; historical artifacts are preserved. [Reproduction and migration](docs/release/2.2.1.md).
 
@@ -17,6 +17,12 @@ Full doc: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/READM
 
 ---
 
+## v2.2.3 — Release changes
+
+Adds the offline `omegaprompt.runtime.verify_calibration_preflight()` hook. It returns a dictionary with `verdict`, `observed_delta`, `noise_floor_mde`, and a copied `blocking_traps` list. A blocking trap or `delta <= MDE` yields `NOT_ESTABLISHED`; otherwise the local rule yields `ESTABLISHED`. Existing calibration paths and defaults are unchanged: callers opt into this helper, which does not execute calibration or independently verify a holdout.
+
+Includes an MCP 1.x/2.x import-layout compatibility shim (`FastMCP` / `MCPServer`). Local verification used SDK 1.30.0; SDK 2.x runtime behavior is not verified, and the declared supported dependency remains `mcp>=1.0.0,<2.0.0`.
+
 ## Start here · Standalone use · Integration/Docking
 
 **Omega Verification Suite** — Quiet precision. AI research guided by evidence.
@@ -26,9 +32,9 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install omegaprompt==2.2.2
+python -m pip install omegaprompt==2.2.3
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.2/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.3/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```

@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.2.3] - 2026-11-01
+
+Adds the offline `omegaprompt.runtime.verify_calibration_preflight()` hook. It returns a dictionary with `verdict`, `observed_delta`, `noise_floor_mde`, and a copied `blocking_traps` list. A blocking trap or `delta <= MDE` yields `NOT_ESTABLISHED`; otherwise the local rule yields `ESTABLISHED`. Existing calibration paths and defaults are unchanged: callers opt into this helper, which does not execute calibration or independently verify a holdout.
+
+Includes an MCP 1.x/2.x import-layout compatibility shim (`FastMCP` / `MCPServer`). Local verification used SDK 1.30.0; SDK 2.x runtime behavior is not verified, and the declared supported dependency remains `mcp>=1.0.0,<2.0.0`.
+
 ## [2.2.2] - 2026-10-28
 
 - Initialize the public omega_lock engine synchronously in the official MCP

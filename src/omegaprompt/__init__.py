@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 """omegaprompt - provider-neutral prompt calibration engine.
 
 v1.1 is the public-distribution release of the v1.0 architecture. The
@@ -114,7 +115,7 @@ from omegaprompt.runtime import (
     report,
 )
 
-__version__ = "2.2.2"
+__version__ = "2.2.3"
 
 __all__ = [
     # domain

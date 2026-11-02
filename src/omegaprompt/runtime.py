@@ -16,6 +16,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from math import isfinite
+from numbers import Real
 from pathlib import Path
 from inspect import signature
 from typing import Literal, Union
@@ -70,26 +71,48 @@ from omegaprompt.targets import PromptTarget
 
 def verify_calibration_preflight(
     observed_delta: float,
-    noise_floor_mde: float = 0.0,
+    noise_floor_mde: float | None = None,
     blocking_traps: Sequence[str] = (),
 ) -> dict[str, object]:
-    """Classify the supplied delta against blocking traps and its noise floor.
+    """Validate supplied preflight inputs without authorizing deployment.
 
-    Success validates only these preflight inputs, not generalization.
-    This offline input check does not run calibration or verify a holdout,
-    so it never authorizes deployment.
-    Values must be finite and the noise floor must be nonnegative.
+    An omitted/None noise floor is unmeasured and blocks validation. An explicit
+    zero is supplied, but a strictly positive finite floor is required to pass.
+    ``noise_floor_measured`` records the supplied-measurement assumption only:
+    this helper cannot verify how the value was measured or its provenance.
+    Success also requires a finite delta above the floor and no blocking traps.
+    No calibration or independent holdout is executed; every returned result
+    keeps holdout_verified and deployment_authorized false.
     The returned trap list is an independent copy in the supplied order.
     """
-    if not isfinite(observed_delta):
-        raise ValueError("observed_delta must be finite")
-    if not isfinite(noise_floor_mde) or noise_floor_mde < 0.0:
-        raise ValueError("noise_floor_mde must be finite and nonnegative")
+    def finite_number(value: object) -> bool:
+        try:
+            return not isinstance(value, bool) and isinstance(value, Real) and isfinite(value)
+        except OverflowError:
+            return False
+
+    if not finite_number(observed_delta):
+        raise ValueError("observed_delta must be a finite number, not a boolean")
+    if noise_floor_mde is not None and (
+        not finite_number(noise_floor_mde) or noise_floor_mde < 0.0
+    ):
+        raise ValueError("noise_floor_mde must be None or a finite nonnegative number, not a boolean")
     traps = list(blocking_traps)
-    preflight_validated = not traps and observed_delta > noise_floor_mde
+    noise_floor_measured = noise_floor_mde is not None
+    preflight_validated = (
+        noise_floor_mde is not None
+        and noise_floor_mde > 0.0
+        and observed_delta > noise_floor_mde
+        and not traps
+    )
+    if not noise_floor_measured:
+        status = "PREFLIGHT_UNMEASURED_NOISE"
+    else:
+        status = "PREFLIGHT_VALIDATED" if preflight_validated else "PREFLIGHT_REJECTED"
     return {
         "verdict": "PREFLIGHT_VALIDATED" if preflight_validated else "NOT_ESTABLISHED",
-        "preflight_status": "PREFLIGHT_VALIDATED" if preflight_validated else "PREFLIGHT_REJECTED",
+        "preflight_status": status,
+        "noise_floor_measured": noise_floor_measured,
         "holdout_verified": False,
         "deployment_authorized": False,
         "observed_delta": observed_delta,

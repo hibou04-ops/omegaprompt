@@ -1,10 +1,26 @@
 # Changelog
 
+## [2.2.5] - 2026-11-02
+
+- Default `verify_calibration_preflight(..., noise_floor_mde=None)` to an explicit
+  `PREFLIGHT_UNMEASURED_NOISE` rejection. Add `noise_floor_measured` to distinguish
+  an omitted value from an explicitly supplied zero; zero still cannot pass.
+- Require finite positive supplied noise, a finite delta strictly above it, and
+  no blocking traps for `PREFLIGHT_VALIDATED`. Reject boolean numeric inputs,
+  negative noise and nonfinite numbers. Every result retains
+  `holdout_verified=False` and `deployment_authorized=False`.
+- Require `omega-lock>=0.3.12,<0.4.0` and guard the installed contract range,
+  so the relative degradation defense is included by dependency resolution.
+- Document that the measured marker records a supplied-measurement assumption,
+  not verified provenance, independence, power, or holdout generalization.
+  Synchronize package/runtime metadata, source-install examples and Action
+  defaults. This entry does not assert publication of version 2.2.5.
+
 ## [2.2.4] - 2026-11-02
 
 The offline `omegaprompt.runtime.verify_calibration_preflight()` hook returns `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, a copied `blocking_traps` list, and explicit authorization fields. A blocking trap or `delta <= MDE` yields `verdict="NOT_ESTABLISHED"` and `preflight_status="PREFLIGHT_REJECTED"`; otherwise both local states are `PREFLIGHT_VALIDATED`. Every result has `holdout_verified=False` and `deployment_authorized=False`: passing this input check does not establish generalization or deployment approval. Existing calibration execution paths and defaults are unchanged; this opt-in helper does not execute calibration or independently verify a holdout.
 
-The source tag and runtime metadata identify 2.2.4. This checkpoint does not claim a new PyPI publication. English and Korean README files describe the same preflight-only authorization contract.
+The source tag and runtime metadata identify 2.2.4. Version 2.2.4 is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.4/) with wheel and source distributions. English and Korean README files describe the same preflight-only authorization contract.
 
 ## [2.2.3] - 2026-11-01
 

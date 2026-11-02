@@ -37,18 +37,38 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 ---
 
-## v2.2.4 — 소스 태그 변경
+## v2.2.5 — 측정 노이즈 사전검사
 
-오프라인 hook `omegaprompt.runtime.verify_calibration_preflight()`는 `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, 복사한 `blocking_traps` 목록과 명시적 승인 필드를 반환합니다. blocking trap이 있거나 `delta <= MDE`이면 `verdict="NOT_ESTABLISHED"`, `preflight_status="PREFLIGHT_REJECTED"`이고, 나머지는 두 로컬 상태 모두 `PREFLIGHT_VALIDATED`입니다. 모든 결과는 `holdout_verified=False`, `deployment_authorized=False`입니다. 입력 사전검사 통과는 일반화 성립이나 배포 승인이 아닙니다. 기존 calibration 실행 경로와 기본값은 보존하며, 호출자가 선택해 사용하는 helper 자체가 calibration이나 독립 holdout 검증을 수행하지 않습니다.
+오프라인 `omegaprompt.runtime.verify_calibration_preflight()`의
+`noise_floor_mde` 기본값은 `None`입니다. 생략하거나 `None`을 전달하면
+`verdict="NOT_ESTABLISHED"`, `preflight_status="PREFLIGHT_UNMEASURED_NOISE"`,
+`noise_floor_measured=False`로 차단합니다. 명시적 0은
+`noise_floor_measured=True`지만 검증을 거부합니다. 유한한 양수 노이즈와 유한한
+`observed_delta > noise_floor_mde`가 주어지고 blocking trap이 없을 때만
+`PREFLIGHT_VALIDATED`입니다. 나머지 유효 입력은 `PREFLIGHT_REJECTED`이며,
+음수 노이즈·비유한 수·boolean은 입력 오류입니다.
 
-이 체크포인트는 GitHub 소스 태그 `v2.2.4`와 패키지/runtime 버전 `2.2.4`를 구분해 기록합니다. 새 PyPI 게시를 포함하지 않으므로 아래 명령은 해당 소스 태그를 직접 설치합니다. 기존 PyPI 배포본의 버전·내용은 별도이며, 기본 GitHub Action도 해당 Action 태그에 동봉된 소스를 설치합니다.
+`noise_floor_measured=True`는 호출자가 측정값을 제공했다는 가정을 기록합니다.
+숫자만으로 측정 출처·독립성·통계적 power를 입증하지 않습니다. 모든 결과는
+`holdout_verified=False`, `deployment_authorized=False`입니다. 이 helper는
+calibration이나 독립 holdout 실험을 수행하지 않으며 로컬 통과는 일반화 성립이나
+배포 승인이 아닙니다.
+
+`2.2.4`는 [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)에 wheel과 source
+배포본이 발행되어 있습니다. `2.2.5`는 [해당 PyPI 버전](https://pypi.org/project/omegaprompt/2.2.5/)과
+[publish workflow 결과](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)를
+확인하세요. 버전 메타데이터만으로 발행을 입증하지 않습니다. 아래 명령은 체크아웃한
+소스를 설치하며 기본 GitHub Action도 해당 Action에 동봉된 소스를 설치합니다.
 
 ```python
 from omegaprompt.runtime import verify_calibration_preflight
 
+assert verify_calibration_preflight(0.2)["preflight_status"] == "PREFLIGHT_UNMEASURED_NOISE"
+assert verify_calibration_preflight(0.2, 0.0)["verdict"] == "NOT_ESTABLISHED"
 result = verify_calibration_preflight(0.2, 0.1)
 assert result["verdict"] == "PREFLIGHT_VALIDATED"
 assert result["preflight_status"] == "PREFLIGHT_VALIDATED"
+assert result["noise_floor_measured"] is True
 assert result["holdout_verified"] is False
 assert result["deployment_authorized"] is False
 ```
@@ -64,16 +84,17 @@ omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact�
 Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
 
 ```bash
-python -m pip install "omegaprompt @ https://github.com/hibou04-ops/omegaprompt/archive/refs/tags/v2.2.4.zip"
+git clone https://github.com/hibou04-ops/omegaprompt.git
+cd omegaprompt
+python -m pip install .
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.4/examples/reference/reference_artifact.json', 'artifact.json')"
-omegaprompt check-artifact artifact.json
-omegaprompt report artifact.json --format json
+omegaprompt check-artifact examples/reference/reference_artifact.json
+omegaprompt report examples/reference/reference_artifact.json --format json
 ```
 
-artifact 다운로드는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.0,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
+clone과 설치에는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.12,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
 
-omega-lock>=0.3.0,<0.4.0은 필수로 자동 설치합니다. 두 mini 패키지는 선택적으로 별도 설치하는 preflight producer입니다. PreflightReport는 derive_adaptation_plan에 연결하며 antemortem은 병렬적인 구현 전 검토 도구입니다. promptfoo와 DSPy는 호출자가 Dataset/PromptVariants 또는 규칙으로 변환해야 하며 기본 원클릭 adapter는 없습니다.
+omega-lock>=0.3.12,<0.4.0은 필수로 자동 설치합니다. 두 mini 패키지는 선택적으로 별도 설치하는 preflight producer입니다. PreflightReport는 derive_adaptation_plan에 연결하며 antemortem은 병렬적인 구현 전 검토 도구입니다. promptfoo와 DSPy는 호출자가 Dataset/PromptVariants 또는 규칙으로 변환해야 하며 기본 원클릭 adapter는 없습니다.
 
 [실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md).
 
@@ -184,7 +205,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.4
+- uses: hibou04-ops/omegaprompt@v2.2.5
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

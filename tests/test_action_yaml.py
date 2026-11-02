@@ -44,7 +44,10 @@ def test_action_declares_artifact_input() -> None:
 
 
 def test_action_default_installs_the_tagged_package_version() -> None:
+    from omegaprompt import __version__
+
     version = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+    assert __version__ == version
     section = _action_text().split("\n  version:\n", 1)[1].split("\noutputs:", 1)[0]
     default = re.search(r'default: "([^"]+)"', section)
     assert default is not None and default.group(1) == version

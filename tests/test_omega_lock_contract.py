@@ -21,6 +21,9 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
+from pathlib import Path
+import re
+import tomllib
 
 import omega_lock
 from omega_lock import EvalResult as OmegaLockEvalResult
@@ -235,11 +238,16 @@ def test_calibrabletarget_protocol_method_presence() -> None:
 
 
 def test_installed_omega_lock_within_verified_contract_range() -> None:
-    """The installed version must match the contract-verified pin range
-    (``omega-lock>=0.3.0,<0.4.0`` in pyproject.toml). A 0.4.x install means this
-    seam was never re-verified — fail loud and force re-verification."""
-    assert omega_lock.__version__.startswith("0.3."), (
+    """Keep the installed dependency within the required relative-defense range."""
+    project = tomllib.loads(
+        (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+    )["project"]
+    assert "omega-lock>=0.3.12,<0.4.0" in project["dependencies"]
+    match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:\.post\d+)?(?:\+[A-Za-z0-9._-]+)?", omega_lock.__version__)
+    assert match is not None, "omega-lock must provide supported stable release metadata"
+    release = tuple(int(part) for part in match.groups())
+    assert (0, 3, 12) <= release < (0, 4, 0), (
         f"omega-lock {omega_lock.__version__} is outside the contract-verified range "
-        "(>=0.3.0,<0.4.0). Re-verify the seam assertions in this file, then widen the "
+        "(>=0.3.12,<0.4.0). Re-verify the seam assertions in this file, then widen the "
         "pin in pyproject.toml."
     )

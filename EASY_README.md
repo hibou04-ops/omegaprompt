@@ -17,18 +17,40 @@ Full doc: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/READM
 
 ---
 
-## v2.2.4 — Source tag changes
+## v2.2.5 — Measured-noise preflight
 
-The offline `omegaprompt.runtime.verify_calibration_preflight()` hook returns `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, a copied `blocking_traps` list, and explicit authorization fields. A blocking trap or `delta <= MDE` yields `verdict="NOT_ESTABLISHED"` and `preflight_status="PREFLIGHT_REJECTED"`; otherwise both local states are `PREFLIGHT_VALIDATED`. Every result has `holdout_verified=False` and `deployment_authorized=False`: passing this input check does not establish generalization or deployment approval. Existing calibration execution paths and defaults are unchanged; this opt-in helper does not execute calibration or independently verify a holdout.
+The offline `omegaprompt.runtime.verify_calibration_preflight()` hook defaults
+`noise_floor_mde` to `None`. Omitting it or passing `None` yields
+`verdict="NOT_ESTABLISHED"`, `preflight_status="PREFLIGHT_UNMEASURED_NOISE"`, and
+`noise_floor_measured=False`. An explicit zero has `noise_floor_measured=True`
+but is rejected. Only a supplied finite positive noise floor, a finite
+`observed_delta > noise_floor_mde`, and no blocking traps yield
+`PREFLIGHT_VALIDATED`; other valid inputs yield `PREFLIGHT_REJECTED`. Negative
+noise, nonfinite numbers, and booleans are input errors.
 
-This checkpoint identifies GitHub source tag `v2.2.4` and package/runtime version `2.2.4`. It does not include a new PyPI publication; the command below installs the source tag directly. Existing PyPI distributions retain their own versions and contents. The default GitHub Action also installs the source bundled with its Action tag.
+`noise_floor_measured=True` records the caller's supplied-measurement assumption;
+the value alone cannot prove measurement provenance, independence, or statistical
+power. Every result keeps `holdout_verified=False` and
+`deployment_authorized=False`. This helper performs no calibration or independent
+holdout experiment, and a local pass establishes neither generalization nor
+deployment approval.
+
+Version `2.2.4` is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)
+with wheel and source distributions. Check [PyPI 2.2.5](https://pypi.org/project/omegaprompt/2.2.5/)
+and [publish workflow results](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)
+for version `2.2.5`; version metadata alone is not a publication receipt. The
+commands below install checked-out source. The default GitHub Action likewise
+installs its bundled source.
 
 ```python
 from omegaprompt.runtime import verify_calibration_preflight
 
+assert verify_calibration_preflight(0.2)["preflight_status"] == "PREFLIGHT_UNMEASURED_NOISE"
+assert verify_calibration_preflight(0.2, 0.0)["verdict"] == "NOT_ESTABLISHED"
 result = verify_calibration_preflight(0.2, 0.1)
 assert result["verdict"] == "PREFLIGHT_VALIDATED"
 assert result["preflight_status"] == "PREFLIGHT_VALIDATED"
+assert result["noise_floor_measured"] is True
 assert result["holdout_verified"] is False
 assert result["deployment_authorized"] is False
 ```
@@ -44,16 +66,17 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install "omegaprompt @ https://github.com/hibou04-ops/omegaprompt/archive/refs/tags/v2.2.4.zip"
+git clone https://github.com/hibou04-ops/omegaprompt.git
+cd omegaprompt
+python -m pip install .
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.4/examples/reference/reference_artifact.json', 'artifact.json')"
-omegaprompt check-artifact artifact.json
-omegaprompt report artifact.json --format json
+omegaprompt check-artifact examples/reference/reference_artifact.json
+omegaprompt report examples/reference/reference_artifact.json --format json
 ```
 
-The download needs internet; the integrity check and report run offline without API keys. The stored deterministic artifact is synthetic evidence. Its missing per-item scores do not prove transfer. Live calibration needs a configured provider and may incur cost.
+Cloning and installing need internet; the integrity check and report run offline without API keys. The stored deterministic artifact is synthetic evidence. Its missing per-item scores do not prove transfer. Live calibration needs a configured provider and may incur cost.
 
-omega-lock>=0.3.0,<0.4.0 is required and installed automatically. Both mini packages are optional, separately installed preflight producers. PreflightReport feeds derive_adaptation_plan; antemortem is a parallel pre-implementation review tool. promptfoo and DSPy require caller-authored conversion into Dataset/PromptVariants or rules; there is no native one-click adapter.
+omega-lock>=0.3.12,<0.4.0 is required and installed automatically. Both mini packages are optional, separately installed preflight producers. PreflightReport feeds derive_adaptation_plan; antemortem is a parallel pre-implementation review tool. promptfoo and DSPy require caller-authored conversion into Dataset/PromptVariants or rules; there is no native one-click adapter.
 
 [Docking contracts and runnable data handoff](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [Full guide](README.md).
 

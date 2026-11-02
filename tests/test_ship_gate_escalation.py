@@ -82,7 +82,7 @@ def test_apply_ship_gate_escalation_forces_hold_and_status_when_review_required(
 
 def test_apply_ship_gate_escalation_preserves_failed_status():
     """A FAIL_KC4_GATE candidate stays at that status — escalation can
-    only sharpen, not soften, the existing verdict."""
+    only strengthen, not soften, the existing verdict."""
     plan = _plan_review_required()
     status, ship, _r, _e = apply_ship_gate_escalation(
         plan,

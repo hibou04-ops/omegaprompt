@@ -86,7 +86,7 @@ dashboard behavior.
 ## No Dashboard or Web-App Scope
 
 `omegaprompt` is a library, CLI, runtime surface, and optional MCP server. It is
-not a hosted evaluation dashboard, SaaS interface, or web application. Artifact
+not a hosted evaluation dashboard, web application. Artifact
 review is intentionally file-based: JSON artifacts, markdown reports, CI logs,
 and PR diffs.
 

@@ -37,7 +37,7 @@ Trust docs: [trust model](docs/trust-model.md) · [toolkit positioning](docs/too
 
 ---
 
-## v2.2.5 — Measured-noise preflight
+## v2.2.6 — Measured-noise preflight
 
 The offline `omegaprompt.runtime.verify_calibration_preflight()` hook defaults
 `noise_floor_mde` to `None`. Omitting it or passing `None` yields
@@ -56,9 +56,9 @@ holdout experiment, and a local pass establishes neither generalization nor
 deployment approval.
 
 Version `2.2.4` is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)
-with wheel and source distributions. Check [PyPI 2.2.5](https://pypi.org/project/omegaprompt/2.2.5/)
+with wheel and source distributions. Check [PyPI 2.2.6](https://pypi.org/project/omegaprompt/2.2.6/)
 and [publish workflow results](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)
-for version `2.2.5`; version metadata alone is not a publication receipt. The
+for version `2.2.6`; version metadata alone is not a publication receipt. The
 commands below install checked-out source. The default GitHub Action likewise
 installs its bundled source.
 
@@ -79,7 +79,7 @@ Includes an MCP 1.x/2.x import-layout compatibility shim (`FastMCP` / `MCPServer
 
 ## Start here · Standalone use · Integration/Docking
 
-**Omega Verification Suite** — Quiet precision. AI research guided by evidence.
+**Open-source AI/ML verification** — Quiet precision. AI research guided by evidence.
 
 Calibrate prompt configurations through omega-lock and inspect CalibrationArtifact JSON against declared ship gates.
 
@@ -207,7 +207,7 @@ A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.5
+- uses: hibou04-ops/omegaprompt@v2.2.6
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary
@@ -324,7 +324,7 @@ python -m omegaprompt.mcp           # stdio; Claude Code / Cursor spawn it as a 
 from omega_lock import run_p1, P1Config   # run_p1 = the engine's core calibration run; the CLI wraps it
 ```
 
-The calibration engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), the parameter-calibration kernel used by this prompt adapter. `omegaprompt` is the prompt-calibration CLI and PyPI distribution that wraps it with the held-out gate, three judges (`RuleJudge` / `LLMJudge` / `EnsembleJudge`), provider-neutral axes, the `CalibrationArtifact` schema (v2.0), the CI `diff`, and the new `gate` ship verdict.
+The calibration engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), a general ML parameter-calibration kernel reused by this prompt adapter. `omegaprompt` is the prompt-calibration CLI and PyPI distribution that wraps it with the held-out gate, three judges (`RuleJudge` / `LLMJudge` / `EnsembleJudge`), provider-neutral axes, the `CalibrationArtifact` schema (v2.0), the CI `diff`, and the new `gate` ship verdict.
 
 The name *omega* is the final ship check — the last gate a prompt clears before it goes out. The name **omegaprompt** is earned at this point in the page, not assumed in the first screen.
 
@@ -406,7 +406,7 @@ Real LLM SDKs degrade silently. A reasoning-effort parameter is rejected by a lo
 
 4. **Neutral-baseline vs calibrated comparison.** The `CalibrationArtifact` (schema v2.0) records the fitness of the neutral-parameter baseline and the fitness of the calibrated best side by side, with absolute and percent uplift, plus quality-per-cost and quality-per-latency ratios at both points. A reviewer sees not just *the best score* but *what the search earned over doing nothing*.
 
-5. **Held-out ship gate with pre-declared thresholds.** The held-out test evaluation uses a Pearson-correlation threshold (`--min-kc4`) and a generalisation-gap threshold (`--max-gap`) that default from the execution profile and are recorded on the artifact. The thresholds cannot be lowered after the scores are seen; this applies the Winchester defence: declare the gate before evaluation. `status = FAIL_KC4_GATE` is a ship-blocker by construction.
+5. **Held-out ship gate with pre-declared thresholds.** The held-out test evaluation uses a Pearson-correlation threshold (`--min-kc4`) and a generalisation-gap threshold (`--max-gap`) that default from the execution profile and are recorded on the artifact. The thresholds cannot be lowered after the scores are seen; this is the predeclared held-out evaluation rule. `status = FAIL_KC4_GATE` is a ship-blocker by construction.
 
 6. **Judge protocol with three shipped implementations.** `LLMJudge` uses a provider's strict-schema parse path; `RuleJudge` runs deterministic Python predicates for format / refusal / regex gates at zero API cost; `EnsembleJudge` short-circuits LLM grading when rule gates fail. The three compose under a single `Judge` protocol, which the `PromptTarget` consumes without knowledge of which strategy is wired in.
 
@@ -526,7 +526,7 @@ Strict mode (the `guarded` profile):
 
 Fast mode (the `expedition` profile):
 - Permits the above, but every relaxation is recorded as a `RelaxedSafeguard` on the artifact, and `stayed_within_guarded_boundaries` is set to `False`.
-- `additional_uplift_from_boundary_crossing` records how much of the calibrated fitness came from work that strict mode would have blocked, so the reviewer can see whether the boundary crossing actually paid off.
+- `additional_uplift_from_boundary_crossing` records how much of the calibrated fitness came from work that strict mode would have blocked, so the reviewer can see whether the boundary crossing provided a measurable benefit.
 
 Profile selection is a single CLI flag (`--profile guarded|expedition`) and appears on the artifact as `selected_profile`.
 
@@ -1222,7 +1222,7 @@ Run the default no-network suite with `uv run pytest -q -m "not live"` (or `pyth
 | **Provider-native evaluation dashboards** | Rubric-based grading inside one vendor's console. | Cross-vendor judging (break self-agreement bias); local artifact that does not require vendor login; deterministic `diff` for regression detection; fast mode for controlled boundary crossing. |
 | **Hand-rolled eval scripts** | Fast to author for a single workload. | Structured data contract (`Dataset` / `JudgeRubric` / `PromptVariants` / `CalibrationArtifact`); capability-tier policy; pre-declared gates that cannot be lowered after the fact; CI integration without bespoke glue. |
 
-The unique selling point is *discipline over search*. The search engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), which supplies the parameter-calibration framework used by this prompt adapter. `omegaprompt` contributes the prompt-specific adapter, three provider-neutral judges, the hard-gates-first fitness shape, and the capability / profile / artifact architecture.
+The unique selling point is *discipline over search*. The search engine is [`omega-lock`](https://github.com/hibou04-ops/omega-lock), which provides general ML parameter calibration with predeclared held-out checks. `omegaprompt` contributes the prompt-specific adapter, three provider-neutral judges, the hard-gates-first fitness shape, and the capability / profile / artifact architecture.
 
 ---
 
@@ -1288,11 +1288,11 @@ Full changelog: [CHANGELOG.md](CHANGELOG.md).
 
 - **Train / test split with a pre-declared gate.** The foundational ML defence against overfitting, documented in every undergraduate curriculum. The specific implementation here (Pearson rank correlation threshold, pre-declared and unmodifiable) is the held-out transfer gate — the kill criterion the `omega-lock` engine names `KC-4` internally.
 - **LLM-as-judge.** Pattern formalised in *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena* (Zheng et al., 2023). `omegaprompt` implements the pattern with schema enforcement at the SDK boundary (Pydantic via each vendor's native parse path) so malformed judge responses raise before polluting the fitness.
-- **Winchester defence.** The rule applied here is simple: *kill criteria declared before the run cannot be relaxed after.* Used here to argue that `--max-gap` and `--min-kc4` must be enforced in configuration, not retroactively tuned on inspection of scores.
-- **Sensitivity-driven coordinate descent.** Stress measurement and top-K unlock are the parameter-calibration primitives introduced by `omega-lock` (v0.3.0) and ported here to prompt configuration.
+- **Predeclared held-out criteria.** An evaluation rule: *kill criteria declared before the run cannot be relaxed after.* Used here to argue that `--max-gap` and `--min-kc4` must be enforced in configuration, not retroactively tuned on inspection of scores.
+- **Sensitivity-driven coordinate descent.** Stress measurement and top-K unlock are the parameter-calibration primitives introduced by `omega-lock` (v0.3.0), for general ML parameter calibration and reused here for prompt configuration.
 - **Antemortem discipline.** The pre-implementation reconnaissance methodology under which this project was designed and built. Every non-trivial change runs through [`antemortem-cli`](https://github.com/hibou04-ops/antemortem-cli) before the first keystroke. The case studies in the [methodology repository](https://github.com/hibou04-ops/Antemortem) record the recon for this codebase.
 
-Naming: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration). The family branding is intentional. `omega-lock` was extracted from a calibration experiment that ended in `KC-4 FAIL` — the overfitting defence firing exactly as designed. `omegaprompt` is the same defence applied one layer up, and the sub-tools `mini-omega-lock` / `mini-antemortem-cli` extend the pattern to preflight measurement.
+Naming: *omega-lock* (parameter calibration) → *omegaprompt* (prompt calibration). The packages share explicit verification boundaries. `omega-lock` records `KC-4 FAIL` when declared held-out criteria fail. `omegaprompt` is the same defence applied one layer up, and the sub-tools `mini-omega-lock` / `mini-antemortem-cli` extend the pattern to preflight measurement.
 
 ---
 

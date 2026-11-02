@@ -1,6 +1,6 @@
 Variants file: C:\Users\hibou\omegaprompt\examples\code_review\variants.json
 Model: gemma4:e4b
-Output: examples\code_review\backtest_results_gemma4.json
+Output: examples\code_review\evaluation_results_gemma4.json
 Variants: N=5
 Items: 16 (6 test + 10 train)
 Total Ollama calls: 80
@@ -12,7 +12,7 @@ V2: system_only= 31 tok | system+sample=  62 tok
 V3: system_only= 69 tok | system+sample= 100 tok
 V4: system_only= 50 tok | system+sample=  81 tok
 
-=== Step 2: Ollama generation backtest (gemma4:e4b) ===
+=== Step 2: Ollama generation evaluation (gemma4:e4b) ===
   V0 | t1_off_by_one_slice       | out_tt=  23 | out_oll=1024 |  53.2s
   V0 | t2_mutable_default_dict   | out_tt= 344 | out_oll=1024 |  24.8s
   V0 | t3_command_injection      | out_tt= 345 | out_oll=1024 |  25.0s
@@ -123,4 +123,4 @@ V2       31        87 $          6.96
 V3       69       224 $         17.84
 V4       50        46 $          4.21
 
-Full results saved: examples\code_review\backtest_results_gemma4.json
+Full results saved: examples\code_review\evaluation_results_gemma4.json

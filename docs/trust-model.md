@@ -149,7 +149,7 @@ without a reproducible local artifact or generated document.
 
 Default CI must be deterministic, repeatable, and safe for contributors. Live
 provider calls introduce network availability, account state, rate limits,
-model drift, billing, and secret-management variability. Therefore default CI
+model drift, access-policy, and secret-management variability. Therefore default CI
 uses mocks, deterministic reference artifacts, and contract tests. Optional
 live tests live behind `OMEGAPROMPT_LIVE_PROVIDER_TESTS=1`.
 

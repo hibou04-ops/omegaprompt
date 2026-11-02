@@ -55,7 +55,7 @@ Summarize: On April 15, 2025, OpenAI released GPT-5, marking the first model in 
 
 ### ITEM: sum8_contract_clause
 ```
-Summarize this contract clause: The Provider warrants that the Services will materially conform to the documentation in effect at the time of execution of this Agreement. The Provider's sole liability and Customer's exclusive remedy for breach of this warranty shall be, at the Provider's option, either (i) re-performance of the non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding the date Customer notified Provider in writing of the non-conformity. EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND.
+Summarize this contract clause: The Provider warrants that the Services will materially conform to the documentation in effect at the time of execution of this Agreement. The Provider's sole liability and Customer's exclusive remedy for breach of this warranty shall be, at the Provider's option, either (i) re-performance of the non-conforming Services at no additional cost, or (ii) restoration of access capacity used for the non-conforming Services for the three (3) months preceding the date Customer notified Provider in writing of the non-conformity. EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND.
 ```
 
 

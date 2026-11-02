@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.6] - 2026-11-03
+
+- Clarify public documentation and examples for general AI/ML verification and software quality engineering.
+- Preserve the verification contracts, SDK interfaces and license notices.
+
 ## [2.2.5] - 2026-11-02
 
 - Default `verify_calibration_preflight(..., noise_floor_mde=None)` to an explicit
@@ -252,7 +257,7 @@ IP defense package + cross-toolkit AGENT_TRIGGERS guide. Same eight runtime entr
 
 ### Fixed
 
-- **Author email attribution clarified.** Earlier docs claimed `hibou04@gmail.com` was a verified personal account of the Primary Author; this was incorrect. `hibouaile04@gmail.com` is the only verified personal email; `hibou04@gmail.com` was an unintended local git client misconfiguration that put a non-author email in some commit `author` fields prior to 2026-04-29. AUTHORS.md and PRE_EXISTING_IP.md now state this explicitly. Author *name* `Hibou04-ops` remains the unambiguous identifier across the repository's history. From 2026-04-29 onwards every repo's local git config commits as `hibouaile04@gmail.com`.
+- **Author email attribution clarified.** Earlier docs claimed `hibou04@gmail.com` was a verified personal account of the Primary Author; this was incorrect. `hibouaile04@gmail.com` is the only verified personal email; `hibou04@gmail.com` was an unintended local Git configuration error that put a non-author email in some commit `author` fields prior to 2026-04-29. AUTHORS.md and PRE_EXISTING_IP.md now state this explicitly. Author *name* `Hibou04-ops` remains the unambiguous identifier across the repository's history. From 2026-04-29 onwards every repo's local git config commits as `hibouaile04@gmail.com`.
 
 ### Rationale
 
@@ -308,7 +313,7 @@ PyPI metadata alignment + 9-task calibration suite + 60s demo. The package itsel
   - `commit_message`: V2 conventional commits, **−52.3%**
 - **5 winner reassignments** after independent Sonnet quality reviews overrode pure-token ranking on `code_writing`, `debugging`, `explanation`, `summarization`, `test_writing`. Rationale: token-only winners had hard-gate violations or coverage gaps that quality scoring caught.
 - **60-second demo walkthrough** (`examples/demo_calibration.py`, `examples/demo_replay.py`, `docs/demo/omegaprompt-demo.en.srt`). Reproducible via `PYTHONIOENCODING=utf-8 python examples/demo_replay.py`. README embeds the inline video.
-- **Reusable offline evaluation CLI** in `examples/code_review/`, usable with Ollama + tiktoken for offline calibration validation.
+- **Reusable evaluation CLI** (`evaluation.py`) usable with Ollama + tiktoken for offline calibration validation.
 - **Cross-model 7B validation** for `code_review` (exaone3.5:7.8b, gemma4:e4b) showing 7B gives directional signal but unreliable absolute quality numbers.
 
 ### Fixed
@@ -317,7 +322,7 @@ PyPI metadata alignment + 9-task calibration suite + 60s demo. The package itsel
 
 ### Methodology Note
 
-Token-only ranking turned out wrong on 5 of 9 tasks once independent Sonnet quality scoring ran — V4 USE_STDLIB missed `@wraps` in `cw6`, V2 debugging format failed `db8` fix_executable, V2 explanation lacked guard, V1 summarization lost to V4 by 0.03 quality but V4 fires the brevity guard correctly, V3' test_writing had two coverage gaps. **Quality scoring is mandatory for production deployment decisions** — see `examples/code_review/validation_archive.json` for the full audit trail of 8 offline evaluations and 5 quality reviews on the most validated task.
+Token-only ranking turned out wrong on 5 of 9 tasks once independent Sonnet quality scoring ran — V4 USE_STDLIB missed `@wraps` in `cw6`, V2 debugging format failed `db8` fix_executable, V2 explanation lacked guard, V1 summarization lost to V4 by 0.03 quality but V4 fires the brevity guard correctly, V3' test_writing had two coverage gaps. **Quality scoring is mandatory for production deployment decisions** — see `examples/code_review/validation_archive.json` for the full 8-evaluation + 5-quality-review audit trail on the most validated task.
 
 ## [1.0.0] - 2026-04-22
 

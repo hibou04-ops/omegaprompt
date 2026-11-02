@@ -37,7 +37,7 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 ---
 
-## v2.2.5 — 측정 노이즈 사전검사
+## v2.2.6 — 측정 노이즈 사전검사
 
 오프라인 `omegaprompt.runtime.verify_calibration_preflight()`의
 `noise_floor_mde` 기본값은 `None`입니다. 생략하거나 `None`을 전달하면
@@ -55,7 +55,7 @@ calibration이나 독립 holdout 실험을 수행하지 않으며 로컬 통과�
 배포 승인이 아닙니다.
 
 `2.2.4`는 [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)에 wheel과 source
-배포본이 발행되어 있습니다. `2.2.5`는 [해당 PyPI 버전](https://pypi.org/project/omegaprompt/2.2.5/)과
+배포본이 발행되어 있습니다. `2.2.6`는 [해당 PyPI 버전](https://pypi.org/project/omegaprompt/2.2.6/)과
 [publish workflow 결과](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)를
 확인하세요. 버전 메타데이터만으로 발행을 입증하지 않습니다. 아래 명령은 체크아웃한
 소스를 설치하며 기본 GitHub Action도 해당 Action에 동봉된 소스를 설치합니다.
@@ -77,7 +77,7 @@ MCP 1.x/2.x import 경로 호환 shim(`FastMCP` / `MCPServer`)을 포함합니�
 
 ## 시작 · 단독 사용 · 도킹
 
-**Omega Verification Suite** — Quiet precision. AI research guided by evidence.
+**Open-source AI/ML verification** — Quiet precision. AI research guided by evidence.
 
 omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact의 선언된 배포 기준을 검사합니다.
 
@@ -205,7 +205,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.5
+- uses: hibou04-ops/omegaprompt@v2.2.6
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary
@@ -322,7 +322,7 @@ python -m omegaprompt.mcp           # stdio; Claude Code / Cursor spawn it as a 
 from omega_lock import run_p1, P1Config   # run_p1 = the engine's core calibration run; the CLI wraps it
 ```
 
-calibration 엔진은 [`omega-lock`](https://github.com/hibou04-ops/omega-lock)으로, 이 prompt adapter에서 사용하는 parameter-calibration 커널입니다. `omegaprompt`는 그것을 held-out gate, 세 judge(`RuleJudge` / `LLMJudge` / `EnsembleJudge`), provider-neutral 축, `CalibrationArtifact` schema(v2.0), CI `diff`, 그리고 새 `gate` ship 판정으로 감싼 prompt-calibration CLI이자 PyPI 배포판입니다.
+calibration 엔진은 [`omega-lock`](https://github.com/hibou04-ops/omega-lock)으로, 이 prompt adapter가 재사용하는 일반 ML parameter-calibration 커널입니다. `omegaprompt`는 그것을 held-out gate, 세 judge(`RuleJudge` / `LLMJudge` / `EnsembleJudge`), provider-neutral 축, `CalibrationArtifact` schema(v2.0), CI `diff`, 그리고 새 `gate` ship 판정으로 감싼 prompt-calibration CLI이자 PyPI 배포판입니다.
 
 *omega*라는 이름은 최종 ship 검사 — prompt가 나가기 전에 통과하는 마지막 gate — 입니다. **omegaprompt**라는 이름은 첫 화면에서 당연한 듯 주어지는 게 아니라, 이 페이지의 이 지점에서 비로소 얻어집니다.
 
@@ -404,7 +404,7 @@ target model과 채점 model이 같은 vendor에서 — 더 나쁘게는 같은 
 
 4. **Neutral-baseline 대 calibrated 비교.** `CalibrationArtifact`(schema v2.0)는 neutral-parameter baseline의 fitness와 calibrated best의 fitness를 나란히 기록하며, 절대·퍼센트 uplift, 그리고 두 지점 모두에서의 quality-per-cost·quality-per-latency 비율을 함께 담습니다. 리뷰어는 *최고 점수*만이 아니라 *검색이 아무것도 안 한 것 대비 무엇을 벌었는지*를 봅니다.
 
-5. **사전 선언 임계값을 가진 held-out ship gate.** held-out 테스트 평가는 Pearson-correlation 임계값(`--min-kc4`)과 generalisation-gap 임계값(`--max-gap`)을 쓰며, 이 둘은 execution profile에서 기본값이 정해지고 artifact에 기록됩니다. 점수를 본 뒤에 임계값을 낮출 수 없습니다. 이는 평가 전에 gate 기준을 선언하는 Winchester defence 원칙을 적용한 것입니다. `status = FAIL_KC4_GATE`는 구조적으로 ship-blocker입니다.
+5. **사전 선언 임계값을 가진 held-out ship gate.** held-out 테스트 평가는 Pearson-correlation 임계값(`--min-kc4`)과 generalisation-gap 임계값(`--max-gap`)을 쓰며, 이 둘은 execution profile에서 기본값이 정해지고 artifact에 기록됩니다. 점수를 본 뒤에 임계값을 낮출 수 없습니다; 이것이 사전 선언한 held-out 평가 규칙입니다. `status = FAIL_KC4_GATE`는 구조적으로 ship-blocker입니다.
 
 6. **세 가지 구현이 제공되는 judge 프로토콜.** `LLMJudge`는 provider의 strict-schema 파싱 경로를 씁니다; `RuleJudge`는 format / refusal / regex gate를 위한 deterministic Python predicate를 API 비용 0으로 돌립니다; `EnsembleJudge`는 rule gate가 실패하면 LLM 채점을 단락시킵니다. 셋은 단일 `Judge` 프로토콜 아래 조합되며, `PromptTarget`은 어떤 전략이 연결되어 있는지 모른 채로 이를 소비합니다.
 
@@ -1192,7 +1192,7 @@ perf.noise_floor            = 0.180
 | **Provider-native 평가 대시보드** | 한 vendor의 콘솔 안에서의 rubric 기반 채점. | cross-vendor 채점(self-agreement bias 깨기); vendor 로그인이 필요 없는 로컬 artifact; regression 탐지를 위한 deterministic `diff`; 통제된 경계 넘기를 위한 fast mode. |
 | **직접 만든 eval 스크립트** | 단일 워크로드에 빠르게 작성 가능. | 구조화된 데이터 계약(`Dataset` / `JudgeRubric` / `PromptVariants` / `CalibrationArtifact`); capability-tier 정책; 사후에 낮출 수 없는 사전 선언 gate; 맞춤 glue 없는 CI 통합. |
 
-고유한 셀링 포인트는 *검색보다 원칙*입니다. search engine인 [`omega-lock`](https://github.com/hibou04-ops/omega-lock)은 이 prompt adapter가 사용하는 parameter-calibration 프레임워크를 제공합니다. `omegaprompt`는 prompt-specific adapter, 세 provider-neutral judge, hard-gates-first fitness 형태, 그리고 capability / profile / artifact architecture를 기여합니다.
+고유한 셀링 포인트는 *검색보다 원칙*입니다. search engine은 [`omega-lock`](https://github.com/hibou04-ops/omega-lock)으로, 일반 ML parameter calibration과 사전 선언한 held-out 검사를 제공합니다. `omegaprompt`는 prompt-specific adapter, 세 provider-neutral judge, hard-gates-first fitness 형태, 그리고 capability / profile / artifact architecture를 기여합니다.
 
 ---
 
@@ -1258,11 +1258,11 @@ strict mode는 정책상 judge 자리에서 로컬 provider를 막습니다. Gem
 
 - **사전 선언 gate를 가진 train / test split.** overfitting에 대한 토대가 되는 ML 방어책으로, 모든 학부 커리큘럼에 문서화되어 있습니다. 여기서의 구체적 구현(Pearson 순위 상관 임계값, 사전 선언되고 수정 불가)이 held-out transfer gate입니다 — `omega-lock` 엔진이 내부적으로 `KC-4`라 부르는 kill criterion.
 - **LLM-as-judge.** *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena*(Zheng et al., 2023)에서 형식화된 패턴. `omegaprompt`는 이 패턴을 SDK 경계에서의 schema 강제(각 vendor의 native parse 경로를 통한 Pydantic)와 함께 구현해서, malformed judge 응답이 fitness를 오염시키기 전에 예외를 던지게 합니다.
-- **Winchester defence.** 여기서 적용하는 원칙: *실행 전에 선언한 kill criteria는 실행 후에 완화할 수 없습니다.* 여기서는 `--max-gap`과 `--min-kc4`를 점수를 본 뒤 소급적으로 조정하지 않고 구성에서 강제해야 한다는 근거로 사용합니다.
-- **Sensitivity 기반 coordinate descent.** stress 측정과 top-K unlock은 `omega-lock`(v0.3.0)이 도입한 parameter-calibration 원시 요소이며, 여기서는 prompt 구성으로 이식되었습니다.
+- **사전 선언한 held-out 기준.** 평가 규칙: *실행 전에 선언된 kill criteria는 실행 후에 완화될 수 없다.* 여기서는 `--max-gap`과 `--min-kc4`가 점수를 들여다본 뒤 소급적으로 튜닝되는 게 아니라 구성에서 강제되어야 한다는 주장을 위해 쓰입니다.
+- **Sensitivity 기반 coordinate descent.** stress 측정과 top-K unlock은 `omega-lock`(v0.3.0)이 도입한 parameter-calibration 원시 요소로, 일반 ML parameter calibration에 사용되며 여기서는 prompt 구성으로 재사용합니다.
 - **Antemortem 원칙.** 이 프로젝트가 설계되고 빌드된 pre-implementation reconnaissance 방법론. 모든 non-trivial한 변경은 첫 키 입력 전에 [`antemortem-cli`](https://github.com/hibou04-ops/antemortem-cli)를 거칩니다. [방법론 repository](https://github.com/hibou04-ops/Antemortem)의 사례 연구가 이 코드베이스에 대한 recon을 기록합니다.
 
-이름: *omega-lock*(parameter calibration) → *omegaprompt*(prompt calibration). 패밀리 브랜딩은 의도적입니다. `omega-lock`은 `KC-4 FAIL`로 끝난 캘리브레이션 실험에서 추출되었습니다 — overfitting 방어책이 설계된 대로 발동한 것입니다. `omegaprompt`는 같은 방어책을 한 계층 위에 적용한 것이고, sub-tool `mini-omega-lock` / `mini-antemortem-cli`는 그 패턴을 preflight 측정으로 확장합니다.
+이름: *omega-lock*(parameter calibration) → *omegaprompt*(prompt calibration). 두 패키지는 명시적인 검증 경계를 제공합니다. `omega-lock`은 선언된 held-out 기준이 실패하면 `KC-4 FAIL`을 기록합니다. `omegaprompt`는 같은 방어책을 한 계층 위에 적용한 것이고, sub-tool `mini-omega-lock` / `mini-antemortem-cli`는 그 패턴을 preflight 측정으로 확장합니다.
 
 ---
 

@@ -46,6 +46,6 @@ sum7_news_event_END
 
 sum8_contract_clause_BEGIN
 - Provider warrants the Services will materially conform to the documentation in effect at execution of the Agreement.
-- Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.
+- Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of non-conforming Services at no extra cost, or (ii) restoration of access capacity used for the non-conforming Services for the three (3) months preceding written notice of non-conformity.
 - Except as expressly stated, the Services are provided "AS IS" without warranty of any kind.
 sum8_contract_clause_END

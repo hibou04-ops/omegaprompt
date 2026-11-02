@@ -40,6 +40,6 @@ sum7_news_event_BEGIN
 sum7_news_event_END
 sum8_contract_clause_BEGIN
 - Provider warrants Services will materially conform to the documentation in effect at execution of the Agreement.
-- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option: (i) re-performance of non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.
+- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option: (i) re-performance of non-conforming Services at no additional cost, or (ii) restoration of access capacity used for the non-conforming Services for the three (3) months preceding written notice of non-conformity.
 - EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND.
 sum8_contract_clause_END

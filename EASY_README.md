@@ -17,7 +17,7 @@ Full doc: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/READM
 
 ---
 
-## v2.2.5 — Measured-noise preflight
+## v2.2.6 — Measured-noise preflight
 
 The offline `omegaprompt.runtime.verify_calibration_preflight()` hook defaults
 `noise_floor_mde` to `None`. Omitting it or passing `None` yields
@@ -36,9 +36,9 @@ holdout experiment, and a local pass establishes neither generalization nor
 deployment approval.
 
 Version `2.2.4` is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)
-with wheel and source distributions. Check [PyPI 2.2.5](https://pypi.org/project/omegaprompt/2.2.5/)
+with wheel and source distributions. Check [PyPI 2.2.6](https://pypi.org/project/omegaprompt/2.2.6/)
 and [publish workflow results](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)
-for version `2.2.5`; version metadata alone is not a publication receipt. The
+for version `2.2.6`; version metadata alone is not a publication receipt. The
 commands below install checked-out source. The default GitHub Action likewise
 installs its bundled source.
 
@@ -59,7 +59,7 @@ Includes an MCP 1.x/2.x import-layout compatibility shim (`FastMCP` / `MCPServer
 
 ## Start here · Standalone use · Integration/Docking
 
-**Omega Verification Suite** — Quiet precision. AI research guided by evidence.
+**Open-source AI/ML verification** — Quiet precision. AI research guided by evidence.
 
 Calibrate prompt configurations through omega-lock and inspect CalibrationArtifact JSON against declared ship gates.
 

@@ -32,5 +32,5 @@ On April 15, 2025, OpenAI launched GPT-5, the first model in the series with nat
 sum7_news_event_END
 
 sum8_contract_clause_BEGIN
-The Provider warrants that the Services will materially conform to the documentation in effect when the Agreement is signed. If this warranty is breached, the Customer's sole remedy — at the Provider's choice — is either re-performance of the non-conforming Services at no extra cost, or a refund of fees paid for those Services during the three months before the Customer gave written notice of the non-conformity. All other warranties are disclaimed: the Services are otherwise provided "as is."
+The Provider warrants that the Services will materially conform to the documentation in effect when the Agreement is signed. If this warranty is breached, the Customer's sole remedy — at the Provider's choice — is either re-performance of the non-conforming Services at no extra cost, or a restoration of access capacity used for those Services during the three months before the Customer gave written notice of the non-conformity. All other warranties are disclaimed: the Services are otherwise provided "as is."
 sum8_contract_clause_END

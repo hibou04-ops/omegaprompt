@@ -1,5 +1,7 @@
 # Summarization
 
+Example wording and file labels were edited for neutral software terminology; archived numeric results are historical measurements of their original versioned inputs and were not re-measured after these edits. They do not measure the edited examples. [Preserved prior-source snapshot](https://github.com/hibou04-ops/omegaprompt/tree/v2.2.5/examples/summarization).
+
 ## Purpose
 
 Prompt-calibration fixture for summaries that preserve names, numbers, dates,

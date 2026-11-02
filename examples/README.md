@@ -37,7 +37,7 @@ enabled explicitly with `OMEGAPROMPT_LIVE_PROVIDER_TESTS=1`.
 
 | Directory | Purpose | Expected input shape | Expected output shape |
 | --- | --- | --- | --- |
-| `code_review/` | Calibrate code-review prompts against correctness and safety issues. | `train.jsonl`, optional `test.jsonl`, `rubric.json`, `variants*.json`. | `CalibrationArtifact` JSON, offline evaluation logs/results, reviewed outputs. |
+| `code_review/` | Calibrate code-review prompts against correctness and safety issues. | `train.jsonl`, optional `test.jsonl`, `rubric.json`, `variants*.json`. | `CalibrationArtifact` JSON, evaluation logs/results, reviewed outputs. |
 | `code_writing/` | Compare code-writing prompt variants for concise, correct implementations. | `train.jsonl`, `rubric.json`, `variants.json`. | `quality_review.json`, `claude_results.json`, subagent prompt/output captures. |
 | `commit_message/` | Tune commit-message generation for concise summaries and body detail. | `train.jsonl`, `rubric.json`, `variants.json`. | `quality_review.json`, `claude_results.json`, subagent prompt/output captures. |
 | `debugging/` | Tune debugging responses that identify root cause and minimal fixes. | `train.jsonl`, `rubric.json`, `variants.json`. | `quality_review.json`, `claude_results.json`, subagent prompt/output captures. |

@@ -27,5 +27,5 @@ On April 15, 2025, OpenAI released GPT-5, the first in the series with native lo
 sum7_news_event_END
 
 sum8_contract_clause_BEGIN
-The Provider warrants that the Services will materially conform to the documentation in effect at signing. The sole remedy for breach is, at the Provider's option, either (i) re-performance of the non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three months preceding Customer's written notice of non-conformity. Otherwise, the Services are provided "AS IS" with no other warranties of any kind.
+The Provider warrants that the Services will materially conform to the documentation in effect at signing. The sole remedy for breach is, at the Provider's option, either (i) re-performance of the non-conforming Services at no extra cost, or (ii) restoration of access capacity used for the non-conforming Services for the three months preceding Customer's written notice of non-conformity. Otherwise, the Services are provided "AS IS" with no other warranties of any kind.
 sum8_contract_clause_END

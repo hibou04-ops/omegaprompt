@@ -29,7 +29,7 @@ inputs:
       The default installs this Action tag's bundled source. A different
       explicit version/spec selects the corresponding PyPI distribution.
     required: false
-    default: "2.2.5"
+    default: "2.2.6"
 
 outputs:
   passed:
@@ -50,7 +50,7 @@ runs:
     - name: Install omegaprompt
       shell: bash
       run: |
-        if [ "${{ inputs.version }}" = "2.2.5" ]; then
+        if [ "${{ inputs.version }}" = "2.2.6" ]; then
           python -m pip install "${{ github.action_path }}"
         elif [ -n "${{ inputs.version }}" ]; then
           spec="${{ inputs.version }}"

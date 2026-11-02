@@ -105,7 +105,7 @@ than another provider or model.
 
 Live provider evidence belongs to the local artifact that produced it. Default
 CI uses mocks and deterministic reference artifacts so provider availability,
-network state, billing, and model drift do not decide whether the package is
+network state, provider-access policy, and model drift do not decide whether the package is
 healthy.
 
 If a provider rejects or weakens a requested capability at runtime, the adapter

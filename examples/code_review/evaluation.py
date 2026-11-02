@@ -1,4 +1,4 @@
-"""Evaluate the N=5 variants pool offline — measures (not predicts) token efficiency.
+"""Evaluate the N=5 variants pool — measures (not predicts) token efficiency.
 
 Cost: $0
   - Input tokens: tiktoken (cl100k_base) — close approximation for Claude.
@@ -12,7 +12,7 @@ between Ollama and Claude. For the user's leverage question
 ("which variant produces the shortest answer?"), the *delta* between
 variants on the same backend is the meaningful signal.
 
-Run the evaluation helper in this directory with Python UTF-8 mode enabled.
+Run: PYTHONIOENCODING=utf-8 python examples/code_review/evaluation.py
 """
 
 from __future__ import annotations
@@ -85,7 +85,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--variants", default=str(ROOT / "variants.json"))
     parser.add_argument("--model", default="exaone3.5:7.8b")
-    parser.add_argument("--output", default=str(ROOT / "backtest_results.json"))
+    parser.add_argument("--output", default=str(ROOT / "evaluation_results.json"))
     args = parser.parse_args()
 
     variants_path = Path(args.variants)
@@ -117,7 +117,7 @@ def main() -> None:
         print(f"V{i}: system_only={sys_only:3d} tok | system+sample={sys_plus_sample:4d} tok")
     print()
 
-    print(f"=== Step 2: Ollama generation backtest ({model}) ===")
+    print(f"=== Step 2: Ollama generation evaluation ({model}) ===")
     results = []
     for vi, sp in enumerate(variants):
         per_outs_tt = []

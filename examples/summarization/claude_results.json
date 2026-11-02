@@ -88,7 +88,7 @@
       "variant": "V0_baseline",
       "item_id": "sum8_contract_clause",
       "tokens": 95,
-      "text": "The Provider warrants that the Services will materially conform to the documentation in effect when the Agreement is signed. If this warranty is breached, the Customer's sole remedy — at the Provider's choice — is either re-performance of the non-conforming Services at no extra cost, or a refund of fees paid for those Services during the three months before the Customer gave written notice of the non-conformity. All other warranties are disclaimed: the Services are otherwise provided \"as is.\""
+      "text": "The Provider warrants that the Services will materially conform to the documentation in effect when the Agreement is signed. If this warranty is breached, the Customer's sole remedy — at the Provider's choice — is either re-performance of the non-conforming Services at no extra cost, or a restoration of access capacity used for those Services during the three months before the Customer gave written notice of the non-conformity. All other warranties are disclaimed: the Services are otherwise provided \"as is.\""
     },
     {
       "variant": "V1_role_terse",
@@ -136,7 +136,7 @@
       "variant": "V1_role_terse",
       "item_id": "sum8_contract_clause",
       "tokens": 94,
-      "text": "The Provider warrants that the Services will materially conform to the documentation in effect at signing. The sole remedy for breach is, at the Provider's option, either (i) re-performance of the non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three months preceding Customer's written notice of non-conformity. Otherwise, the Services are provided \"AS IS\" with no other warranties of any kind."
+      "text": "The Provider warrants that the Services will materially conform to the documentation in effect at signing. The sole remedy for breach is, at the Provider's option, either (i) re-performance of the non-conforming Services at no extra cost, or (ii) restoration of access capacity used for the non-conforming Services for the three months preceding Customer's written notice of non-conformity. Otherwise, the Services are provided \"AS IS\" with no other warranties of any kind."
     },
     {
       "variant": "V2_format",
@@ -184,7 +184,7 @@
       "variant": "V2_format",
       "item_id": "sum8_contract_clause",
       "tokens": 99,
-      "text": "- Provider warrants the Services will materially conform to the documentation in effect at execution of the Agreement.\n- Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of non-conforming Services at no extra cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.\n- Except as expressly stated, the Services are provided \"AS IS\" without warranty of any kind."
+      "text": "- Provider warrants the Services will materially conform to the documentation in effect at execution of the Agreement.\n- Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of non-conforming Services at no extra cost, or (ii) restoration of access capacity used for the non-conforming Services for the three (3) months preceding written notice of non-conformity.\n- Except as expressly stated, the Services are provided \"AS IS\" without warranty of any kind."
     },
     {
       "variant": "V3prime_rules",
@@ -232,7 +232,7 @@
       "variant": "V3prime_rules",
       "item_id": "sum8_contract_clause",
       "tokens": 118,
-      "text": "- Provider warrants Services will materially conform to the documentation in effect at the time of execution of this Agreement.\n- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of the non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding the date Customer notified Provider in writing of the non-conformity.\n- EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND."
+      "text": "- Provider warrants Services will materially conform to the documentation in effect at the time of execution of this Agreement.\n- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option, either (i) re-performance of the non-conforming Services at no additional cost, or (ii) restoration of access capacity used for the non-conforming Services for the three (3) months preceding the date Customer notified Provider in writing of the non-conformity.\n- EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND."
     },
     {
       "variant": "V4_guard",
@@ -280,7 +280,7 @@
       "variant": "V4_guard",
       "item_id": "sum8_contract_clause",
       "tokens": 107,
-      "text": "- Provider warrants Services will materially conform to the documentation in effect at execution of the Agreement.\n- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option: (i) re-performance of non-conforming Services at no additional cost, or (ii) refund of fees paid for the non-conforming Services for the three (3) months preceding written notice of non-conformity.\n- EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND."
+      "text": "- Provider warrants Services will materially conform to the documentation in effect at execution of the Agreement.\n- Provider's sole liability and Customer's exclusive remedy for breach is, at Provider's option: (i) re-performance of non-conforming Services at no additional cost, or (ii) restoration of access capacity used for the non-conforming Services for the three (3) months preceding written notice of non-conformity.\n- EXCEPT AS EXPRESSLY SET FORTH ABOVE, THE SERVICES ARE PROVIDED 'AS IS' WITHOUT WARRANTY OF ANY KIND."
     }
   ]
 }

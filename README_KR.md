@@ -19,7 +19,7 @@ optimizer의 원시 정수는 설정한 `MetaAxisSpace` 목록의 인덱스입�
 
 > **2.2.0 (2026-10-28): 평가 무결성과 대기 작업 상한.** 데이터·rubric·variants 등 평가 컨텍스트 변경 시 캐시를 무효화합니다. `PromptTarget.evaluate(..., use_cache=False)`는 실제 재측정이며 캐시 재생은 독립 관측으로 세지 않습니다. 병렬 대기 결과는 `max_workers`개 이하이고 입력 순서를 보존합니다. 실패한 target/judge 시도와 반환된 usage도 누적 계측하며 부분 성공은 캐시하지 않습니다. 명시적 disjoint 모드는 ID 중복을 입력 오류로 처리합니다. [검증 근거와 이행 안내](docs/release/2.2.0.md).
 
-문서: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (신뢰 근거)](docs/claims/README_CLAIMS.generated.md)
+문서: [English](README.md) · **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (신뢰 근거)](docs/claims/README_CLAIMS.generated.md)
 
 키워드: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
 
@@ -37,9 +37,21 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 ---
 
-## v2.2.3 — 이번 변경
+## v2.2.4 — 소스 태그 변경
 
-오프라인 hook `omegaprompt.runtime.verify_calibration_preflight()`를 추가했습니다. `verdict`, `observed_delta`, `noise_floor_mde`, 복사한 `blocking_traps` 목록을 반환합니다. blocking trap이 있거나 `delta <= MDE`이면 `NOT_ESTABLISHED`, 나머지는 로컬 규칙의 `ESTABLISHED`입니다. 기존 calibration 실행 경로와 기본값은 보존하며, 호출자가 선택해 사용하는 helper 자체가 calibration이나 독립 holdout 검증을 수행하지 않습니다.
+오프라인 hook `omegaprompt.runtime.verify_calibration_preflight()`는 `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, 복사한 `blocking_traps` 목록과 명시적 승인 필드를 반환합니다. blocking trap이 있거나 `delta <= MDE`이면 `verdict="NOT_ESTABLISHED"`, `preflight_status="PREFLIGHT_REJECTED"`이고, 나머지는 두 로컬 상태 모두 `PREFLIGHT_VALIDATED`입니다. 모든 결과는 `holdout_verified=False`, `deployment_authorized=False`입니다. 입력 사전검사 통과는 일반화 성립이나 배포 승인이 아닙니다. 기존 calibration 실행 경로와 기본값은 보존하며, 호출자가 선택해 사용하는 helper 자체가 calibration이나 독립 holdout 검증을 수행하지 않습니다.
+
+이 체크포인트는 GitHub 소스 태그 `v2.2.4`와 패키지/runtime 버전 `2.2.4`를 구분해 기록합니다. 새 PyPI 게시를 포함하지 않으므로 아래 명령은 해당 소스 태그를 직접 설치합니다. 기존 PyPI 배포본의 버전·내용은 별도이며, 기본 GitHub Action도 해당 Action 태그에 동봉된 소스를 설치합니다.
+
+```python
+from omegaprompt.runtime import verify_calibration_preflight
+
+result = verify_calibration_preflight(0.2, 0.1)
+assert result["verdict"] == "PREFLIGHT_VALIDATED"
+assert result["preflight_status"] == "PREFLIGHT_VALIDATED"
+assert result["holdout_verified"] is False
+assert result["deployment_authorized"] is False
+```
 
 MCP 1.x/2.x import 경로 호환 shim(`FastMCP` / `MCPServer`)을 포함합니다. 로컬 검증은 SDK 1.30.0으로 수행했으며 2.x runtime은 미검증이고, 선언된 지원 의존성은 `mcp>=1.0.0,<2.0.0`을 유지합니다.
 
@@ -52,16 +64,18 @@ omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact�
 Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
 
 ```bash
-python -m pip install omegaprompt==2.2.3
+python -m pip install "omegaprompt @ https://github.com/hibou04-ops/omegaprompt/archive/refs/tags/v2.2.4.zip"
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.3/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.4/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
 
 artifact 다운로드는 인터넷이 필요하며 이후 검사는 오프라인입니다. 저장된 합성 artifact의 누락된 per-item 점수는 transfer 통과를 뜻하지 않습니다. 실제 보정은 provider 설정과 비용 확인이 필요합니다. omega-lock>=0.3.0,<0.4.0은 필수이며 두 mini 도구는 선택입니다.
 
-[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md). 두 mini 도구의 직전 검증 조합은 omegaprompt 2.2.0이며, 별도 배포 패키지입니다.
+omega-lock>=0.3.0,<0.4.0은 필수로 자동 설치합니다. 두 mini 패키지는 선택적으로 별도 설치하는 preflight producer입니다. PreflightReport는 derive_adaptation_plan에 연결하며 antemortem은 병렬적인 구현 전 검토 도구입니다. promptfoo와 DSPy는 호출자가 Dataset/PromptVariants 또는 규칙으로 변환해야 하며 기본 원클릭 adapter는 없습니다.
+
+[실제 연결 방식과 입력·출력](https://github.com/hibou04-ops/omega-lock/blob/main/DOCKING.md) · [전체 안내](README.md).
 
 MCP는 해당 배포명의 `[mcp]` extras와 기존 서버 명령을 사용합니다. 기존 FastMCP 계약은 SDK `>=1.0.0,<2.0.0` 범위로 유지합니다.
 
@@ -170,7 +184,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.3
+- uses: hibou04-ops/omegaprompt@v2.2.4
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary
@@ -1140,7 +1154,7 @@ perf.noise_floor            = 0.180
 | `judges/` | `RuleJudge` (no_refusal / non_empty / json_object / regex / 중복-검사 거부 / 누락-검사 예외); `LLMJudge` (strict-schema dispatch, payload 구성, non-`JudgeResult` 응답 예외, strict-mode ship-grade judge 거부); `EnsembleJudge` (rule-first 단락, rule-pass 시 LLM 에스컬레이션, 병합된 gate_results, non-`RuleJudge` 거부). |
 | `targets/` | mock된 provider + judge로 end-to-end `PromptTarget`; 범위 밖 입력에 대한 meta-axis 해석과 clamping; 평가 간 usage 누적; `evaluation_history` 보존; latency 측정; degraded-capability 전파. |
 | `commands/` | CLI help가 `calibrate` / `report` / `diff` / `check-artifact`를 나열; `--version`이 `omegaprompt`를 표시; `report`가 schema-v2.0 artifact를 렌더링; `diff`가 fitness, cost 비율, latency 비율, 경계 넘기 플립에서 regression을 탐지; `check-artifact`가 network 없는 무결성 검사를 수행. |
-| `preflight/` | **Plugin 인터페이스만** — `omegaprompt` 안에는 probe나 classifier 코드가 없음. `contracts`: severity 순서, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` 강제; `JudgeQualityMeasurement.consistency`(0..1), `EndpointMeasurement.schema_reliability`(0..1) 경계. `adaptation`: 네 임계값에 걸친 noise-adaptive `min_kc4`; consistency 기반 `rescore_count`; schema-fallback 트리거; wall-time 기반 `unlock_k` 감소; small-sample 격차 확대; variant-skip 축 표시; `apply_adaptation_plan` invariant(`min_kc4`를 결코 약화시키지 않음, `max_gap`을 결코 넓히지 않음, `unlock_k`를 결코 올리지 않음). Sub-tool probe + classifier 구현(각자의 test suite를 가짐)은 `mini-omega-lock`과 `mini-antemortem-cli` repository에 삽니다. |
+| `preflight/` | **Plugin 인터페이스만** — `omegaprompt` 안에는 probe나 classifier 코드가 없음. `contracts`: severity 순서, status enum, `PreflightReport.worst_severity` / `any_real_or_new`, Pydantic `extra="forbid"` 강제; `JudgeQualityMeasurement.consistency`(0..1), `EndpointMeasurement.schema_reliability`(0..1) 경계. `adaptation`: 네 임계값에 걸친 noise-adaptive `min_kc4`; consistency 기반 `rescore_count`; schema-fallback 트리거; wall-time 기반 `unlock_k` 감소; small-sample 수동 검토 승격; variant-skip 축 표시; `apply_adaptation_plan` invariant(`min_kc4`를 결코 약화시키지 않음, `max_gap`을 결코 넓히지 않음, `unlock_k`를 결코 올리지 않음). Sub-tool probe + classifier 구현(각자의 test suite를 가짐)은 `mini-omega-lock`과 `mini-antemortem-cli` repository에 삽니다. |
 | `test_calibrate_integration.py` | deterministic in-memory `CalibrableTarget`로 **진짜 `omega_lock.run_p1`을 구동**(search engine에는 mock 없음). artifact의 `calibrated_params`, `neutral_baseline_params`, `walk_forward`, `sensitivity_ranking`이 `P1Result`의 실제 형태와 일치하는지 단언 — 이 테스트가 잡는 regression은 per-module 단위 테스트가 닿을 수 없는, adapter 계층과 search engine 사이의 drift입니다. |
 
 기본 no-network suite는 `uv run pytest -q -m "not live"`(또는 `python -m pytest -q -m "not live"`)로 돌리세요. wall-clock 시간은 첫 import 시의 Pydantic model 컴파일이 지배합니다.

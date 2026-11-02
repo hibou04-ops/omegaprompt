@@ -13,13 +13,25 @@ optimizer의 원시 정수는 설정한 `MetaAxisSpace` 목록의 인덱스입�
 
 [![PyPI](https://img.shields.io/pypi/v/omegaprompt?color=blue&label=pypi&cacheSeconds=3600)](https://pypi.org/project/omegaprompt/)
 
-전체 문서: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · English Easy: [EASY_README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) · 한국어 Full: [README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md)
+전체 문서: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · English Easy: [EASY_README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md) · 한국어 Full: [README_KR.md](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md)
 
 ---
 
-## v2.2.3 — 이번 변경
+## v2.2.4 — 소스 태그 변경
 
-오프라인 hook `omegaprompt.runtime.verify_calibration_preflight()`를 추가했습니다. `verdict`, `observed_delta`, `noise_floor_mde`, 복사한 `blocking_traps` 목록을 반환합니다. blocking trap이 있거나 `delta <= MDE`이면 `NOT_ESTABLISHED`, 나머지는 로컬 규칙의 `ESTABLISHED`입니다. 기존 calibration 실행 경로와 기본값은 보존하며, 호출자가 선택해 사용하는 helper 자체가 calibration이나 독립 holdout 검증을 수행하지 않습니다.
+오프라인 hook `omegaprompt.runtime.verify_calibration_preflight()`는 `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, 복사한 `blocking_traps` 목록과 명시적 승인 필드를 반환합니다. blocking trap이 있거나 `delta <= MDE`이면 `verdict="NOT_ESTABLISHED"`, `preflight_status="PREFLIGHT_REJECTED"`이고, 나머지는 두 로컬 상태 모두 `PREFLIGHT_VALIDATED`입니다. 모든 결과는 `holdout_verified=False`, `deployment_authorized=False`입니다. 입력 사전검사 통과는 일반화 성립이나 배포 승인이 아닙니다. 기존 calibration 실행 경로와 기본값은 보존하며, 호출자가 선택해 사용하는 helper 자체가 calibration이나 독립 holdout 검증을 수행하지 않습니다.
+
+이 체크포인트는 GitHub 소스 태그 `v2.2.4`와 패키지/runtime 버전 `2.2.4`를 구분해 기록합니다. 새 PyPI 게시를 포함하지 않으므로 아래 명령은 해당 소스 태그를 직접 설치합니다. 기존 PyPI 배포본의 버전·내용은 별도이며, 기본 GitHub Action도 해당 Action 태그에 동봉된 소스를 설치합니다.
+
+```python
+from omegaprompt.runtime import verify_calibration_preflight
+
+result = verify_calibration_preflight(0.2, 0.1)
+assert result["verdict"] == "PREFLIGHT_VALIDATED"
+assert result["preflight_status"] == "PREFLIGHT_VALIDATED"
+assert result["holdout_verified"] is False
+assert result["deployment_authorized"] is False
+```
 
 MCP 1.x/2.x import 경로 호환 shim(`FastMCP` / `MCPServer`)을 포함합니다. 로컬 검증은 SDK 1.30.0으로 수행했으며 2.x runtime은 미검증이고, 선언된 지원 의존성은 `mcp>=1.0.0,<2.0.0`을 유지합니다.
 
@@ -32,9 +44,9 @@ omega-lock 엔진으로 프롬프트 설정을 보정하고 CalibrationArtifact�
 Python 3.11 이상에서 실행합니다. 설치에는 인터넷이 필요합니다.
 
 ```bash
-python -m pip install omegaprompt==2.2.3
+python -m pip install "omegaprompt @ https://github.com/hibou04-ops/omegaprompt/archive/refs/tags/v2.2.4.zip"
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.3/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.4/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```

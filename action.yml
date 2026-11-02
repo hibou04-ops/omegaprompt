@@ -26,9 +26,10 @@ inputs:
   version:
     description: >-
       omegaprompt version/spec to install (e.g. '2.1.0' or a PEP 508 spec).
-      Defaults to the package version shipped with this Action tag.
+      The default installs this Action tag's bundled source. A different
+      explicit version/spec selects the corresponding PyPI distribution.
     required: false
-    default: "2.2.3"
+    default: "2.2.4"
 
 outputs:
   passed:
@@ -49,7 +50,9 @@ runs:
     - name: Install omegaprompt
       shell: bash
       run: |
-        if [ -n "${{ inputs.version }}" ]; then
+        if [ "${{ inputs.version }}" = "2.2.4" ]; then
+          python -m pip install "${{ github.action_path }}"
+        elif [ -n "${{ inputs.version }}" ]; then
           spec="${{ inputs.version }}"
           case "$spec" in
             *[\<\>=!~]*) python -m pip install "omegaprompt${spec}" ;;

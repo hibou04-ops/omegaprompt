@@ -19,7 +19,7 @@ Raw optimizer integers are indices into the configured `MetaAxisSpace` lists, no
 
 > **2.2.0 (2026-10-28): evaluation integrity and bounded work.** Context changes invalidate memoized observations. `PromptTarget.evaluate(..., use_cache=False)` performs fresh calls; cache replay adds no independent observation. Parallel evaluation retains at most `max_workers` submitted results and preserves input order. Failed target/judge attempts and returned usage remain in target accounting; no partial success is cached. Explicit disjoint mode rejects overlapping IDs. [Evidence and migration](docs/release/2.2.0.md).
 
-Docs: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (trust evidence)](docs/claims/README_CLAIMS.generated.md)
+Docs: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md) · [한국어 legacy](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (trust evidence)](docs/claims/README_CLAIMS.generated.md)
 
 Keywords: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
 
@@ -37,9 +37,21 @@ Trust docs: [trust model](docs/trust-model.md) · [toolkit positioning](docs/too
 
 ---
 
-## v2.2.3 — Release changes
+## v2.2.4 — Source tag changes
 
-Adds the offline `omegaprompt.runtime.verify_calibration_preflight()` hook. It returns a dictionary with `verdict`, `observed_delta`, `noise_floor_mde`, and a copied `blocking_traps` list. A blocking trap or `delta <= MDE` yields `NOT_ESTABLISHED`; otherwise the local rule yields `ESTABLISHED`. Existing calibration paths and defaults are unchanged: callers opt into this helper, which does not execute calibration or independently verify a holdout.
+The offline `omegaprompt.runtime.verify_calibration_preflight()` hook returns `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, a copied `blocking_traps` list, and explicit authorization fields. A blocking trap or `delta <= MDE` yields `verdict="NOT_ESTABLISHED"` and `preflight_status="PREFLIGHT_REJECTED"`; otherwise both local states are `PREFLIGHT_VALIDATED`. Every result has `holdout_verified=False` and `deployment_authorized=False`: passing this input check does not establish generalization or deployment approval. Existing calibration execution paths and defaults are unchanged; this opt-in helper does not execute calibration or independently verify a holdout.
+
+This checkpoint identifies GitHub source tag `v2.2.4` and package/runtime version `2.2.4`. It does not include a new PyPI publication; the command below installs the source tag directly. Existing PyPI distributions retain their own versions and contents. The default GitHub Action also installs the source bundled with its Action tag.
+
+```python
+from omegaprompt.runtime import verify_calibration_preflight
+
+result = verify_calibration_preflight(0.2, 0.1)
+assert result["verdict"] == "PREFLIGHT_VALIDATED"
+assert result["preflight_status"] == "PREFLIGHT_VALIDATED"
+assert result["holdout_verified"] is False
+assert result["deployment_authorized"] is False
+```
 
 Includes an MCP 1.x/2.x import-layout compatibility shim (`FastMCP` / `MCPServer`). Local verification used SDK 1.30.0; SDK 2.x runtime behavior is not verified, and the declared supported dependency remains `mcp>=1.0.0,<2.0.0`.
 
@@ -52,9 +64,9 @@ Calibrate prompt configurations through omega-lock and inspect CalibrationArtifa
 Requires Python 3.11+. Installation needs internet.
 
 ```bash
-python -m pip install omegaprompt==2.2.3
+python -m pip install "omegaprompt @ https://github.com/hibou04-ops/omegaprompt/archive/refs/tags/v2.2.4.zip"
 omegaprompt --help
-python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.3/examples/reference/reference_artifact.json', 'artifact.json')"
+python -c "from urllib.request import urlretrieve; urlretrieve('https://raw.githubusercontent.com/hibou04-ops/omegaprompt/v2.2.4/examples/reference/reference_artifact.json', 'artifact.json')"
 omegaprompt check-artifact artifact.json
 omegaprompt report artifact.json --format json
 ```
@@ -172,7 +184,7 @@ A prompt change is a code change. Gate it like one. The dedicated **`omegaprompt
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.3
+- uses: hibou04-ops/omegaprompt@v2.2.4
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

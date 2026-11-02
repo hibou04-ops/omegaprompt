@@ -11,7 +11,7 @@ from omegaprompt.runtime import verify_calibration_preflight
 @pytest.mark.parametrize(
     ("observed_delta", "noise_floor_mde", "expected"),
     [
-        (0.2, 0.1, "ESTABLISHED"),
+        (0.2, 0.1, "PREFLIGHT_VALIDATED"),
         (0.1, 0.1, "NOT_ESTABLISHED"),
         (0.05, 0.1, "NOT_ESTABLISHED"),
         (0.0, 0.0, "NOT_ESTABLISHED"),
@@ -24,6 +24,11 @@ def test_verdict_requires_delta_strictly_above_noise_floor(
     result = verify_calibration_preflight(observed_delta, noise_floor_mde)
     assert result == {
         "verdict": expected,
+        "preflight_status": (
+            "PREFLIGHT_VALIDATED" if expected == "PREFLIGHT_VALIDATED" else "PREFLIGHT_REJECTED"
+        ),
+        "holdout_verified": False,
+        "deployment_authorized": False,
         "observed_delta": observed_delta,
         "noise_floor_mde": noise_floor_mde,
         "blocking_traps": [],
@@ -31,14 +36,30 @@ def test_verdict_requires_delta_strictly_above_noise_floor(
 
 
 @pytest.mark.parametrize("observed_delta", [0.01, 0.1, 1.0])
-def test_blocking_traps_prevent_established_verdict(observed_delta):
+def test_blocking_traps_prevent_preflight_validation(observed_delta):
     result = verify_calibration_preflight(observed_delta, 0.0, ("OMG001",))
     assert result["verdict"] == "NOT_ESTABLISHED"
+    assert result["preflight_status"] == "PREFLIGHT_REJECTED"
     assert result["blocking_traps"] == ["OMG001"]
 
 
 def test_default_noise_floor_preserves_positive_delta_use():
-    assert verify_calibration_preflight(0.1)["verdict"] == "ESTABLISHED"
+    assert verify_calibration_preflight(0.1)["verdict"] == "PREFLIGHT_VALIDATED"
+
+
+@pytest.mark.parametrize("observed_delta", [-1.0, 0.0, 0.1, 1e308])
+@pytest.mark.parametrize("noise_floor_mde", [0.0, 0.1, 1e308])
+@pytest.mark.parametrize("blocking_traps", [(), ("OMG001",)])
+def test_preflight_never_verifies_holdout_or_authorizes_deployment(
+    observed_delta, noise_floor_mde, blocking_traps
+):
+    result = verify_calibration_preflight(observed_delta, noise_floor_mde, blocking_traps)
+    assert result["holdout_verified"] is False
+    assert result["deployment_authorized"] is False
+    assert result["verdict"] != "ESTABLISHED"
+    assert (result["preflight_status"] == "PREFLIGHT_VALIDATED") == (
+        not blocking_traps and observed_delta > noise_floor_mde
+    )
 
 
 def test_result_does_not_alias_or_mutate_callers_traps():

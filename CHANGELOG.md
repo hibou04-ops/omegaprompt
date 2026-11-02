@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.2.4] - 2026-11-02
+
+The offline `omegaprompt.runtime.verify_calibration_preflight()` hook returns `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, a copied `blocking_traps` list, and explicit authorization fields. A blocking trap or `delta <= MDE` yields `verdict="NOT_ESTABLISHED"` and `preflight_status="PREFLIGHT_REJECTED"`; otherwise both local states are `PREFLIGHT_VALIDATED`. Every result has `holdout_verified=False` and `deployment_authorized=False`: passing this input check does not establish generalization or deployment approval. Existing calibration execution paths and defaults are unchanged; this opt-in helper does not execute calibration or independently verify a holdout.
+
+The source tag and runtime metadata identify 2.2.4. This checkpoint does not claim a new PyPI publication. English and Korean README files describe the same preflight-only authorization contract.
+
 ## [2.2.3] - 2026-11-01
 
 Adds the offline `omegaprompt.runtime.verify_calibration_preflight()` hook. It returns a dictionary with `verdict`, `observed_delta`, `noise_floor_mde`, and a copied `blocking_traps` list. A blocking trap or `delta <= MDE` yields `NOT_ESTABLISHED`; otherwise the local rule yields `ESTABLISHED`. Existing calibration paths and defaults are unchanged: callers opt into this helper, which does not execute calibration or independently verify a holdout.

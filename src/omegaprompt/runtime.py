@@ -75,7 +75,9 @@ def verify_calibration_preflight(
 ) -> dict[str, object]:
     """Classify the supplied delta against blocking traps and its noise floor.
 
-    This offline input check does not run calibration or verify a holdout.
+    Success validates only these preflight inputs, not generalization.
+    This offline input check does not run calibration or verify a holdout,
+    so it never authorizes deployment.
     Values must be finite and the noise floor must be nonnegative.
     The returned trap list is an independent copy in the supplied order.
     """
@@ -84,13 +86,12 @@ def verify_calibration_preflight(
     if not isfinite(noise_floor_mde) or noise_floor_mde < 0.0:
         raise ValueError("noise_floor_mde must be finite and nonnegative")
     traps = list(blocking_traps)
-    verdict = (
-        "NOT_ESTABLISHED"
-        if traps or observed_delta <= noise_floor_mde
-        else "ESTABLISHED"
-    )
+    preflight_validated = not traps and observed_delta > noise_floor_mde
     return {
-        "verdict": verdict,
+        "verdict": "PREFLIGHT_VALIDATED" if preflight_validated else "NOT_ESTABLISHED",
+        "preflight_status": "PREFLIGHT_VALIDATED" if preflight_validated else "PREFLIGHT_REJECTED",
+        "holdout_verified": False,
+        "deployment_authorized": False,
         "observed_delta": observed_delta,
         "noise_floor_mde": noise_floor_mde,
         "blocking_traps": traps,

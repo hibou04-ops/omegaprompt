@@ -48,6 +48,8 @@ def test_action_default_installs_the_tagged_package_version() -> None:
     section = _action_text().split("\n  version:\n", 1)[1].split("\noutputs:", 1)[0]
     default = re.search(r'default: "([^"]+)"', section)
     assert default is not None and default.group(1) == version
+    assert f'if [ "${{{{ inputs.version }}}}" = "{version}" ]; then' in _action_text()
+    assert 'python -m pip install "${{ github.action_path }}"' in _action_text()
 
 
 def test_action_declares_format_and_generalization_inputs() -> None:

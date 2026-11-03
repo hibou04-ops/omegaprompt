@@ -11,6 +11,34 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
+Docs: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md) · [한국어 legacy](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (trust evidence)](docs/claims/README_CLAIMS.generated.md)
+
+<!-- QUICKSTART_DEMO_START -->
+## 10-second start: install and inspect an offline gate
+
+```bash
+pip install omegaprompt
+uvx omegaprompt --help
+```
+
+PASS means only that the supplied preflight inputs pass. Holdout remains unverified and deployment remains unauthorized.
+
+After installation, run the demo from a clone of this repository. The diff block is the demo's actual stdout.
+
+```bash
+git clone https://github.com/hibou04-ops/omegaprompt.git
+cd omegaprompt
+python examples/quickstart_demo.py
+```
+
+```diff
+- [BLOCKED] unmeasured_noise: PREFLIGHT_UNMEASURED_NOISE; deployment_authorized=False
+- [BLOCKED] below_noise: PREFLIGHT_REJECTED; deployment_authorized=False
++ [PASS] preflight_only: PREFLIGHT_VALIDATED; deployment_authorized=False
+```
+<!-- QUICKSTART_DEMO_END -->
+
+
 > Includes the 2.2.2 engine initialization before MCP transport; the internal cold-import cause remains UNKNOWN.
 
 > **2.2.1 (2026-10-28): neutral parameters respect configured subsets.** Select STANDARD/MEDIUM by their positions in the allowed lists, falling back to the first allowed value. Public 2.2.0 unintentionally used DEEP for the default baseline and rejected valid singleton lists. Fresh baseline scores, costs and selections can change; historical artifacts are preserved. [Reproduction and migration](docs/release/2.2.1.md).
@@ -19,7 +47,6 @@ Raw optimizer integers are indices into the configured `MetaAxisSpace` lists, no
 
 > **2.2.0 (2026-10-28): evaluation integrity and bounded work.** Context changes invalidate memoized observations. `PromptTarget.evaluate(..., use_cache=False)` performs fresh calls; cache replay adds no independent observation. Parallel evaluation retains at most `max_workers` submitted results and preserves input order. Failed target/judge attempts and returned usage remain in target accounting; no partial success is cached. Explicit disjoint mode rejects overlapping IDs. [Evidence and migration](docs/release/2.2.0.md).
 
-Docs: **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md) · [한국어 legacy](https://github.com/hibou04-ops/omegaprompt/blob/main/README_KR.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (trust evidence)](docs/claims/README_CLAIMS.generated.md)
 
 Keywords: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
 

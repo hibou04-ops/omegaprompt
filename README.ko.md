@@ -11,6 +11,34 @@
 [![MCP](https://img.shields.io/badge/MCP-server-blueviolet.svg)](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md#103-mcp-server-claude-code-cursor)
 [![Parent framework](https://img.shields.io/badge/framework-omega--lock-blueviolet.svg)](https://github.com/hibou04-ops/omega-lock)
 
+문서: [English](README.md) · **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (신뢰 근거)](docs/claims/README_CLAIMS.generated.md)
+
+<!-- QUICKSTART_DEMO_START -->
+## 10초 시작: 설치와 오프라인 게이트 결과
+
+```bash
+pip install omegaprompt
+uvx omegaprompt --help
+```
+
+PASS는 입력된 사전검증 조건의 통과만 뜻합니다. 홀드아웃은 미검증이며 배포는 승인되지 않습니다.
+
+설치 후 이 저장소를 복제한 디렉터리에서 아래 데모를 실행합니다. diff 블록은 데모가 출력하는 실제 stdout입니다.
+
+```bash
+git clone https://github.com/hibou04-ops/omegaprompt.git
+cd omegaprompt
+python examples/quickstart_demo.py
+```
+
+```diff
+- [BLOCKED] unmeasured_noise: PREFLIGHT_UNMEASURED_NOISE; deployment_authorized=False
+- [BLOCKED] below_noise: PREFLIGHT_REJECTED; deployment_authorized=False
++ [PASS] preflight_only: PREFLIGHT_VALIDATED; deployment_authorized=False
+```
+<!-- QUICKSTART_DEMO_END -->
+
+
 > 이전 2.2.2의 MCP transport 전 engine 초기화 수정을 포함합니다. 내부 cold-import 원인은 UNKNOWN입니다.
 
 > **2.2.1 (2026-10-28): 부분 축의 중립값 교정.** reasoning/budget 중립값은 설정 목록에서 STANDARD/MEDIUM의 위치를 사용하며, 없으면 첫 허용값을 사용합니다. 공개 2.2.0에서 기본 STANDARD가 DEEP으로 해석되거나 유효한 단일값 목록이 실패하던 결함을 교정했습니다. 새 실행의 기준 점수·비용·선택 결과는 달라질 수 있으며 기존 artifact는 보존합니다. [재현과 호환성](docs/release/2.2.1.md).
@@ -19,7 +47,6 @@ optimizer의 원시 정수는 설정한 `MetaAxisSpace` 목록의 인덱스입�
 
 > **2.2.0 (2026-10-28): 평가 무결성과 대기 작업 상한.** 데이터·rubric·variants 등 평가 컨텍스트 변경 시 캐시를 무효화합니다. `PromptTarget.evaluate(..., use_cache=False)`는 실제 재측정이며 캐시 재생은 독립 관측으로 세지 않습니다. 병렬 대기 결과는 `max_workers`개 이하이고 입력 순서를 보존합니다. 실패한 target/judge 시도와 반환된 usage도 누적 계측하며 부분 성공은 캐시하지 않습니다. 명시적 disjoint 모드는 ID 중복을 입력 오류로 처리합니다. [검증 근거와 이행 안내](docs/release/2.2.0.md).
 
-문서: [English](README.md) · **[Easy start](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README.md)** · [Full reference](https://github.com/hibou04-ops/omegaprompt/blob/main/README.md) · [한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/README.ko.md) · [쉬운 한국어](https://github.com/hibou04-ops/omegaprompt/blob/main/EASY_README_KR.md) · [Examples gallery](examples/) · [Claim ledger (신뢰 근거)](docs/claims/README_CLAIMS.generated.md)
 
 키워드: **prompt overfitting · prompt regression testing · LLM eval CI · prompt evaluation · prompt A/B test in CI · held-out validation for prompts · CI ship gate for prompts**
 

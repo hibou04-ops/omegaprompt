@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.7] - 2026-11-06
+
+- Synchronize the distribution README with the current source quickstart and documentation.
+- Align package metadata, source installation examples and Action version defaults; preserve verification behavior and public interfaces.
+
 ## [2.2.6] - 2026-11-03
 
 - Clarify public documentation and examples for general AI/ML verification and software quality engineering.

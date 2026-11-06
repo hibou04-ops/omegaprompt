@@ -17,7 +17,7 @@ optimizer의 원시 정수는 설정한 `MetaAxisSpace` 목록의 인덱스입�
 
 ---
 
-## v2.2.6 — 측정 노이즈 사전검사
+## v2.2.7 — 측정 노이즈 사전검사
 
 오프라인 `omegaprompt.runtime.verify_calibration_preflight()`의
 `noise_floor_mde` 기본값은 `None`입니다. 생략하거나 `None`을 전달하면
@@ -35,7 +35,7 @@ calibration이나 독립 holdout 실험을 수행하지 않으며 로컬 통과�
 배포 승인이 아닙니다.
 
 `2.2.4`는 [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)에 wheel과 source
-배포본이 발행되어 있습니다. `2.2.6`는 [해당 PyPI 버전](https://pypi.org/project/omegaprompt/2.2.6/)과
+배포본이 발행되어 있습니다. `2.2.7`는 [해당 PyPI 버전](https://pypi.org/project/omegaprompt/2.2.7/)과
 [publish workflow 결과](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)를
 확인하세요. 버전 메타데이터만으로 발행을 입증하지 않습니다. 아래 명령은 체크아웃한
 소스를 설치하며 기본 GitHub Action도 해당 Action에 동봉된 소스를 설치합니다.

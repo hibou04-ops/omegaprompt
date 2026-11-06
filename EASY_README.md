@@ -17,7 +17,7 @@ Full doc: [README.md](https://github.com/hibou04-ops/omegaprompt/blob/main/READM
 
 ---
 
-## v2.2.7 — Measured-noise preflight
+## v2.2.8 — Measured-noise preflight
 
 The offline `omegaprompt.runtime.verify_calibration_preflight()` hook defaults
 `noise_floor_mde` to `None`. Omitting it or passing `None` yields
@@ -35,12 +35,12 @@ power. Every result keeps `holdout_verified=False` and
 holdout experiment, and a local pass establishes neither generalization nor
 deployment approval.
 
-Version `2.2.7` is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.7/)
-with wheel and source distributions. [Publish workflow run 42150632021](https://github.com/hibou04-ops/omegaprompt/actions/runs/42150632021)
-built those files from [source commit `aaceca7`](https://github.com/hibou04-ops/omegaprompt/commit/aaceca7a238172296b71def5d59bef21b57138f3).
-Subsequent source maintenance does not change the published files. The commands
-below install checked-out source. The default GitHub Action likewise installs
-its bundled source.
+This source tree targets version `2.2.8`. Publication is a separate release step:
+check [PyPI 2.2.8](https://pypi.org/project/omegaprompt/2.2.8/) and the
+[publish workflow results](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)
+for public availability and build provenance. The version number alone is not a
+publication receipt. The commands below install checked-out source. The default
+GitHub Action likewise installs its bundled source.
 
 ```python
 from omegaprompt.runtime import verify_calibration_preflight

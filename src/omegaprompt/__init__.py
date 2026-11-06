@@ -115,7 +115,7 @@ from omegaprompt.runtime import (
     report,
 )
 
-__version__ = "2.2.7"
+__version__ = "2.2.8"
 
 __all__ = [
     # domain

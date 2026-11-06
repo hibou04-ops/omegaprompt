@@ -64,7 +64,7 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 
 ---
 
-## v2.2.7 — 측정 노이즈 사전검사
+## v2.2.8 — 측정 노이즈 사전검사
 
 오프라인 `omegaprompt.runtime.verify_calibration_preflight()`의
 `noise_floor_mde` 기본값은 `None`입니다. 생략하거나 `None`을 전달하면
@@ -81,11 +81,11 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 calibration이나 독립 holdout 실험을 수행하지 않으며 로컬 통과는 일반화 성립이나
 배포 승인이 아닙니다.
 
-`2.2.7`은 [PyPI](https://pypi.org/project/omegaprompt/2.2.7/)에 wheel과 source
-배포본이 발행되어 있습니다. [Publish workflow 실행 42150632021](https://github.com/hibou04-ops/omegaprompt/actions/runs/42150632021)은
-[소스 커밋 `aaceca7`](https://github.com/hibou04-ops/omegaprompt/commit/aaceca7a238172296b71def5d59bef21b57138f3)에서 해당 파일을 빌드했습니다.
-이후의 소스 정비는 이미 게시된 파일을 바꾸지 않습니다. 아래 명령은 체크아웃한
-소스를 설치하며 기본 GitHub Action도 해당 Action에 동봉된 소스를 설치합니다.
+이 소스의 릴리즈 대상 버전은 `2.2.8`입니다. 게시는 별도 릴리즈 단계이므로
+[PyPI 2.2.8](https://pypi.org/project/omegaprompt/2.2.8/)과
+[publish workflow 결과](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)에서
+공개 여부와 빌드 출처를 확인하세요. 버전 표기만으로 게시 완료를 입증하지 않습니다.
+아래 명령은 체크아웃한 소스를 설치하며 기본 GitHub Action도 해당 Action에 동봉된 소스를 설치합니다.
 
 ```python
 from omegaprompt.runtime import verify_calibration_preflight
@@ -232,7 +232,7 @@ prompt 변경은 코드 변경입니다. 코드처럼 gate하세요. 전용 **`o
 
 ```yaml
 # .github/workflows/prompt-audit.yml
-- uses: hibou04-ops/omegaprompt@v2.2.7
+- uses: hibou04-ops/omegaprompt@v2.2.8
   with:
     artifact: artifact.json          # a CalibrationArtifact you produced in a prior step
     format: json                     # machine-readable gate summary

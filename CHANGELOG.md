@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.2.8] - 2026-11-06
+
+- Update the distribution README to use the current release verification links and preserve historical provenance through retained GitHub source tags.
+- Align current installation guidance and Action defaults with 2.2.8; preserve runtime behavior, public interfaces and recorded evaluation results.
+- Preserve the resolved omega-lock 0.3.14 dependency and the declared >=0.3.12,<0.4.0 compatibility range.
+
 ## [2.2.7] - 2026-11-06
 
 - Synchronize the distribution README with the current source quickstart and documentation.
@@ -30,7 +36,7 @@
 
 The offline `omegaprompt.runtime.verify_calibration_preflight()` hook returns `verdict`, `preflight_status`, `observed_delta`, `noise_floor_mde`, a copied `blocking_traps` list, and explicit authorization fields. A blocking trap or `delta <= MDE` yields `verdict="NOT_ESTABLISHED"` and `preflight_status="PREFLIGHT_REJECTED"`; otherwise both local states are `PREFLIGHT_VALIDATED`. Every result has `holdout_verified=False` and `deployment_authorized=False`: passing this input check does not establish generalization or deployment approval. Existing calibration execution paths and defaults are unchanged; this opt-in helper does not execute calibration or independently verify a holdout.
 
-The source tag and runtime metadata identify 2.2.4. Version 2.2.4 is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.4/) with wheel and source distributions. English and Korean README files describe the same preflight-only authorization contract.
+The retained [GitHub source tag v2.2.4](https://github.com/hibou04-ops/omegaprompt/tree/v2.2.4) and runtime metadata identify the historical 2.2.4 release, which was published with wheel and source distributions. This source-history reference does not assert continued availability of its former PyPI files. English and Korean README files described the same preflight-only authorization contract.
 
 ## [2.2.3] - 2026-11-01
 

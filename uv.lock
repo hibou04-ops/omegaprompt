@@ -778,14 +778,14 @@ wheels = [
 
 [[package]]
 name = "omega-lock"
-version = "0.3.2"
+version = "0.3.14"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/f9/56076709a6280c1fe5a0bdfb7d7eb62edffe0946290a05c96a76ff93d326/omega_lock-0.3.2.tar.gz", hash = "sha256:903bd0243208fc9c17f9fd050bb5598bbf947e6c959aebaf12bd53bc5263bc96", size = 201663, upload-time = "2026-06-07T14:23:34.221Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/64/d1/27e17e9f26654021920fc1e8c0231ac5077392c078a44def78ff616dfa01/omega_lock-0.3.14.tar.gz", hash = "sha256:e9428bd48ee50980f25038c2137dadc5cb5d8b7217448667398480608ff421b5", size = 288005, upload-time = "2026-11-06T02:20:08.728Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/91/3a/aa42f2df1ee0256311ef247f64870cf26769ad8481b14a9971be5b9a94bb/omega_lock-0.3.2-py3-none-any.whl", hash = "sha256:9452aed4f28f81d08103229b7badffe1dfa6b9db8b2cb5491f767e5e28ab6383", size = 80232, upload-time = "2026-06-07T14:23:33.023Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/52/41d351550e57cbc671c656bbd3b98c9263327d01003dafe5579e07da34f3/omega_lock-0.3.14-py3-none-any.whl", hash = "sha256:65f83d352b165df975eba14ab91b3ddf711a8dd1c30fd08b1cc2335e2ca2d476", size = 114071, upload-time = "2026-11-06T02:20:06.602Z" },
 ]
 
 [[package]]
@@ -826,7 +826,7 @@ requires-dist = [
     { name = "google-genai", specifier = ">=1.0.0" },
     { name = "google-genai", marker = "extra == 'gemini'", specifier = ">=1.0.0" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.0.0,<2.0.0" },
-    { name = "omega-lock", specifier = ">=0.3.0,<0.4.0" },
+    { name = "omega-lock", specifier = ">=0.3.12,<0.4.0" },
     { name = "openai", specifier = ">=1.50.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.50.0" },
     { name = "pydantic", specifier = ">=2.6.0" },

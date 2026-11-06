@@ -35,12 +35,12 @@ power. Every result keeps `holdout_verified=False` and
 holdout experiment, and a local pass establishes neither generalization nor
 deployment approval.
 
-Version `2.2.4` is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)
-with wheel and source distributions. Check [PyPI 2.2.7](https://pypi.org/project/omegaprompt/2.2.7/)
-and [publish workflow results](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)
-for version `2.2.7`; version metadata alone is not a publication receipt. The
-commands below install checked-out source. The default GitHub Action likewise
-installs its bundled source.
+Version `2.2.7` is published on [PyPI](https://pypi.org/project/omegaprompt/2.2.7/)
+with wheel and source distributions. [Publish workflow run 42150632021](https://github.com/hibou04-ops/omegaprompt/actions/runs/42150632021)
+built those files from [source commit `aaceca7`](https://github.com/hibou04-ops/omegaprompt/commit/aaceca7a238172296b71def5d59bef21b57138f3).
+Subsequent source maintenance does not change the published files. The commands
+below install checked-out source. The default GitHub Action likewise installs
+its bundled source.
 
 ```python
 from omegaprompt.runtime import verify_calibration_preflight

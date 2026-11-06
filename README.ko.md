@@ -81,10 +81,10 @@ pip install "omegaprompt[mcp]"       # + MCP server (Claude Code / Cursor)
 calibration이나 독립 holdout 실험을 수행하지 않으며 로컬 통과는 일반화 성립이나
 배포 승인이 아닙니다.
 
-`2.2.4`는 [PyPI](https://pypi.org/project/omegaprompt/2.2.4/)에 wheel과 source
-배포본이 발행되어 있습니다. `2.2.7`는 [해당 PyPI 버전](https://pypi.org/project/omegaprompt/2.2.7/)과
-[publish workflow 결과](https://github.com/hibou04-ops/omegaprompt/actions/workflows/publish.yml)를
-확인하세요. 버전 메타데이터만으로 발행을 입증하지 않습니다. 아래 명령은 체크아웃한
+`2.2.7`은 [PyPI](https://pypi.org/project/omegaprompt/2.2.7/)에 wheel과 source
+배포본이 발행되어 있습니다. [Publish workflow 실행 42150632021](https://github.com/hibou04-ops/omegaprompt/actions/runs/42150632021)은
+[소스 커밋 `aaceca7`](https://github.com/hibou04-ops/omegaprompt/commit/aaceca7a238172296b71def5d59bef21b57138f3)에서 해당 파일을 빌드했습니다.
+이후의 소스 정비는 이미 게시된 파일을 바꾸지 않습니다. 아래 명령은 체크아웃한
 소스를 설치하며 기본 GitHub Action도 해당 Action에 동봉된 소스를 설치합니다.
 
 ```python
